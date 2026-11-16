@@ -1,0 +1,27 @@
+# Brazil, split S1 (temporal), baselines L0 (seasonal naive) and L1 (history only).
+exp_name: brazil_s1_baselines
+country: BRAZIL
+panel: data/processed/panel_weekly_v1.parquet
+split: {name: S1, train_start_year: 2018}   # train targets in [2018, Y-1]
+test_years: [2020, 2021, 2022, 2023, 2024]  # one fit per test year Y
+tune_year: 2019                             # tune once: train 2018, validate 2019; then frozen
+horizons: [1, 2, 3, 4]
+quantiles: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+coverage_levels: [0.4, 0.8]
+exclude_flag_gap: true
+seeds: [0]
+threads: 16
+runs:
+  - {model: naive, level: L0}
+  - {model: nb, level: L1}
+  - model: lgbm
+    level: L1
+    params: {learning_rate: 0.05, num_boost_round: 400, feature_fraction: 0.9,
+             bagging_fraction: 0.8, bagging_freq: 1, lambda_l2: 1.0}
+    tune:
+      grid: {num_leaves: [31, 127], min_data_in_leaf: [100, 1000]}
+      horizons: [1, 4]
+      quantiles: [0.1, 0.5, 0.9]
+dm_pairs:
+  - [lgbm-L1, naive-L0]
+  - [lgbm-L1, nb-L1]
