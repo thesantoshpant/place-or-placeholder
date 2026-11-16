@@ -23,15 +23,17 @@
 - **C4 `range_km`:** each country's S1 value (BR 8483, CO 705, PE 148, TW 27 km). S5 uses a per-country dict. C1 uses `c1_period: auto`: pre-training years in S0/S1, and LOO-kNN over training rows in S2–S4.
 - **Threads** are always 4 per worker.
 
-## Queue (`queue.sh launch | status | workers <A|B> | lane <A|B>`)
-- **Lane A (`pop_qA`):** BR S1-shared → BR S4 → S3 → S2 → S5 (BR held out). (S0 dropped 2026-11-16.)
-- **Lane B (`pop_qB`):** PE S1-shared → TW S1-shared → CO S4 → S2 → S3 → S5 (CO, PE, TW held out) → TW S1-BRparams → CO S1-shared. (S0 dropped and CO S4 moved first, 2026-11-16.) CO S1-shared waits until `pop_s1_colombia` has ended.
-- **Workers** (4 threads each) are re-evaluated at every stage start and every 20 s within a stage. When the number rises, an extra `run_experiment.py` process joins the same config, and one assembly pass runs at the end of the stage.
-  - While any `pop_s1_*` session is alive: A = 5, B = 2 (28 threads).
-  - Once none is alive: A = 9, B = 4 (52 threads).
-  - When one lane finishes, the other gets budget/4.
-- **Manual pins:** `A_WORKERS=` / `B_WORKERS=` in `runs/queue/override.env`.
-- **Logs:** `runs/queue/lane_{A,B}.log`. A failed job is logged and the lane moves on to the next job.
+## Queue (`queue.sh launch | status | budget | workers <L> | lane <L> | reap`)
+- **Lanes since 2026-11-16 13:12** (see "Throughput 2026-11-16" below):
+  - **A (`pop_qA`):** BR S1-shared → BR S4.
+  - **C (`pop_qC`):** BR S3 → S5 (BR held out).
+  - **D (`pop_qD`):** BR S2.
+  - **B (`pop_qB`):** PE S1-shared → TW S1-shared → CO S4 → S2 → S3 → S5 (CO, PE, TW held out) → TW S1-BRparams → CO S1-shared. CO S1-shared waits until `pop_s1_colombia` has ended.
+- **Workers** (4 threads each) are re-evaluated at every stage start and every 20 s within a stage. When the number rises, an extra `run_experiment.py` process joins the same config (if MemAvailable ≥ 12 GiB), and one final pass (leftover chunks + assembly) runs at the end of the stage. Counts never drop mid-stage.
+  - **Budget** = 60 threads, or 52 while other users' CPU is > 4 cores (back to 60 below 3 cores; 2-s `top` sample, cached 60 s in `runs/queue/others_cpu`), minus 4 × `WORKERS` of each live `pop_s1_<c>` session.
+  - budget/4 workers are split over the unfinished lanes by weight (remaining worker-h: A 135, B 95, C 93, D 98), largest remainder, ≥ 1 each. A finished lane's workers go to the others.
+- **Manual pins:** `<L>_WORKERS=`, `W_<L>=` (weight) and `BUDGET=` (threads) in `runs/queue/override.env`.
+- **Logs:** `runs/queue/lane_{A,B,C,D}.log`. A failed job is logged and the lane moves on to the next job. A lane never starts a job while another `split_pipeline.sh` runs it.
 - **Scheduling:** `runner.submit_order` submits the latest test years first, which shortens the tail at the end of each stage.
 
 ## Measured chunk times and ETA (4 threads, server load ~55–60) — superseded by the scope cuts below
@@ -66,3 +68,32 @@
   | Lane A wall (9 workers, 13 after lane B ends) | ≈ 33 h | ≈ 47 h |
 
   Add a few hours while `pop_s1_colombia` holds the budget at 5 + 2 workers. Chunk times rise if the server load climbs.
+
+
+## Throughput 2026-11-16
+- **Measured inefficiency (13:04).** Tails and setup were small: 13 parallel runs today (`runs/*/run.log`) kept their workers 89–100% busy, BR data load is ~10 s per stage and `select_control` takes 2 s. The real losses were:
+  - **Unused budget.** While `pop_s1_colombia` ran, the queue held 28 threads (A 5 + B 2), so 40 of 64 hardware threads were busy (load ~50) and 24 sat idle.
+  - **Lane imbalance.** Lane B (~95 worker-h) would end ~9 h before lane A (~330 worker-h), and all of Brazil was serial inside one lane.
+- **Change.**
+  - Brazil is split over three lanes (A: S1-shared → S4; C: S3 → S5; D: S2), with work-weighted shares of one budget of 60 threads.
+  - `run_cfg` counts `run_experiment.py` processes already running on a config as workers instead of waiting them out.
+  - Chunk definitions, params, seeds and threads (4) are unchanged, so results are identical.
+  - Concurrent stages within a split (option a) were not built. They would recover only the ~3% tail loss and would need a stage-DAG rewrite.
+- **Handover 13:11.**
+  - New scripts were installed by atomic `mv`, so running bash processes kept the old file.
+  - Killing the old lane loops also ended their process groups, even though remain-on-exit was set and the sessions were renamed. The in-flight chunks were lost: BR S1-shared `controls_2019` (≤ 5 chunks of ~8 min) and TW S1-shared `L3_Cstar` (2 short chunks). Every `.done.json` chunk was kept (16/40 BR).
+  - **Next time:** change the scripts with `mv` only. The lanes pick up the new `queue.sh workers` at once and the new `split_pipeline.sh` at their next job. Do not kill lane loops.
+- **Layout now.** 4 lanes; A 4, B 3, C 2, D 3 workers + `pop_s1_colombia` 3 = 60 threads. After `pop_s1_colombia` ends: A 5, B 3, C 3, D 4 = 60 threads.
+- **ETA** (event simulation of the lanes with the dynamic split, `tmp/eta3.py`, CO S1 ending ~5.7 h after 13:12):
+
+  | | C\* = C1 | C\* = C3/C4 |
+  |---|---|---|
+  | Lane D (BR S2) | 26.5 h | 37 h |
+  | Lane A (BR S1-shared, S4) | 28 h | 40 h |
+  | Lane B (CO/PE/TW) | 30 h | 42 h |
+  | Lane C (BR S3, S5) | 30 h | 42.5 h |
+  | **All done** | **≈ 30 h** (Nov 17 ~19:00) | ≈ 42.5 h (Nov 18 ~08:00) |
+  | Old 2-lane layout | 36.5 h | 51 h |
+  | New layout at the 52-thread fallback | 34 h | 48 h |
+
+  The floor is total work ÷ threads: 421 worker-h needs ≈ 29 h at 15 workers (12 while CO S1 runs). Finishing in ≤ 24 h would take ~70 threads, which is more than the 64 on the machine.

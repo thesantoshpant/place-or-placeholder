@@ -282,3 +282,154 @@ def test_lst_screen_option_default_off_and_only_lst(grid):
     assert diff.any()
     changed_cols = set(on.columns[diff.any(axis=0)])
     assert changed_cols <= {f"{v}_m{b}" for v in ("lst_day_pw", "lst_night_pw") for b in LV.MONTHS_BACK}
+
+
+# ------------------------------------------------------------------ no-history arm (N-levels)
+N_LEVELS = ("N2", "N3", "N4")
+
+
+def _case_poisoned_grid(grid, seed=1):
+    """Same grid with every case value replaced (random and NaN): anything read from cases changes."""
+    import dataclasses
+    rng = np.random.default_rng(seed)
+    y = rng.normal(5, 3, size=grid.y.shape)
+    y[rng.random(grid.y.shape) < 0.2] = np.nan
+    return dataclasses.replace(grid, y=y)
+
+
+def test_nohist_feature_counts_and_names(grid):
+    idx = rows(grid, 1)
+    c = ctx()
+    X = {lv: LV.LEVELS[lv](grid, idx, 1, c) for lv in N_LEVELS}
+    assert {k: v.shape[1] for k, v in X.items()} == {"N2": 53, "N3": 65, "N4": 129}
+    l1 = set(H.l1_features(grid, idx, 1).columns) - {"woy_sin", "woy_cos"}
+    for lv, df in X.items():
+        assert not (set(df.columns) & l1), lv
+        assert not any(k.startswith(("lag_", "sy")) for k in df.columns), lv
+    H.assert_no_location(X["N3"].columns)  # N2/N3 carry no location-specific column names
+
+
+def test_nohist_blocks_have_no_history_provenance():
+    for lv, blocks in LV.N_BLOCKS.items():
+        for b in blocks:
+            assert b.__module__ == LV.__name__, (lv, b)
+            assert b not in (LV._l0, LV._l1, LV._l2, LV._l3, LV._l4)
+            assert "grid.y" not in __import__("inspect").getsource(b), (lv, b.__name__)
+
+
+@pytest.mark.parametrize("h", [1, 4])
+@pytest.mark.parametrize("level", N_LEVELS)
+def test_nohist_levels_do_not_depend_on_cases(grid, level, h):
+    idx = rows(grid, h)
+    a = LV.LEVELS[level](grid, idx, h, ctx())
+    b = LV.LEVELS[level](_case_poisoned_grid(grid), idx, h, ctx())
+    pd.testing.assert_frame_equal(a, b)
+    # sanity: the same poisoning does change an L-level
+    assert not LV.LEVELS["L1"](grid, idx, h, ctx()).equals(
+        LV.LEVELS["L1"](_case_poisoned_grid(grid), idx, h, ctx()))
+
+
+@pytest.mark.parametrize("control", ["C1", "C2", "C3", "C4", "C5"])
+def test_nohist_controls_case_dependence(grid, split_dir, control):
+    """N3+Ck reads no cases for C2-C5; C1 (unit target encoding) is case-derived by design."""
+    idx = rows(grid, 1)
+    sp = SP.get_split("S4", "BRAZIL", 0, 2022, split_dir=split_dir)
+
+    def mk(p):
+        c = ctx(control_kw={"C4": {"range_km": 300.0}})
+        c.panel, c.split = p, sp
+        return c
+    p2 = panel()
+    p2["cases"] = np.random.default_rng(7).poisson(50, len(p2)).astype(float)
+    a = LV.LEVELS[f"N3+{control}"](grid, idx, 1, mk(panel()))
+    b = LV.LEVELS[f"N3+{control}"](_case_poisoned_grid(grid), idx, 1, mk(p2))
+    if control == "C1":
+        assert not a.equals(b)
+        n3 = list(LV.LEVELS["N3"](grid, idx, 1, ctx()).columns)
+        pd.testing.assert_frame_equal(a[n3], b[n3])
+    else:
+        pd.testing.assert_frame_equal(a, b)
+
+
+def test_n4_is_n3_union_alphaearth(grid):
+    idx = rows(grid, 1)
+    n3 = LV.LEVELS["N3"](grid, idx, 1, ctx())
+    n4 = LV.LEVELS["N4"](grid, idx, 1, ctx())
+    ae = LV.alphaearth_block(grid, idx, ctx())
+    assert list(n4.columns) == list(n3.columns) + list(ae.columns)
+    pd.testing.assert_frame_equal(n4[list(n3.columns)], n3)
+    pd.testing.assert_frame_equal(n4[list(ae.columns)], ae)
+    # and N-levels are the L-levels minus the case-history columns
+    hist = [k for k in H.l1_features(grid, idx, 1).columns if k not in ("woy_sin", "woy_cos")]
+    for n, l in (("N2", "L2"), ("N3", "L3"), ("N4", "L4")):
+        lx = LV.LEVELS[l](grid, idx, 1, ctx()).drop(columns=hist)
+        nx = LV.LEVELS[n](grid, idx, 1, ctx())
+        assert set(lx.columns) == set(nx.columns)
+        pd.testing.assert_frame_equal(lx[list(nx.columns)], nx, check_dtype=False)
+
+
+@pytest.mark.parametrize("seed", [0, 3])
+@pytest.mark.parametrize("control", ["C1", "C2", "C3", "C4", "C5"])
+def test_nohist_control_blocks_match_l3_controls(grid, split_dir, control, seed):
+    idx = rows(grid, 1)
+    sp = SP.get_split("S4", "BRAZIL", 0, 2022, split_dir=split_dir)
+
+    def mk():
+        c = ctx(control_kw={"C4": {"range_km": 300.0}})
+        c.panel, c.split, c.seed = panel(), sp, seed
+        return c
+    l3c = LV.LEVELS[f"L3+{control}"](grid, idx, 1, mk())
+    ctrl = [k for k in l3c.columns if k.startswith(control.lower() + "_")]
+    for base in ("N3", "N4"):
+        X = LV.LEVELS[f"{base}+{control}"](grid, idx, 1, mk())
+        nb = LV.LEVELS[base](grid, idx, 1, mk())
+        assert list(X.columns) == list(nb.columns) + ctrl
+        pd.testing.assert_frame_equal(X[ctrl], l3c[ctrl])
+
+
+@pytest.mark.parametrize("h", [1, 4])
+@pytest.mark.parametrize("level", ["N2", "N3", "N4"])
+def test_nohist_poisoned_future_inputs_do_not_change_features(grid, level, h):
+    test_poisoned_future_inputs_do_not_change_features(grid, level, h)
+
+
+# ------------------------------------------------------------------ C6: unit ID as a categorical
+@pytest.mark.parametrize("base", ["L3", "L4", "N3", "N4"])
+def test_c6_unit_id_categorical_seen_units(grid, split_dir, base):
+    idx = rows(grid, 1)
+    c = ctx()
+    c.panel = panel()
+    c.split = SP.get_split("S1", "BRAZIL", None, 2022, split_dir=split_dir)
+    X = LV.LEVELS[f"{base}+C6"](grid, idx, 1, c)
+    assert [k for k in X.columns if k.startswith("c6_")] == ["c6_unit_cat"]
+    codes = X["c6_unit_cat"].to_numpy()
+    assert np.isfinite(codes).all() and (codes == np.round(codes)).all()
+    # one distinct code per unit, constant over time
+    m = pd.Series(codes).groupby(idx["u"].to_numpy()).nunique()
+    assert (m == 1).all() and len(np.unique(codes)) == idx["u"].nunique()
+
+
+def test_c6_not_applicable_for_unseen_units(grid, split_dir):
+    from pop.features.controls import ControlNotApplicable
+    c = ctx()
+    c.panel = panel()
+    c.split = SP.get_split("S4", "BRAZIL", 0, 2022, split_dir=split_dir)
+    with pytest.raises(ControlNotApplicable):
+        LV.LEVELS["N3+C6"](grid, rows(grid, 1), 1, c)
+
+
+def test_c6_is_categorical_in_lgbm(grid, split_dir):
+    from pop.models.lgbm import LGBMQuantile
+    idx = rows(grid, 1)
+    c = ctx()
+    c.panel = panel()
+    c.split = SP.get_split("S1", "BRAZIL", None, 2022, split_dir=split_dir)
+    X = LV.LEVELS["N2"](grid, idx, 1, c).assign(
+        c6_unit_cat=LV.control_block("C6", grid, idx, c)["c6_unit_cat"].to_numpy())
+    y = grid.y[idx["u"].to_numpy(), idx["t"].to_numpy()]
+    m = LGBMQuantile(seed=0, threads=1, num_boost_round=5, min_data_in_leaf=5)
+    m.fit(X, y, quantiles=[0.5])
+    b = m.boosters_[0.5]
+    j = list(X.columns).index("c6_unit_cat")
+    assert b.dump_model()["feature_infos"]["c6_unit_cat"]["values"]  # categorical: list of values
+    assert j >= 0

@@ -27,10 +27,12 @@
 # largest training country's L1 = Brazil's, Colombia's when Brazil is held out), for every level
 # and control. Threads are always 4.
 # Markers: runs/<c>_<s>/PIPELINE_DONE or PIPELINE_FAILED. Log: runs/<c>_<s>/pipeline.log.
-# Workers: inside a queue lane (POP_LANE=A|B) the count comes from `queue.sh workers <lane>`,
+# Workers: inside a queue lane (POP_LANE=A|B|C|D) the count comes from `queue.sh workers <lane>`,
 # re-read at each stage start and every 20 s during a stage; when it rises, an extra
 # run_experiment.py process is started on the same config (chunks are flock-claimed), followed by
-# one assembly pass at the end of the stage. Standalone: --workers N or WORKERS=N in
+# one final pass (leftover chunks + assembly) at the end of the stage. run_experiment.py processes
+# already running on the config (left by a lane handover) are counted as workers, not waited out.
+# Standalone: --workers N or WORKERS=N in
 # runs/<c>_<s>/override.env.
 set -uo pipefail
 ROOT=/net/home/spant/0-100/group-research/place-or-placeholder
@@ -217,39 +219,42 @@ want_workers() {
 }
 run_cfg() {  # $1 = config name
   local cfg=configs/${C}_${TOK}_$1.yaml rd=runs/${C}_${TOK}_$1
+  local pat="[r]un_experiment.py $cfg "
   mkdir -p "$rd"
-  # after a lane restart, wait for run_experiment processes left running on this config (they
-  # keep their flock claims); the run below then only assembles or picks up what is left
-  if pgrep -f "[r]un_experiment.py $cfg " >/dev/null; then
-    say "waiting for earlier run_experiment processes on $cfg"
-    while pgrep -f "[r]un_experiment.py $cfg " >/dev/null; do sleep 30; done
+  # run_experiment processes left running on this config by an earlier pipeline (lane handover)
+  # keep their flock claims; they count as workers here, and new processes only add the rest.
+  # (pgrep counts the parent and its pool workers, so workers ~ count - 1.)
+  local left lw=0; left=$(pgrep -u "$(id -u)" -fc "$pat")
+  (( left > 0 )) && { lw=$((left - 1)); say "$left earlier run_experiment processes on $cfg (~$lw workers) keep running"; }
+  local cur=$lw want pids=() n=0 rc=0 p
+  start_proc() {  # $1 = workers
+    python scripts/run/run_experiment.py "$cfg" --workers "$1" --threads "$THREADS" \
+      >> "$rd/stdout$( (( n > 0 )) && echo ".helper$n").log" 2>&1 &
+    pids+=($!); n=$((n + 1))
+  }
+  want=$(want_workers)
+  if [[ $want =~ ^[0-9]+$ ]] && (( want > cur )); then
+    say "run $cfg (workers $((want - cur)) new + $lw earlier, threads $THREADS)"
+    start_proc $((want - cur)); cur=$want
   fi
-  local cur; cur=$(want_workers)
-  say "run $cfg (workers $cur, threads $THREADS)"
-  python scripts/run/run_experiment.py "$cfg" --workers "$cur" --threads "$THREADS" \
-    >> "$rd/stdout.log" 2>&1 &
-  local main=$! helpers=() n=0
-  while kill -0 "$main" 2>/dev/null; do
+  while pgrep -u "$(id -u)" -f "$pat" >/dev/null; do
     sleep 20
-    kill -0 "$main" 2>/dev/null || break
-    local want; want=$(want_workers)
-    if [[ $want =~ ^[0-9]+$ ]] && (( want > cur )); then
-      say "top-up: +$((want - cur)) workers on $cfg (now $want)"
-      python scripts/run/run_experiment.py "$cfg" --workers "$((want - cur))" --threads "$THREADS" \
-        >> "$rd/stdout.helper$((n++)).log" 2>&1 &
-      helpers+=($!)
-      cur=$want
+    pgrep -u "$(id -u)" -f "$pat" >/dev/null || break
+    want=$(want_workers)
+    local mem; mem=$(awk '/^MemAvailable/ {print int($2 / 1048576)}' /proc/meminfo)
+    if [[ $want =~ ^[0-9]+$ ]] && (( want > cur && mem >= 12 )); then
+      say "top-up: +$((want - cur)) workers on $cfg (now $want; MemAvailable ${mem} GiB)"
+      start_proc $((want - cur)); cur=$want
     fi
   done
-  wait "$main"; local rc=$?
-  local p
-  for p in "${helpers[@]}"; do wait "$p" || say "helper $p exited non-zero (main rc $rc)"; done
-  if (( rc == 0 && ${#helpers[@]} > 0 )); then  # helpers may have written the outputs concurrently
-    say "assembly pass for $cfg"
-    python scripts/run/run_experiment.py "$cfg" --workers 1 --threads "$THREADS" \
-      >> "$rd/stdout.log" 2>&1 || rc=$?
-  fi
-  return $rc
+  for p in "${pids[@]}"; do wait "$p" || { rc=$?; say "run_experiment $p exited $rc"; }; done
+  if (( n == 1 && lw == 0 )); then return $rc; fi
+  # several processes (helpers, earlier ones) may have written the outputs concurrently: one
+  # final pass computes anything left (e.g. chunks of a crashed process) and assembles
+  want=$(want_workers); [[ $want =~ ^[0-9]+$ ]] || want=1
+  say "final pass for $cfg (workers $want)"
+  python scripts/run/run_experiment.py "$cfg" --workers "$want" --threads "$THREADS" \
+    >> "$rd/stdout.log" 2>&1
 }
 plan_of() {  # s1_shared: run | reuse:<dir> (from runs/<c>_<s>/plan.json); others: run
   [[ -f $PD/plan.json ]] || { echo run; return; }

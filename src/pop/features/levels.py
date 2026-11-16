@@ -19,6 +19,13 @@ and, for the controls, the current split instance.
     L4+Ck  L4 + the same control block as L3+Ck (identical construction, seed and kwargs);
            used for G_excess = WIS(L3+C*) - WIS(L4+C*).
 
+No-history arm (secondary / exploratory; docs/methods/nohist_arm.md). No column is read from cases
+(grid.y); the only case-derived input is the C1 control (an ID-type target encoding by design):
+    N2   calendar (woy_sin, woy_cos of the target week) + climate     (2 + 51 = 53 cols)
+    N3   N2 + standard remote sensing / population                    (53 + 12 = 65 cols)
+    N4   N3 + AlphaEarth (as in L4)                                   (65 + 64 = 129 cols)
+    N3+Ck, N4+Ck   as L3+Ck / L4+Ck with N3 / N4 as the base (k = 1..6; C6 = unit ID categorical).
+
 Availability rules (asserted at read time):
     weekly  source week <= origin week                       (history._take)
     monthly source month ended before the origin week starts (month index < month of origin)
@@ -50,7 +57,7 @@ MONTHS_BACK = (1, 2, 3)
 YEARLY_VARS = ("ntl_pw", "built_share")
 AE_DIM = 64
 AE_BANDS = [f"A{i:02d}" for i in range(AE_DIM)]
-CONTROLS = ("C1", "C2", "C3", "C4", "C5")
+CONTROLS = ("C1", "C2", "C3", "C4", "C5", "C6")  # C6 = unit ID (categorical)
 
 PATHS = {
     "climate": ["data/interim/climate/climate_weekly_{c}_v1.parquet"],
@@ -331,7 +338,7 @@ def control_block(control, grid, idx, ctx) -> pd.DataFrame:
         on.append("year")
     X = left.merge(df.astype({"unit_id": str}), on=on, how="left")[feat]
     X.index = idx.index
-    return X.astype(np.float32)
+    return X.astype(np.float32)  # C6 codes (< 2**24) stay exact in float32
 
 
 # ------------------------------------------------------------------ registry
@@ -369,7 +376,40 @@ def _l4c(control):
     return fn
 
 
+# ------------------------------------------------------------------ no-history arm (N-levels)
+def calendar_block(grid, idx, ctx=None) -> pd.DataFrame:
+    """Week-of-year sin/cos of the target week (same definition as in L1); reads grid.woy only."""
+    ang = 2 * np.pi * grid.woy[idx["t"].to_numpy()] / H.WOY_PERIOD
+    return pd.DataFrame({"woy_sin": np.sin(ang), "woy_cos": np.cos(ang)}, index=idx.index)
+
+
+# provenance: the blocks each N-level is built from (no history.* function; nothing reads grid.y)
+N_BLOCKS = {"N2": (calendar_block, climate_block),
+            "N3": (calendar_block, climate_block, rs_block),
+            "N4": (calendar_block, climate_block, rs_block, alphaearth_block)}
+
+
+def _nlevel(name):
+    def fn(grid, idx, h, ctx):
+        return pd.concat([b(grid, idx, ctx) for b in N_BLOCKS[name]], axis=1)
+    fn.__name__ = name.lower()
+    return fn
+
+
+def _nc(base, control):
+    def fn(grid, idx, h, ctx):
+        return pd.concat([_nlevel(base)(grid, idx, h, ctx), control_block(control, grid, idx, ctx)],
+                         axis=1)
+    fn.__name__ = f"{base.lower()}_{control.lower()}"
+    return fn
+
+
+NOHIST_LEVELS = {**{n: _nlevel(n) for n in N_BLOCKS},
+                 **{f"N3+{c}": _nc("N3", c) for c in CONTROLS},
+                 **{f"N4+{c}": _nc("N4", c) for c in CONTROLS}}
+
 LEVELS = {"L0": _l0, "L1": _l1, "L2": _l2, "L3": _l3, "L4": _l4,
           **{f"L3+{c}": _l3c(c) for c in CONTROLS},
-          **{f"L4+{c}": _l4c(c) for c in CONTROLS}}
+          **{f"L4+{c}": _l4c(c) for c in CONTROLS},
+          **NOHIST_LEVELS}
 NO_LOCATION_LEVELS = {"L0", "L1", "L2"}  # history + climate: no location columns allowed

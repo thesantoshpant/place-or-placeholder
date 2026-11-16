@@ -24,7 +24,8 @@ class LGBMQuantile(QuantileModel):
     def fit(self, X, y_log, quantiles=None):
         self.quantiles_ = tuple(float(q) for q in quantiles)
         ds = lgb.Dataset(X.to_numpy(np.float32), label=np.asarray(y_log, np.float32),
-                         feature_name=list(X.columns), free_raw_data=False)
+                         feature_name=list(X.columns), free_raw_data=False,
+                         categorical_feature=[c for c in X.columns if str(c).endswith("_cat")] or "auto")
         self.boosters_ = {}
         for q in self.quantiles_:
             p, rounds = self._params(q)

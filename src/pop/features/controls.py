@@ -10,6 +10,8 @@ Column contracts (all outputs carry ``unit_id``; C3 also ``year``):
     C3  shuffle_embeddings      -> unit_id, year, c3_A00..c3_A63        (year = embedding year)
     C4  random_smooth_fields    -> unit_id, c4_f00..c4_f63            (static)
     C5  static_embedding        -> unit_id, c5_A00..c5_A63            (static; AlphaEarth 2023)
+    C6  unit_id_categorical     -> unit_id, c6_unit_cat               (pure ID; LightGBM categorical,
+                                   columns ending in '_cat'; seen-unit splits only, else NotApplicable)
 
 Inputs:
     units_df  unit_id, country, and either (lat, lon) or (centroid_lat, centroid_lon) in degrees.
@@ -30,7 +32,7 @@ from scipy.special import gammaln, lpmv
 
 R_EARTH_KM = 6371.0088
 BANDS = [f"A{i:02d}" for i in range(64)]
-CONTROLS = ("C1", "C2", "C3", "C4", "C5")
+CONTROLS = ("C1", "C2", "C3", "C4", "C5", "C6")
 N_SEEDS = 10  # C3 / C4 draws
 STATIC_YEAR = 2023
 ROOT = Path(__file__).resolve().parents[3]
@@ -38,7 +40,7 @@ BOUNDARIES = ROOT / "data/interim/boundaries/opendengue_units_v1.parquet"
 
 
 class ControlNotApplicable(ValueError):
-    """Raised when a control is undefined for a split (C1 under S5)."""
+    """Raised when a control is undefined for a split (C1 under S5; C6 with unseen test units)."""
 
 
 # ------------------------------------------------------------------------------------ geometry
@@ -366,6 +368,19 @@ def static_embedding(emb_df, units=None, year=STATIC_YEAR) -> pd.DataFrame:
     return out.reset_index(drop=True)
 
 
+def unit_id_categorical(units_df, train_units, test_units) -> pd.DataFrame:
+    """C6. The unit identity itself as one categorical code (rank of unit_id among the sorted
+    train | test units). Only defined when every test unit is a training unit (S0/S1): for
+    held-out units the category was never seen in training, so ControlNotApplicable."""
+    train_units, test_units = set(map(str, train_units)), set(map(str, test_units))
+    if not test_units <= train_units:
+        raise ControlNotApplicable("C6 (unit ID) is undefined when test units are unseen (S2-S5)")
+    allu = sorted(train_units | test_units)
+    known = set(units_df.unit_id.astype(str)) if units_df is not None else set(allu)
+    allu = [u for u in allu if u in known]
+    return pd.DataFrame({"unit_id": allu, "c6_unit_cat": np.arange(len(allu), dtype=np.int32)})
+
+
 # ----------------------------------------------------------------------------------- dispatch
 def make_controls(control, units_df, train_units, test_units, origin_year, train_rows=None,
                   emb_df=None, seed=0, **kw) -> pd.DataFrame:
@@ -384,6 +399,8 @@ def make_controls(control, units_df, train_units, test_units, origin_year, train
         return random_smooth_fields(units_df, allu, seed=seed, **kw)
     if control == "C5":
         return static_embedding(emb_df, allu, **kw)
+    if control == "C6":
+        return unit_id_categorical(units_df, train_units, test_units)
     raise ValueError(f"unknown control {control}")
 
 
