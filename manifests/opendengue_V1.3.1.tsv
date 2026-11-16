@@ -1,0 +1,4 @@
+file	source_url	bytes	sha256	md5	upstream_check	upstream_match	downloaded_at_utc
+National_extract_V1_3_1.zip	https://raw.githubusercontent.com/OpenDengue/master-repo/main/data/releases/V1.3.1/National_extract_V1_3_1.zip	330958	c588335f25f2202e4f87d271381f385c76ffd4dcb68348f40c2a6fcab8889d4e	5b5ea930dc3cc24ede9704c4553d449e	github_api_size+git_blob_sha1	yes	2026-11-16T05:40:08Z
+Spatial_extract_V1_3_1.zip	https://raw.githubusercontent.com/OpenDengue/master-repo/main/data/releases/V1.3.1/Spatial_extract_V1_3_1.zip	55045735	d864f84bead932f065d8fb642636e825cd4f16ceef6c4b4f26e4609a3a64c5b5	d215278e2d735bc27aa2c2c53e2b7a88	github_api_size+git_blob_sha1	yes	2026-11-16T05:40:10Z
+Temporal_extract_V1_3_1.zip	https://raw.githubusercontent.com/OpenDengue/master-repo/main/data/releases/V1.3.1/Temporal_extract_V1_3_1.zip	55205724	6bb4dbec3d891e444047354619d7bc7003e29e2f9f9cfcec29130fe605c126a2	4f88cec8df68f1ba8d3f21c1def60ed7	github_api_size+git_blob_sha1	yes	2026-11-16T05:40:12Z
