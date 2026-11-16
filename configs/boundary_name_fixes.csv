@@ -1,0 +1,17 @@
+country,od_adm1,od_adm2,target_id,note
+COLOMBIA,ATLANTICO,BARRANQUILLA,7082276B33268622823443,geoBoundaries name truncated: Distrito Especial Industrial Y Portuario De Barr*
+COLOMBIA,VALLE,DARIEN,7082276B94395141643556,Calima (El Darien) - official name Calima
+COLOMBIA,AMAZONAS,PUERTO SANTANDER (CD),7082276B22108715685729,DANE: Santander (Araracuara) corregimiento departamental
+COLOMBIA,VAUPES,PACOA (CD),7082276B7457968430038,Pacoa (Cor. Departamental)
+COLOMBIA,VAUPES,YAVARATE (CD),7082276B57930571389360,Yavarate (Cor. Departamental)
+COLOMBIA,CHOCO,RIOQUITO,7082276B43042384629965,Rio Quito (Paimado)
+COLOMBIA,BOLIVAR,TIQUISIO (PUERTO RICO),7082276B69446027092984,geoBoundaries spelling Tiquiso
+COLOMBIA,CHOCO,BELEN DE BAJIRA,NONE,Not in DANE MGN 2020 (municipality status annulled); territory within Riosucio/Carmen del Darien - left unmatched
+PERU,ICA,NAZCA,86281439B61745843991716,spelling Nasca
+PERU,HUANUCO,MARAЀON,86281439B56657051022034,OpenDengue mojibake for MARAÑON; geoBoundaries MaraÃ±on (Huanuco)
+TAIWAN,TAINAN CITY,XINYING DIST.,52511910B15727969780764,geoBoundaries/OSM labels this polygon Xiaying but its location (23.30N 120.30E) is Xinying (新營); Siaying is the real Xiaying
+TAIWAN,TAINAN CITY,XIAYING DIST.,52511910B67622492960002,Siaying = Xiaying (下營) Tongyong spelling
+TAIWAN,NANTOU COUNTY,SHUILI TOWNSHIP,52511910B97596648855860,geoBoundaries "Shueli Town" (水里鄉)
+TAIWAN,NANTOU COUNTY,ZHUSHAN TOWNSHIP,52511910B648094459248,geoBoundaries "Chushang" (竹山鎮; Wade-Giles)
+TAIWAN,PINGTUNG COUNTY,LIUQIU TOWNSHIP,52511910B90795941917739,geoBoundaries "Xiaoliuqiu" (琉球鄉 island)
+TAIWAN,TAITUNG COUNTY,LUDAO TOWNSHIP,52511910B398222474379,geoBoundaries "Green Island" (綠島鄉)

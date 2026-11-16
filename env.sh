@@ -21,3 +21,6 @@ if [ -f "$PROJECT_ROOT/.venv/bin/activate" ]; then
   . "$PROJECT_ROOT/.venv/bin/activate"
   export UV_PYTHON="$PROJECT_ROOT/.venv/bin/python"
 fi
+
+# Earth Engine Cloud project for this paper (pass explicitly; never edit ~/.config/earthengine)
+export EE_PROJECT=ee-spant-scaleshift

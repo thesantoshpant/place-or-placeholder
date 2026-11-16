@@ -61,3 +61,36 @@ Compiled 2026-11-15 from web research only. Items marked **UNVERIFIED** could no
 9. Clarke J et al. 2024, "A global dataset of publicly available dengue case count data", *Scientific Data* 11:296 (OpenDengue). Our data source.
 10. Araujo EC et al. 2025, "Leveraging probabilistic forecasts for dengue preparedness and control: the 2024 Dengue Forecasting Sprint in Brazil", medRxiv 10.1101/2025.05.12.25327419 (https://www.medrxiv.org/content/10.1101/2025.05.12.25327419.full.pdf). Mosqlimate/InfoDengue benchmark scored with WIS. Use its baselines and protocol for comparability. (First-author name from prior knowledge; check before citing.)
 11. Das A et al. 2024, "A decoder-only foundation model for time-series forecasting", ICML 2024 (TimesFM). **No peer-reviewed WIS evaluation of TimesFM 2.5 on infectious disease was found.** The closest are a TimesFM/Moirai study on HFMD (Frontiers Public Health 2025, 10.3389/fpubh.2025.1634138, non-WIS metrics) and EpiCastBench (arXiv:2605.11598, MASE/RMSE). This gap gives us a small secondary contribution.
+
+## Verification round 2 (2026-11-15)
+
+1. **Brittain et al., medRxiv 10.64898/2026.11.05.26367335. VERIFIED** (https://www.medrxiv.org/content/10.64898/2026.11.05.26367335v1.full). Assets are dated 2026-11-06. 5,570 Brazilian municipalities, monthly cases, horizons of 1/3/6/12 months. SARIMA, XGBoost, TCN and N-BEATS trained Jan 2010–Dec 2019; TimesFM zero-shot. Targets Jan 2020–Aug 2025. WIS on log(1+cases).
+   - **PDFM:** one 330-d Oct 2023 snapshot: "a single October 2023 embedding snapshot was used throughout the evaluation period".
+   - **Location controls:** none found in a full-text keyword search (shuffle, permutation, placebo, fixed effect, coordinates, one-hot, identifier). The ERA analysis uses the static embeddings to parameterise "municipality-specific climate sensitivities", which is close to ID use.
+   - **Spatial hold-out:** none. Hold-outs are temporal only.
+   - **Headline:** improvement in 19 of 20 model-horizons. N-BEATS at 6 months: ΔWIS −1.13 (95% CI 0.84–1.48; DM p<0.0001). Also −1.13 at 12 months, reported in Results without a CI. TCN at 12 months: p=0.14.
+2. **Muslim et al., arXiv:2610.05699 v2 (17 Oct 2026; v1 5 Oct). VERIFIED** (https://arxiv.org/html/2610.05699v2).
+   - **Dengue (Mexico):** about 2,450 municipalities. ΔWIS is PDFM minus TimesFM; negative means PDFM is better.
+     - 1 month: −0.0051 (bootstrap CI −0.0081 to −0.0027; DM p<0.001)
+     - 3 months: +0.0028 (p=0.14)
+     - 6 months: +0.0039 (p=0.074, sensitive to block length)
+     - The gain is significant only at 1 month.
+     - **Oct-2025 snapshot check:** −0.00505 vs −0.00514 (2023 snapshot) at 1 month; stable.
+     - No shuffled or unseen-region control for dengue.
+   - **Controls in other case studies:**
+     - MMR: Canadian embeddings randomly reassigned (permutation); 10-fold CV.
+     - CVD: spatial random effects; county hold-out.
+     - Cholera: permutation test on Precision@5.
+     - PRAMS: random- and shuffled-embedding controls. Real embeddings beat random by +0.0047 AUC; no shuffled result was found. Label permutation is also used. Whole jurisdictions are held out (S2), where PDFM *replacing state* gives ΔAUC +0.0038.
+3. **Nazir, Cheng, Khalid, arXiv:2605.10949. VERIFIED. Only v1 exists** (29 Apr 2026), so there is no version difference (https://arxiv.org/abs/2605.10949).
+   - Malaria (Nigeria): *static* "fingerprint per location"; R² 0.201 → 0.245.
+   - ARI (11 countries): *year-aligned*, "sampled at each cluster's survey year"; R² 0.157 → 0.206.
+   - Stunting: country-level average, year unstated; R² 0.036 → 0.036, with no gain due to collinearity with fixed effects.
+4. **AlphaEarth V1 ANNUAL. VERIFIED** (https://developers.google.com/earth-engine/datasets/catalog/GOOGLE_SATELLITE_EMBEDDING_V1_ANNUAL).
+   - "The embeddings are unit-length, meaning they have a magnitude of 1".
+   - CC-BY 4.0. Required attribution: "The AlphaEarth Foundations Satellite Embedding dataset is produced by Google and Google DeepMind."
+   - Cite Brown CF et al. 2025, arXiv:2507.22291.
+5. **TimesFM 2.5: deciles only. VERIFIED.** `src/timesfm/configs.py` (https://github.com/google-research/timesfm) sets `DEFAULT_QUANTILES = (0.1,…,0.9)`, "the 9 quantiles that the TimesFM 2.5 model was trained to output". `output_quantiles` "must be a subset of DEFAULT_QUANTILES". The continuous head only avoids "quantile collapsing". HF card output is the mean plus the 10th–90th percentiles. **It cannot produce 0.025 or 0.975.** Score WIS on the 0.1–0.9 levels.
+6. **Bosse NI, Abbott S, Cori A, van Leeuwen E, Bracher J, Funk S. 2023. *PLOS Comput Biol* 19(8):e1011393. VERIFIED** (https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1011393).
+
+**Framing:** Neither Brittain nor Muslim's dengue study has a location-only control or a spatial hold-out, and both use a static 2023 snapshot. Our "place or placeholder" test is unoccupied.

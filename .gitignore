@@ -2,15 +2,15 @@
 .venv/
 .tools/
 .cache/
-tmp/
+/tmp/
 __pycache__/
 *.pyc
 .ipynb_checkpoints/
 
 # Data & outputs (stored on the GPU server, never in git)
-data/
-outputs/
-runs/
+/data/
+/outputs/
+/runs/
 *.parquet
 *.zarr/
 *.tif
@@ -24,3 +24,8 @@ runs/
 
 # OS
 .DS_Store
+
+# Python/OS metadata
+._*
+.pytest_cache/
+*.egg-info/
