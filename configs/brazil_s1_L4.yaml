@@ -1,0 +1,28 @@
+# Brazil, split S1 (temporal), LightGBM at L4 = L3 + AlphaEarth embedding of year y-1
+# (y = target epi-year; pop-weighted w_ vector renormalised to unit length).
+# Launched by scripts/run/launch_br_s1_ae_runs.sh only after the AlphaEarth data verification.
+exp_name: brazil_s1_L4
+country: BRAZIL
+panel: data/processed/panel_weekly_v1.parquet
+split: {name: S1, folds: all}               # pop.splits API; train targets 2018..Y-1
+test_years: [2020, 2021, 2022, 2023, 2024]  # rolling origins Y
+tune_year: 2019                             # tune once: train 2018, validate 2019; then frozen
+horizons: [1, 2, 3, 4]
+quantiles: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+coverage_levels: [0.4, 0.8]
+exclude_flag_gap: true
+seeds: [0]
+threads: 16
+features:
+  climate_lag_vars: [tmean, precip, rh]
+  yearly_ref: target                        # yearly inputs (incl. AlphaEarth) = year y-1 of target
+  alphaearth: {weights: w, normalize: true}
+runs:
+  - model: lgbm
+    level: L4
+    params: {learning_rate: 0.05, num_boost_round: 400, feature_fraction: 0.9,
+             bagging_fraction: 0.8, bagging_freq: 1, lambda_l2: 1.0}
+    tune:                                   # same grid and budget as L1-L3
+      grid: {num_leaves: [31, 127], min_data_in_leaf: [100, 1000]}
+      horizons: [1, 4]
+      quantiles: [0.1, 0.5, 0.9]

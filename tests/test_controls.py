@@ -85,7 +85,178 @@ def test_c1_population_incidence():
     assert np.allclose(lv, C.unit_level(rows, set(u.unit_id), 2021))
 
 
-# ---------------------------------------------------------------------------------- C2
+def _panel_and_split(name="S1", origin=2021, seed=3):
+    from pop.splits.splits import Split
+    u = synth_units()
+    rng = np.random.default_rng(seed)
+    xs = sorted(u.unit_id[u.country == "X"])
+    rows = [{"unit_id": x, "year": y, "cases": float(rng.poisson(3 + i % 5)), "flag_gap": False}
+            for i, x in enumerate(xs) for y in range(2014, origin + 1) for _ in range(4)]
+    panel = pd.DataFrame(rows)
+    allu = frozenset(xs)
+    test = frozenset(xs[:15]) if name != "S1" else allu
+    train = allu if name == "S1" else allu - test
+    sp = Split(name, "X", None if name == "S1" else 0, origin, train, test,
+               tuple(range(2018, origin)), (origin,))
+    return u, panel, sp
+
+
+@pytest.mark.parametrize("origin", [2019, 2021])
+def test_c1_s1_ignores_training_target_years(origin):
+    u, panel, sp = _panel_and_split("S1", origin)
+    a = C.make_controls_for_split("C1", sp, u, panel=panel)
+    poisoned = panel.copy()
+    poisoned.loc[poisoned.year >= min(sp.train_years), "cases"] = 1e12
+    b = C.make_controls_for_split("C1", sp, u, panel=poisoned)
+    pd.testing.assert_frame_equal(a, b)
+    # equals the own mean of log1p(cases) over 2014-2017, gap weeks excluded
+    pre = panel[panel.year < 2018]
+    exp = np.log1p(pre.cases).groupby(pre.unit_id).mean()
+    got = a.set_index("unit_id").c1_te
+    assert np.allclose(got.loc[exp.index], exp)
+    gapped = panel.copy()
+    gapped["flag_gap"] = gapped.year < 2018
+    gapped.loc[gapped.flag_gap, "cases"] = 1e12
+    first = gapped.groupby("unit_id").head(1).index
+    gapped.loc[first, ["flag_gap", "cases"]] = [False, 0.0]
+    g = C.make_controls_for_split("C1", sp, u, panel=gapped).set_index("unit_id").c1_te
+    assert np.allclose(g.dropna(), 0.0) and g.notna().all()
+
+
+def test_c1_s1_identical_across_origins_and_train_test():
+    u, p21, s21 = _panel_and_split("S1", 2021)
+    _, _, s19 = _panel_and_split("S1", 2019)
+    p19 = p21[p21.year <= 2019]
+    a = C.make_controls_for_split("C1", s19, u, panel=p19)
+    b = C.make_controls_for_split("C1", s21, u, panel=p21)
+    pd.testing.assert_frame_equal(a, b)
+    # one value per unit; training and test rows of a unit read the same row of this table
+    assert a.unit_id.is_unique and set(a.unit_id) == set(s19.train_units) == set(s19.test_units)
+
+
+def test_c1_s1_legacy_train_period_available():
+    u, panel, sp = _panel_and_split("S1", 2021)
+    leg = C.make_controls_for_split("C1", sp, u, panel=panel, c1_period="train").set_index("unit_id").c1_te
+    r = panel[panel.year.between(2018, 2020)]
+    exp = np.log1p(r.cases).groupby(r.unit_id).mean()
+    assert np.allclose(leg.loc[exp.index], exp)
+    with pytest.raises(ValueError):
+        C.make_controls_for_split("C1", sp, u, panel=panel, c1_period="bogus")
+
+
+def test_c1_unseen_splits_unchanged():
+    """Legacy rule (train_mode='loo_knn') reproduces the pre-2026-11-16 output in S2-S4, and the
+    default 'matched' mode equals it in S4 (plain leave-one-out)."""
+    from pop.splits.splits import row_masks
+    for name in ("S2", "S3", "S4"):
+        u, panel, sp = _panel_and_split(name, 2021)
+        new = C.make_controls_for_split("C1", sp, u, panel=panel, train_mode="loo_knn")
+        tr = panel[row_masks(panel, sp)["train_target_ok"]]
+        old = C.make_controls("C1", u, sp.train_units, sp.test_units, sp.origin, train_rows=tr,
+                              train_mode="auto")
+        pd.testing.assert_frame_equal(new, old)
+        pd.testing.assert_frame_equal(new, C.make_controls_for_split(
+            "C1", sp, u, panel=panel, c1_period="train", train_mode="loo_knn"))
+        if name == "S4":
+            pd.testing.assert_frame_equal(new, C.make_controls_for_split("C1", sp, u, panel=panel))
+
+
+# ---------------------------------------------------- C1 matched leave-out (2026-11-16)
+def _states(u, n_lon=4, n_lat=3):
+    u = u.copy()
+    bx = np.clip(((u.lon + 5) / 10 * n_lon).astype(int), 0, n_lon - 1)
+    by = np.clip(((u.lat - u.lat.groupby(u.country).transform("min")) / 10 * n_lat).astype(int), 0, n_lat - 1)
+    u["adm1"] = u.country + "_" + by.astype(str) + bx.astype(str)
+    return u
+
+
+def _matched_split(name, u, origin=2021, d_km=150.0):
+    from pop.splits.splits import Split
+    xs = u[u.country == "X"]
+    if name == "S2":
+        test = set(xs.unit_id[xs.adm1 == sorted(xs.adm1.unique())[0]])
+        train = set(xs.unit_id) - test
+    elif name == "S3":
+        test = set(xs.unit_id[xs.lon < -2.5])
+        tq, rest = xs[xs.unit_id.isin(test)], xs[~xs.unit_id.isin(test)]
+        D = C.great_circle_km(tq.lat.to_numpy()[:, None], tq.lon.to_numpy()[:, None],
+                              rest.lat.to_numpy()[None, :], rest.lon.to_numpy()[None, :])
+        train = set(rest.unit_id[(D > d_km).all(0)])
+    else:
+        test = set(sorted(xs.unit_id)[::5])
+        train = set(xs.unit_id) - test
+    assert test and len(train) > 10
+    return Split(name, "X", 0, origin, frozenset(train), frozenset(test),
+                 tuple(range(2018, origin)), (origin,))
+
+
+def _panel(u, origin=2021, seed=4):
+    rng = np.random.default_rng(seed)
+    xs = sorted(u.unit_id[u.country == "X"])
+    return pd.DataFrame([{"unit_id": x, "year": y, "cases": float(rng.poisson(1 + i % 9)),
+                          "flag_gap": False}
+                         for i, x in enumerate(xs) for y in range(2016, origin + 1) for _ in range(3)])
+
+
+@pytest.mark.parametrize("name", ["S2", "S3"])
+def test_c1_matched_training_neighbours_follow_heldout_rule(name):
+    from pop.splits.splits import row_masks
+    d_km = 150.0
+    u = _states(synth_units(n=150))
+    panel = _panel(u)
+    sp = _matched_split(name, u, d_km=d_km)
+    got = C.make_controls_for_split("C1", sp, u, panel=panel, c1_buffer_km=d_km).set_index("unit_id").c1_te
+    tr_rows = panel[row_masks(panel, sp)["train_target_ok"]]
+    own = C.unit_level(tr_rows, sp.train_units, sp.origin)
+    tr = u[u.unit_id.isin(sp.train_units)]
+    rule = {"exclude_group": "adm1"} if name == "S2" else {"exclude_within_km": d_km}
+    exp, nb = C.knn_encode(tr, tr, own, exclude_self=True, return_neighbours=True, **rule)
+    assert np.allclose(got.loc[exp.index], exp, equal_nan=True)
+    pts = u.set_index("unit_id")
+    for t, ids in nb.items():
+        assert t not in ids and len(ids) > 0
+        if name == "S2":  # no training unit is encoded from a unit of its own state
+            assert (pts.loc[ids, "adm1"] != pts.at[t, "adm1"]).all()
+        else:  # nor from a unit within the buffer D
+            d = C.great_circle_km(pts.at[t, "lat"], pts.at[t, "lon"], pts.loc[ids, "lat"].to_numpy(),
+                                  pts.loc[ids, "lon"].to_numpy())
+            assert (d > d_km).all()
+    # held-out units: unchanged (kNN over all training units)
+    te = u[u.unit_id.isin(sp.test_units)]
+    assert np.allclose(got.loc[te.unit_id], C.knn_encode(te, tr, own, exclude_self=True), equal_nan=True)
+    # the matched training encodings differ from the legacy plain leave-one-out ones
+    leg = C.make_controls_for_split("C1", sp, u, panel=panel, train_mode="loo_knn").set_index("unit_id").c1_te
+    assert not np.allclose(leg.loc[tr.unit_id], got.loc[tr.unit_id])
+    # and matched training neighbours are at least as far away as plain-LOO ones, on average
+    _, nb_loo = C.knn_encode(tr, tr, own, exclude_self=True, return_neighbours=True)
+
+    def mean_d(nbs):
+        return np.mean([C.great_circle_km(pts.at[t, "lat"], pts.at[t, "lon"], pts.loc[i, "lat"].to_numpy(),
+                                          pts.loc[i, "lon"].to_numpy()).mean() for t, i in nbs.items()])
+    assert mean_d(nb) > mean_d(nb_loo)
+
+
+def test_c1_matched_rule_defaults_and_errors():
+    from pop.splits.splits import Split
+    s = lambda n, c="BRAZIL": Split(n, c, 0, 2021, frozenset({"a"}), frozenset({"b"}), (2018,), (2021,))  # noqa: E731
+    assert C.c1_matched_rule(s("S2")) == {"exclude_group": "adm1"}
+    assert C.c1_matched_rule(s("S3")) == {"exclude_within_km": 225.0}
+    assert C.c1_matched_rule(s("S3", "COLOMBIA")) == {"exclude_within_km": 130.0}
+    assert C.c1_matched_rule(s("S4")) == {}
+    u = synth_units()  # no adm1 column
+    rows = synth_rows(u)
+    allu = set(u.unit_id[u.country == "X"])
+    test = set(sorted(allu)[:10])
+    with pytest.raises(ValueError):
+        C.make_controls("C1", u, allu - test, test, 2021, train_rows=rows, exclude_group="adm1")
+    with pytest.raises(ValueError):
+        C.make_controls("C1", u, allu - test, test, 2021, train_rows=rows, train_mode="bogus")
+    # seen units (S0/S1) ignore the matched rule: own mean
+    a = C.make_controls("C1", u, allu, allu, 2021, train_rows=rows)
+    b = C.make_controls("C1", u, allu, allu, 2021, train_rows=rows, train_mode="own")
+    pd.testing.assert_frame_equal(a, b)
+
+
 def test_c2_harmonics_orthonormal_and_finite():
     rng = np.random.default_rng(0)
     n = 200_000
@@ -179,3 +350,17 @@ def test_c5_picks_2023():
     assert len(f) == len(u) and (f.c5_A00 == 2023).all()
     ref = e[e.year == 2023].set_index("unit_id")[C.BANDS]
     assert np.array_equal(f.set_index("unit_id").loc[ref.index].to_numpy(), ref.to_numpy())
+
+
+def test_fit_embedding_range_ignores_units_without_embedding():
+    rng = np.random.default_rng(3)
+    n = 400
+    lat, lon = rng.uniform(-20, -10, n), rng.uniform(-50, -40, n)
+    pts = pd.DataFrame({"unit_id": [f"u{i}" for i in range(n)], "country": "BRAZIL",
+                        "lat": lat, "lon": lon})
+    F = C.gaussian_random_fields(lat, lon, 300.0, n_fields=64, rng=rng)
+    emb = pd.DataFrame(F, columns=C.BANDS).assign(unit_id=pts.unit_id, year=2018)
+    r0 = C.fit_embedding_range(emb, pts)
+    emb.loc[5, C.BANDS] = np.nan  # e.g. an island unit with no pixels
+    r1 = C.fit_embedding_range(emb, pts)
+    assert np.isfinite(r1) and abs(r1 - r0) / r0 < 0.05

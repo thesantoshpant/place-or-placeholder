@@ -3,7 +3,8 @@
 
 Usage:
     python scripts/run/analyze_run.py --runs runs/brazil_s1_baselines runs/brazil_s1_timesfm_zs \
-        [--out runs/brazil_s1_baselines/analysis] [--ref lgbm-L1] [--naive naive-L0]
+        [--out runs/brazil_s1_baselines/analysis] [--ref lgbm-L1] [--naive naive-L0] \
+        [--pairs lgbm-L2:lgbm-L1 ...]   # extra DM pairs, added to the default ones
 
 Each run dir must hold scores.parquet (one row per forecast; wis_log, wis_case, cov_40, cov_80,
 cases). Model label = ``run`` column if present, else ``model`` from summary.csv, else the dir
@@ -82,6 +83,8 @@ def main() -> None:
     ap.add_argument("--naive", default="naive-L0")
     ap.add_argument("--panel", default=None, help="default: panel in first run's config_resolved.yaml")
     ap.add_argument("--country", default=None)
+    ap.add_argument("--pairs", nargs="*", default=[], metavar="A:B",
+                    help="extra DM pairs (model labels), e.g. lgbm-L2:lgbm-L1")
     a = ap.parse_args()
     runs = [Path(r) for r in a.runs]
     out = Path(a.out) if a.out else runs[0] / "analysis"
@@ -176,7 +179,8 @@ def main() -> None:
     tfm = next((m for m in models if "timesfm" in m.lower()), None)
     nb = next((m for m in models if m.lower().startswith("nb")), None)
     pairs = [(a.ref, a.naive), (a.ref, nb), (a.ref, tfm), (tfm, a.naive)]
-    pairs = [(x, y) for x, y in pairs if x in models and y in models]
+    pairs += [tuple(p.split(":", 1)) for p in a.pairs]
+    pairs = list(dict.fromkeys((x, y) for x, y in pairs if x in models and y in models))
     rows = []
     for h in sorted(sc.horizon.unique()):
         sh = sc[sc.horizon == h]

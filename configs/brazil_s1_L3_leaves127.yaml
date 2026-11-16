@@ -1,0 +1,19 @@
+# Sensitivity: Brazil S1 L3 with the L1/L2 hyperparameters (num_leaves 127, min_data_in_leaf 100)
+# instead of the L3-tuned 31/100 (the 2019 tuning grid was nearly flat: 0.07369 vs 0.07374).
+# Question: is the L3 deficit vs L2 on test years due to model capacity or to the L3 features?
+exp_name: brazil_s1_L3_leaves127
+country: BRAZIL
+panel: data/processed/panel_weekly_v1.parquet
+split: {name: S1, folds: all}
+test_years: [2020, 2021, 2022, 2023, 2024]
+tune_year: 2019
+horizons: [1, 2, 3, 4]
+quantiles: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+coverage_levels: [0.4, 0.8]
+exclude_flag_gap: true
+seeds: [0]
+threads: 4
+features: {climate_lag_vars: [tmean, precip, rh], yearly_ref: target}
+runs:
+  - {model: lgbm, level: L3, name: lgbm-L3-leaves127, seeded: false,
+     params_from: runs/brazil_s1_L2/tuning_lgbm-L2.json}

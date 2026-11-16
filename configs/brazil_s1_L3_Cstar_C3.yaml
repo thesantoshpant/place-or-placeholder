@@ -1,0 +1,29 @@
+# SUPERSEDED 2026-11-16: C* is now C1 (leak-free); kept for reference. Partial
+# outputs in runs/brazil_s1_L3_Cstar_C3_partial.
+# Brazil, split S1 (temporal), LightGBM at L3+C3 for the primary estimand
+# G_excess = WIS(L3+C*) - WIS(L4+C*). C* = C3 (shuffled AlphaEarth embeddings, within country-year),
+# chosen on the 2019 origin by scripts/run/select_control.py runs/brazil_s1_controls_2019
+# (docs/results/brazil_s1_control_selection.md). Hyperparameters frozen from the L3 tuning.
+# 10 seeds (seed = control permutation and LightGBM seed); score = mean over seeds.
+# The control block is built exactly as in L4+C3 (same seeds, same control_kw).
+exp_name: brazil_s1_L3_Cstar_C3_partial
+country: BRAZIL
+panel: data/processed/panel_weekly_v1.parquet
+split: {name: S1, folds: all}               # pop.splits API; train targets 2018..Y-1
+test_years: [2020, 2021, 2022, 2023, 2024]  # rolling origins Y
+tune_year: 2019
+horizons: [1, 2, 3, 4]
+quantiles: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+coverage_levels: [0.4, 0.8]
+exclude_flag_gap: true
+seeds: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+threads: 4
+features:
+  climate_lag_vars: [tmean, precip, rh]
+  yearly_ref: target
+  alphaearth: {weights: w, normalize: true}   # source table for C3
+  control_kw:
+    C4: {range_km: 8483.37}                   # as configs/brazil_s1_controls_2019.yaml (unused by C3)
+runs:
+  - {model: lgbm, level: L3+C3, name: lgbm-L3+C3, seeded: true,
+     params_from: runs/brazil_s1_L3/tuning_lgbm-L3.json}

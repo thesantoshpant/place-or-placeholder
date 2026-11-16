@@ -35,6 +35,16 @@ MOD13 = "MODIS/061/MOD13Q1"
 MOD11 = "MODIS/061/MOD11A2"
 COMPOSITE_DAYS = {MOD13: 16, MOD11: 8}
 MONTHLY_VARS = ["ndvi", "lst_day", "lst_night"]
+LST_VARS = ["lst_day", "lst_night"]
+# v2 LST QC rule (MOD11A2 C6/6.1 user guide, Wan 2013, QC_Day / QC_Night bit table):
+#   bits 0-1 mandatory QA: 00 produced good quality, 01 produced other quality, 10/11 not produced;
+#   bits 6-7 LST error flag: 00 <= 1 K, 01 <= 2 K, 10 <= 3 K, 11 > 3 K.
+# Keep a pixel if bits 0-1 == 00, or bits 0-1 == 01 and bits 6-7 <= LST_MAX_ERR_FLAG.
+# v2 uses LST_MAX_ERR_FLAG = 0 (error <= 1 K): the looser <= 2 K variant keeps the cloud-contaminated
+# night pixels behind the Colombian -42 deg C values (they are flagged 01 with error <= 2 K).
+LST_MAX_ERR_FLAG = 0
+LST_QC_RULE = ("keep QC bits0-1 == 00; or bits0-1 == 01 and LST error bits6-7 == 00 (<= 1 K); "
+               "day and night masked separately with their own QC band, per native 1 km pixel")
 FINE = C.FINE  # fine cells per ERA5 cell -> 0.01 deg
 FRES = C.RES / FINE
 R_EARTH = 6371008.8
@@ -74,6 +84,40 @@ def _lst(img, which):
     return img.select(f"LST_{which}_1km").multiply(0.02).subtract(273.15).updateMask(ok)
 
 
+def lst_qc_ok_np(qc, max_err_flag: int = LST_MAX_ERR_FLAG) -> np.ndarray:
+    """Pure-numpy version of the v2 MOD11A2 QC rule (``LST_QC_RULE``) for 8-bit QC values."""
+    qc = np.asarray(qc).astype(np.int64)
+    mand, err = qc & 3, (qc >> 6) & 3
+    return (mand == 0) | ((mand == 1) & (err <= max_err_flag))
+
+
+def lst_qc_ok(qc: ee.Image, max_err_flag: int = LST_MAX_ERR_FLAG) -> ee.Image:
+    """EE version of ``lst_qc_ok_np``: 1 where the pixel passes the v2 QC rule."""
+    mand, err = qc.bitwiseAnd(3), qc.rightShift(6).bitwiseAnd(3)
+    return mand.eq(0).Or(mand.eq(1).And(err.lte(max_err_flag)))
+
+
+def _lst_v2(img, which, max_err_flag=LST_MAX_ERR_FLAG):
+    """LST (deg C) masked with its own QC band (``QC_Day`` / ``QC_Night``) by the v2 rule."""
+    return (img.select(f"LST_{which}_1km").multiply(0.02).subtract(273.15)
+            .updateMask(lst_qc_ok(img.select(f"QC_{which}"), max_err_flag)))
+
+
+def lst_image(year: int, months=range(1, 13), qc: bool = True, max_err_flag: int = LST_MAX_ERR_FLAG) -> ee.Image:
+    """Bands ``lst_day_<mm>``, ``lst_night_<mm>`` (deg C), month-major. qc=True applies the v2 rule
+    per composite before the monthly mean (v2); qc=False is the unmasked v1 LST. Masks are applied
+    to the native 1 km pixels: at the 0.01 deg request scale EE reads pyramid level 0 (926 m)."""
+    m11 = composites_by_month(MOD11, year)
+    bands = []
+    for m in months:
+        b = ee.ImageCollection(MOD11).filter(ee.Filter.inList("system:index", m11[m]))
+        for v, which in (("lst_day", "Day"), ("lst_night", "Night")):
+            ic = b.map(lambda i, w=which: _lst_v2(i, w, max_err_flag)) if qc else \
+                b.map(lambda i, w=which: i.select(f"LST_{w}_1km").multiply(0.02).subtract(273.15))
+            bands.append(ic.mean().rename(f"{v}_{m:02d}") if m11[m] else _masked(f"{v}_{m:02d}"))
+    return ee.Image.cat(bands)
+
+
 def monthly_image(year: int, months=range(1, 13), mask_qa: str = "ndvi") -> ee.Image:
     """Bands ``<var>_<mm>`` for ndvi (unitless), lst_day, lst_night (deg C).
     mask_qa: "all" (NDVI SummaryQA + LST QC), "ndvi" (NDVI only; LST is already only produced
@@ -89,8 +133,36 @@ def monthly_image(year: int, months=range(1, 13), mask_qa: str = "ndvi") -> ee.I
         else:
             ld = b.map(lambda i: i.select("LST_Day_1km").multiply(0.02).subtract(273.15))
             ln = b.map(lambda i: i.select("LST_Night_1km").multiply(0.02).subtract(273.15))
-        bands += [nd.mean().rename(f"ndvi_{m:02d}"), ld.mean().rename(f"lst_day_{m:02d}"), ln.mean().rename(f"lst_night_{m:02d}")]
+        for v, ic, ids in (("ndvi", nd, m13[m]), ("lst_day", ld, m11[m]), ("lst_night", ln, m11[m])):
+            # A month without composites (MODIS starts Feb 2000) would give a zero-band mean()
+            # and silently shift every later band; emit a fully masked band (-> NaN) instead.
+            bands.append(ic.mean().rename(f"{v}_{m:02d}") if ids else _masked(f"{v}_{m:02d}"))
     return ee.Image.cat(bands)
+
+
+def _masked(name: str) -> ee.Image:
+    return ee.Image.constant(0).toFloat().updateMask(ee.Image.constant(0)).rename(name)
+
+
+def monthly_band_names(months=range(1, 13), vars_=MONTHLY_VARS) -> list[str]:
+    """Band order of ``monthly_image`` (``lst_image`` with vars_=LST_VARS): month-major, then vars."""
+    return [f"{v}_{m:02d}" for m in months for v in vars_]
+
+
+def monthly_frame(unit_ids, year: int, vp: np.ndarray, va: np.ndarray, vars_=MONTHLY_VARS) -> pd.DataFrame:
+    """(bands, units) pop- and area-weighted unit means of ``monthly_image`` -> long unit-month frame
+    with ``<var>_pw`` / ``<var>_aw`` columns. Refuses arrays that are not 12 months x vars."""
+    nb = 12 * len(vars_)
+    if vp.shape[0] != nb or va.shape[0] != nb:
+        raise ValueError(f"expected {nb} monthly bands for {year}, got {vp.shape[0]}/{va.shape[0]}")
+    rows = []
+    for m in range(1, 13):
+        d = pd.DataFrame({"unit_id": unit_ids, "year": year, "month": m})
+        for j, v in enumerate(vars_):
+            b = len(vars_) * (m - 1) + j
+            d[f"{v}_pw"], d[f"{v}_aw"] = vp[b], va[b]
+        rows.append(d)
+    return pd.concat(rows, ignore_index=True)
 
 
 def viirs_id(year: int) -> str | None:

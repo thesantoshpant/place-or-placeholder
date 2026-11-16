@@ -9,8 +9,13 @@ issued so that the target week falls in Y). Tuning origin = 2019 (train 2018, te
 S0  random unit-weeks (leaky contrast): rows of 2018..Y hashed to 80/20; train = 80% part (incl. year Y),
     test = 20% part restricted to year Y.                                           BRAZIL, COLOMBIA, TAIWAN
 S1  pure temporal, all units train and test.                                        all four countries
-S2  leave-one-adm1-out; fold = adm1 index (sorted).                                 BRAZIL, COLOMBIA
-S3  spatial k-means blocks; test block b, train = other blocks minus buffer units.  BRAZIL, COLOMBIA
+S2  grouped leave-states-out: every adm1 in exactly one of 5 folds, folds balanced by unit
+    count (seeded greedy); fold = group index.                                      BRAZIL, COLOMBIA
+S2L legacy leave-one-adm1-out; fold = adm1 index (sorted). Kept, not run.           BRAZIL, COLOMBIA
+S3  spatial k-means blocks grouped into folds (BR: 10 blocks -> 5 folds of 2, largest block
+    paired with smallest; CO: 6 folds = 6 blocks); train = all other units minus those within
+    D of any held-out unit of the fold.                                             BRAZIL, COLOMBIA
+S3B legacy one-block-per-fold S3 (BR 10, CO 6). Kept, not run.                      BRAZIL, COLOMBIA
 S4  cold-start: 5-fold random unit hold-out stratified by adm1.                     BRAZIL, COLOMBIA
 S5  leave-one-country-out; fold = held-out country (TAIWAN first); `country` arg ignored.
 
@@ -47,15 +52,21 @@ SPLIT_COUNTRIES = {
     "S3": ("BRAZIL", "COLOMBIA"),
     "S4": ("BRAZIL", "COLOMBIA"),
     "S5": S5_ORDER,  # held-out country
+    "S2L": ("BRAZIL", "COLOMBIA"),  # legacy leave-one-adm1-out (not run)
+    "S3B": ("BRAZIL", "COLOMBIA"),  # legacy one block per fold (not run)
 }
 SPLITS = tuple(SPLIT_COUNTRIES)
+S2_GROUPS = 5                       # S2: adm1s grouped into 5 folds
+S3_BLOCKS_PER_FOLD = {"BRAZIL": 2}  # S3: BR 10 blocks -> 5 folds of 2; others 1 block per fold
+FOLD_COL = {"S2": "s2_fold", "S2L": "s2l_fold", "S3": "s3_fold", "S3B": "s3_block",
+            "S4": "s4_fold"}
 
 
 @dataclass(frozen=True)
 class Split:
     name: str
     country: str          # test country
-    fold: object          # None (S0/S1), adm1 index (S2), block (S3), fold (S4), country (S5)
+    fold: object          # None (S0/S1), group (S2/S3/S4), adm1 (S2L), block (S3B), country (S5)
     origin: int
     train_units: frozenset
     test_units: frozenset
@@ -66,9 +77,58 @@ class Split:
 
 
 # ------------------------------------------------------------------------------------------- tables
+def group_adm1_folds(units: pd.DataFrame, k: int = S2_GROUPS, seed: int = DEFAULT_SEED) -> pd.Series:
+    """S2 fold per unit: each adm1 goes to exactly one of min(k, n_adm1) folds. Seeded greedy:
+    adm1s in a seeded random order, then (stable) by unit count descending; each goes to the
+    fold with the fewest units so far (ties -> lowest fold index)."""
+    sizes = units.groupby("adm1").size()
+    k = min(k, len(sizes))
+    names = sizes.index.to_numpy()[np.random.default_rng(seed).permutation(len(sizes))]
+    order = sorted(names, key=lambda a: -int(sizes[a]))
+    load, fold = np.zeros(k, int), {}
+    for a in order:
+        f = int(np.argmin(load))
+        fold[a] = f
+        load[f] += int(sizes[a])
+    return units["adm1"].map(fold).astype("Int16")
+
+
+def group_blocks(blocks: pd.Series, per_fold: int) -> dict:
+    """S3 fold per block: blocks sorted by unit count; the i-th largest is grouped with the
+    i-th smallest (per_fold = 2). Folds are numbered by their smallest block id. Identity when the
+    block count is not a multiple of per_fold."""
+    sizes = blocks.value_counts()
+    ids = sorted(int(b) for b in sizes.index)
+    n = len(ids)
+    if per_fold <= 1 or n % per_fold:
+        return {b: b for b in ids}
+    if per_fold != 2:
+        raise NotImplementedError("only pairs of blocks are implemented")
+    desc = sorted(ids, key=lambda b: (-int(sizes[b]), b))
+    groups = sorted(sorted((desc[i], desc[n - 1 - i])) for i in range(n // 2))
+    return {b: g for g, grp in enumerate(groups) for b in grp}
+
+
 @lru_cache(maxsize=4)
 def load_unit_folds(split_dir: str | None = None) -> pd.DataFrame:
-    return pd.read_parquet(Path(split_dir or SPLIT_DIR) / "unit_folds.parquet")
+    """unit_folds.parquet plus the derived fold columns. The file's ``s2_fold`` (adm1 index) is
+    exposed as ``s2l_fold`` (S2L); ``s2_fold`` becomes the grouped S2 fold and ``s3_fold`` the
+    grouped S3 fold (S3B keeps ``s3_block``)."""
+    uf = pd.read_parquet(Path(split_dir or SPLIT_DIR) / "unit_folds.parquet")
+    uf["s2l_fold"] = uf["s2_fold"]
+    uf["s2_fold"] = pd.array([pd.NA] * len(uf), dtype="Int16")
+    uf["s3_fold"] = pd.array([pd.NA] * len(uf), dtype="Int16")
+    for c in SPLIT_COUNTRIES["S2"]:
+        m = (uf.country == c).to_numpy()
+        if m.any() and "adm1" in uf:
+            uf.loc[m, "s2_fold"] = group_adm1_folds(uf[m]).to_numpy()
+    for c in SPLIT_COUNTRIES["S3"]:
+        m = (uf.country == c).to_numpy() & uf.s3_block.notna().to_numpy()
+        if m.any():
+            b = uf.s3_block[m].astype(int)
+            uf.loc[m, "s3_fold"] = b.map(group_blocks(b, S3_BLOCKS_PER_FOLD.get(c, 1))).astype(
+                "Int16").to_numpy()
+    return uf
 
 
 @lru_cache(maxsize=4)
@@ -93,8 +153,7 @@ def folds(name: str, country: str, split_dir: str | None = None) -> list:
     if name == "S5":
         return list(S5_ORDER)
     uf = load_unit_folds(split_dir)
-    col = {"S2": "s2_fold", "S3": "s3_block", "S4": "s4_fold"}[name]
-    return sorted(int(x) for x in uf.loc[uf.country == country, col].dropna().unique())
+    return sorted(int(x) for x in uf.loc[uf.country == country, FOLD_COL[name]].dropna().unique())
 
 
 # ----------------------------------------------------------------------------------------------- API
@@ -118,14 +177,15 @@ def get_split(name: str, country: str, fold=None, origin: int = FIRST_TEST_ORIGI
     elif name == "S5":
         train, test = frozenset(uf.unit_id[uf.country != country]), allu
     else:
-        col = {"S2": "s2_fold", "S3": "s3_block", "S4": "s4_fold"}[name]
-        test = frozenset(cu.unit_id[cu[col] == fold])
+        sel = (cu[FOLD_COL[name]] == fold).fillna(False).to_numpy(bool)
+        test = frozenset(cu.unit_id[sel])
         if not test:
             raise ValueError(f"{name}/{country}: empty fold {fold}")
         train = allu - test
-        if name == "S3":
+        if name in ("S3", "S3B"):  # buffer around every held-out unit = union over its blocks
+            blocks = {int(b) for b in cu.s3_block[sel]}
             ex = load_buffer_exclusions(split_dir)
-            ex = ex[(ex.country == country) & (ex.test_block == fold)]
+            ex = ex[(ex.country == country) & ex.test_block.isin(blocks)]
             train = train - frozenset(ex.excluded_unit_id)
     return Split(name, country, fold, origin, train, test, train_years, test_years, row_level, seed)
 

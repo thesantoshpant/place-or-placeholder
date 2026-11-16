@@ -1,0 +1,43 @@
+# Brazil S1: choice of the ID control C* on the 2019 origin only (train targets 2018, test 2019).
+# No 2020+ case data is read: S1 training rows are target years < origin, C1 uses those rows only.
+# (C5 is by definition the AlphaEarth 2023 image; it is imagery, not outcome data.)
+# Every run reuses L3's frozen hyperparameters (runs/brazil_s1_L3/tuning_lgbm-L3.json), so the
+# controls differ only in their feature block. C3/C4 run 10 seeds (seed = control draw and
+# LightGBM seed); C1/C2/C5 and the L3 reference run seed 0 only.
+# Select C* with: python scripts/run/select_control.py runs/brazil_s1_controls_2019
+exp_name: brazil_s1_controls_2019
+country: BRAZIL
+panel: data/processed/panel_weekly_v1.parquet
+split: {name: S1, folds: all}
+test_years: [2019]
+tune_year: 2019
+horizons: [1, 2, 3, 4]
+quantiles: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+coverage_levels: [0.4, 0.8]
+exclude_flag_gap: true
+seeds: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+threads: 16
+features:
+  climate_lag_vars: [tmean, precip, rh]
+  yearly_ref: target
+  alphaearth: {weights: w, normalize: true}   # source table for C3 (shuffled) and C5 (2023)
+  control_kw:
+    # Exponential e-folding scale from controls.fit_embedding_range on the renormalised BR
+    # embeddings of 2017-2018 (the years available at the 2019 origin), default binning
+    # (max distance = 1/2 of the largest pair distance, 25 bins). The variogram rises almost
+    # linearly to ~2,100 km (no sill), so the scale is weakly identified (2017: 11,398 km;
+    # 2018: 6,105 km; 2017-2024: 7,028 km). launch_br_s1_ae_runs.sh re-fits and checks it.
+    C4: {range_km: 8483.37}
+runs:
+  - {model: lgbm, level: L3, name: lgbm-L3, seeded: false,
+     params_from: runs/brazil_s1_L3/tuning_lgbm-L3.json}
+  - {model: lgbm, level: L3+C1, name: lgbm-L3+C1, seeded: false,
+     params_from: runs/brazil_s1_L3/tuning_lgbm-L3.json}
+  - {model: lgbm, level: L3+C2, name: lgbm-L3+C2, seeded: false,
+     params_from: runs/brazil_s1_L3/tuning_lgbm-L3.json}
+  - {model: lgbm, level: L3+C5, name: lgbm-L3+C5, seeded: false,
+     params_from: runs/brazil_s1_L3/tuning_lgbm-L3.json}
+  - {model: lgbm, level: L3+C3, name: lgbm-L3+C3, seeded: true,
+     params_from: runs/brazil_s1_L3/tuning_lgbm-L3.json}
+  - {model: lgbm, level: L3+C4, name: lgbm-L3+C4, seeded: true,
+     params_from: runs/brazil_s1_L3/tuning_lgbm-L3.json}

@@ -1,0 +1,30 @@
+# Brazil, split S1 (temporal), LightGBM at L3+C1 for the primary estimand
+# G_excess = WIS(L3+C*) - WIS(L4+C*). C* = C1 (leak-free target encoding: unit mean log1p(cases)
+# over the pre-training years 2014-2017, flag_gap weeks dropped, same value for training and test
+# rows and every origin; controls.c1_source_rows). Chosen on the 2019 origin by
+# scripts/run/select_control.py runs/brazil_s1_controls_2019 runs/brazil_s1_controls_2019_C1fix
+#   --replace lgbm-L3+C1 (docs/results/brazil_s1_control_selection.md).
+# Hyperparameters frozen from the L3 tuning. C1 is deterministic: 1 seed.
+# The control block is built exactly as in L4+C1. The previous C* = C3 config is
+# configs/brazil_s1_L3_Cstar_C3.yaml (partial run in runs/brazil_s1_L3_Cstar_C3_partial).
+exp_name: brazil_s1_L3_Cstar
+country: BRAZIL
+panel: data/processed/panel_weekly_v1.parquet
+split: {name: S1, folds: all}               # pop.splits API; train targets 2018..Y-1
+test_years: [2020, 2021, 2022, 2023, 2024]  # rolling origins Y
+tune_year: 2019
+horizons: [1, 2, 3, 4]
+quantiles: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+coverage_levels: [0.4, 0.8]
+exclude_flag_gap: true
+seeds: [0]
+threads: 4
+features:
+  climate_lag_vars: [tmean, precip, rh]
+  yearly_ref: target
+  alphaearth: {weights: w, normalize: true}
+  control_kw:
+    C1: {c1_period: auto}                     # auto -> pre_train under S1
+runs:
+  - {model: lgbm, level: L3+C1, name: lgbm-L3+C1, seeded: false,
+     params_from: runs/brazil_s1_L3/tuning_lgbm-L3.json}

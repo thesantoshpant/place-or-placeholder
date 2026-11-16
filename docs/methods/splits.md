@@ -1,14 +1,14 @@
 # Train/test splits S0–S5 (splits_v1)
 
-Code: `src/pop/splits/{splits,spatial}.py`. Build: `scripts/splits/build_splits.py` (re-runnable, seed 20240101). Outputs: `data/processed/splits_v1/`.
+Code: `src/pop/splits/{splits,spatial}.py`. The grouped S2/S3 fold columns (`s2_fold`, `s3_fold`) are derived in `load_unit_folds()` from the stored table (whose adm1 index is exposed as `s2l_fold`, blocks as `s3_block`), so `splits_v1` was not rebuilt. Tests: `tests/test_splits.py` (coverage, disjointness, one fold per state, buffer distance and completeness). Build: `scripts/splits/build_splits.py` (re-runnable, seed 20240101). Outputs: `data/processed/splits_v1/`.
 
 **Origins.** Origin Y trains on target years 2018..Y−1 (lags may use earlier years) and tests on all target weeks of Y, horizons 1–4. Tuning origin 2019 trains on 2018 only. Test origins run from 2020 to the last year of each country: BR 2024, CO 2022, PE 2023, TW 2024. `row_masks()` returns `train`, `test`, `score = test & ~flag_gap` and `train_target_ok`. Gap weeks stay available as inputs.
 
 **Splits.**
 - **S0** (BR/CO/TW, leaky): a hash of (unit, week, seed) sends 20% of 2018..Y rows to test. Train uses the other 80%, including rows from Y. Test is the 20% that falls in Y.
 - **S1** (all countries): purely temporal; every unit is in both train and test.
-- **S2** (BR/CO): leave one adm1 out.
-- **S3** (BR/CO): k-means blocks on centroids (k = 10 for BR, 6 for CO). Units within D of the test block are dropped from training.
+- **S2** (BR/CO): **grouped leave-states-out, 5 folds** (changed 2026-11-16). Each adm1 is in exactly one fold; held-out units are always in states never seen in training. Folds are balanced by unit count with a seeded greedy rule (`splits.group_adm1_folds`: adm1s in a seeded random order, stable-sorted by size descending, each to the currently smallest fold). The old leave-one-adm1-out split is kept as **S2L** (not run).
+- **S3** (BR/CO): k-means blocks on centroids (k = 10 for BR, 6 for CO). **BR's 10 blocks are grouped into 5 folds of 2** (largest block paired with smallest, `splits.group_blocks`); CO keeps 6 folds = 6 blocks. Units within D of *any* held-out unit of the fold are dropped from training (union of the per-block buffers). The old one-block-per-fold split is kept as **S3B** (not run).
 - **S4** (BR/CO): 5-fold unit hold-out stratified by adm1. Fold sizes differ by at most one unit, both overall and within each adm1.
 - **S5**: leave one country out, in the order TW, BR, CO, PE.
 
@@ -30,15 +30,17 @@ The exponential ranges come from long, weak tails and are not used. Plots: `outp
 ## Fold sizes (origin 2020)
 | Split | Country | folds | test units | train units | buffer-excluded |
 |---|---|---|---|---|---|
-| S2 | BR | 27 | 1–853 | 4664–5516 | – |
-| S2 | CO | 33 | 1–125 | 946–1070 | – |
-| S3 | BR | 10 | 107–961 | 3910–5378 | 32–646 |
+| S2 | BR | 5 (4–6 states each) | 1090–1124 | 4393–4427 | – |
+| S2 | CO | 5 (6–7 depts each) | 214–215 | 856–857 | – |
+| S3 | BR | 5 (blocks 0+3, 1+2, 4+9, 5+6, 7+8) | 966–1219 | 3631–4124 | 340–678 |
 | S3 | CO | 6 | 30–246 | 528–1038 | 3–297 |
+| S2L (legacy) | BR / CO | 27 / 33 | 1–853 / 1–125 | | – |
+| S3B (legacy) | BR | 10 | 107–961 | 3910–5378 | 32–646 |
 | S4 | BR | 5 | 1103–1104 | 4413–4414 | – |
 | S4 | CO | 5 | 214–215 | 856–857 | – |
 | S5 | TW/BR/CO/PE | 1 each | 287/5517/1071/115 | 6703/1473/5919/6875 | – |
 
-S0/S1 use all units: BR 5517, CO 1071, TW 287, and PE 115 (S1 only). Distrito Federal and Bogotá each form a single-unit S2 fold. CO S3 block 5 has 30 units (Amazon/Orinoquía).
+S0/S1 use all units: BR 5517, CO 1071, TW 287, and PE 115 (S1 only). Under S2L, Distrito Federal and Bogotá each form a single-unit fold. CO S3 block 5 has 30 units (Amazon/Orinoquía).
 
 ## Flagged units (no geometry → adm1-mean centroid)
 - `COLOMBIA|CHOCO|BELEN DE BAJIRA`: its S3 buffer membership is approximate.

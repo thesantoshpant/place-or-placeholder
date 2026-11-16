@@ -1,7 +1,8 @@
 """Location-only control features C1-C5 (Paper 1, "Place or Placeholder?").
 
 Each control replaces the AlphaEarth block in L4 ("L3 + C"). Everything is computed at fit time
-for one split instance (train_units, test_units, origin_year); C1 uses training rows only.
+for one split instance (train_units, test_units, origin_year). C1 uses outcome rows of training
+units only: pre-training years under S0/S1, training target rows under S2-S4 (c1_source_rows).
 
 Column contracts (all outputs carry ``unit_id``; C3 also ``year``):
     C1  target_encoding         -> unit_id, c1_te                     (static within an origin)
@@ -96,9 +97,14 @@ def unit_level(train_rows, train_units, origin_year, population=None) -> pd.Seri
 
 
 def knn_encode(query: pd.DataFrame, ref: pd.DataFrame, ref_values: pd.Series, k=5, eps_km=1.0,
-               exclude_self=False, return_neighbours=False):
+               exclude_self=False, return_neighbours=False, exclude_group=None,
+               exclude_within_km=None):
     """Inverse-distance (1/(d+eps)) weighted mean of the k nearest `ref` units in the same country.
-    `ref` must contain only training units; `exclude_self` drops a query unit from its own pool."""
+    `ref` must contain only training units; `exclude_self` drops a query unit from its own pool.
+    Matched leave-out (C1 train_mode='matched'): `exclude_group` (a column, e.g. 'adm1') drops
+    ref units sharing the query unit's value; `exclude_within_km` drops ref units with
+    great-circle distance <= that many km (this also drops the unit itself). A query unit with
+    fewer than k admissible neighbours uses those it has (NaN if none)."""
     out, nbrs = pd.Series(np.nan, index=query.unit_id.to_numpy(), dtype=float), {}
     ref = ref[ref.unit_id.isin(ref_values.index)]
     for c, q in query.groupby("country"):
@@ -109,23 +115,43 @@ def knn_encode(query: pd.DataFrame, ref: pd.DataFrame, ref_values: pd.Series, k=
         rid = rc.unit_id.to_numpy()
         if exclude_self:
             D[q.unit_id.to_numpy()[:, None] == rid[None, :]] = np.inf
+        if exclude_group is not None:
+            D[q[exclude_group].to_numpy()[:, None] == rc[exclude_group].to_numpy()[None, :]] = np.inf
+        if exclude_within_km is not None:
+            D[D <= float(exclude_within_km)] = np.inf
         vals = ref_values.reindex(rid).to_numpy()
-        kk = min(k, D.shape[1] - int(exclude_self))
+        kk = min(k, D.shape[1])
         if kk < 1:
             continue
         idx = np.argpartition(D, kk - 1, axis=1)[:, :kk]
         d = np.take_along_axis(D, idx, 1)
-        w = 1.0 / (d + eps_km)
-        out.loc[q.unit_id.to_numpy()] = (w * vals[idx]).sum(1) / w.sum(1)
-        nbrs.update({u: list(rid[i]) for u, i in zip(q.unit_id, idx)})
+        ok = np.isfinite(d)
+        w = np.where(ok, 1.0 / (np.where(ok, d, 0.0) + eps_km), 0.0)
+        num = np.where(ok, w * vals[idx], 0.0).sum(1)
+        den = w.sum(1)
+        with np.errstate(invalid="ignore", divide="ignore"):
+            out.loc[q.unit_id.to_numpy()] = np.where(den > 0, num / np.where(den > 0, den, 1.0), np.nan)
+        nbrs.update({u: list(rid[i][o]) for u, i, o in zip(q.unit_id, idx, ok)})
     return (out, nbrs) if return_neighbours else out
 
 
+C1_TRAIN_MODES = ("matched", "auto", "loo_knn", "own")
+
+
 def target_encoding(units_df, train_units, test_units, origin_year, train_rows, population=None,
-                    k=5, eps_km=1.0, train_mode="auto") -> pd.DataFrame:
-    """C1. Seen units (S0/S1): own training mean. Unseen units (S2-S4): kNN of training units.
-    train_mode for training units when test units are unseen: 'loo_knn' (auto; leave-one-out kNN
-    so train and test encodings share a distribution) or 'own'. S5 -> ControlNotApplicable."""
+                    k=5, eps_km=1.0, train_mode="matched", exclude_group=None,
+                    exclude_within_km=None) -> pd.DataFrame:
+    """C1. Seen units (S0/S1): own mean of `train_rows` (via make_controls_for_split these are the
+    pre-training years, see c1_source_rows). Unseen units (S2-S4): kNN of training units.
+    train_mode for training units when test units are unseen:
+      'matched' (default, 2026-11-16): kNN with the held-out unit's leave-out rule applied to each
+        training unit, i.e. its own unit plus `exclude_group` (S2: same adm1) / everything within
+        `exclude_within_km` (S3: buffer D); with neither given this is plain leave-one-out (S4).
+      'loo_knn' / 'auto' (legacy): plain leave-one-out kNN.  'own': the unit's own mean.
+    Test units are always encoded from the training pool, excluding themselves only.
+    S5 -> ControlNotApplicable."""
+    if train_mode not in C1_TRAIN_MODES:
+        raise ValueError(f"C1 train_mode must be one of {C1_TRAIN_MODES}, got {train_mode!r}")
     train_units, test_units = set(train_units), set(test_units)
     allu = _subset(units_df, train_units | test_units)
     tr = allu[allu.unit_id.isin(train_units)]
@@ -133,14 +159,28 @@ def target_encoding(units_df, train_units, test_units, origin_year, train_rows, 
         raise ControlNotApplicable("C1 is dropped when the test country has no training units (S5)")
     own = unit_level(train_rows, train_units, origin_year, population)
     seen = test_units <= train_units
-    mode = ("own" if seen else "loo_knn") if train_mode == "auto" else train_mode
+    if seen or train_mode == "own":
+        mode = "own" if train_mode in ("auto", "matched", "own") else train_mode
+    else:
+        mode = train_mode if train_mode == "matched" else "loo_knn"
+    mkw = {}
+    if mode == "matched":
+        if exclude_group is not None and exclude_group not in allu.columns:
+            raise ValueError(f"C1 matched mode needs column {exclude_group!r} in units_df")
+        mkw = {"exclude_group": exclude_group, "exclude_within_km": exclude_within_km}
     te = pd.Series(np.nan, index=allu.unit_id.to_numpy(), dtype=float)
     if mode == "own":
         te.update(own.reindex(tr.unit_id).dropna())
     else:
-        te.loc[tr.unit_id.to_numpy()] = knn_encode(tr, tr, own, k, eps_km, exclude_self=True).to_numpy()
-    miss = allu[te.reindex(allu.unit_id).isna().to_numpy() | (allu.unit_id.isin(test_units - train_units)).to_numpy()]
-    if len(miss):  # unseen test units (and training units with no usable rows)
+        te.loc[tr.unit_id.to_numpy()] = knn_encode(tr, tr, own, k, eps_km, exclude_self=True,
+                                                   **mkw).to_numpy()
+    unseen = allu.unit_id.isin(test_units - train_units).to_numpy()
+    miss_tr = allu[te.reindex(allu.unit_id).isna().to_numpy() & ~unseen]
+    if len(miss_tr) and mode == "own":  # training units with no usable rows
+        te.loc[miss_tr.unit_id.to_numpy()] = knn_encode(miss_tr, tr, own, k, eps_km,
+                                                        exclude_self=True).to_numpy()
+    miss = allu[unseen]
+    if len(miss):  # unseen test units
         te.loc[miss.unit_id.to_numpy()] = knn_encode(miss, tr, own, k, eps_km, exclude_self=True).to_numpy()
     return pd.DataFrame({"unit_id": te.index, "c1_te": te.to_numpy()})
 
@@ -281,7 +321,7 @@ def fit_embedding_range(emb_df, points, year=None, per_country=False, n_bins=25,
     if per_country. Default max distance = 1/2 of the largest within-country pair distance."""
     e = emb_df if year is None or "year" not in emb_df.columns else emb_df[emb_df.year == year]
     bands = [b for b in BANDS if b in e.columns]
-    e = e.groupby("unit_id")[bands].mean().reset_index()
+    e = e.groupby("unit_id")[bands].mean().dropna().reset_index()  # units without pixels
     pts = points[["unit_id", "country"]].assign(lat=_latlon(points)[0], lon=_latlon(points)[1])
     e = e.merge(pts, on="unit_id", how="inner")
     D, G, C = [], [], []
@@ -329,7 +369,7 @@ def static_embedding(emb_df, units=None, year=STATIC_YEAR) -> pd.DataFrame:
 # ----------------------------------------------------------------------------------- dispatch
 def make_controls(control, units_df, train_units, test_units, origin_year, train_rows=None,
                   emb_df=None, seed=0, **kw) -> pd.DataFrame:
-    """Features for units in train_units | test_units. kw: C1 population/k/eps_km/train_mode;
+    """Features for units in train_units | test_units. kw: C1 population/k/eps_km/train_mode/exclude_group/exclude_within_km;
     C2 L; C3 return_source; C4 range_km (required), n_fields, method; C5 year."""
     allu = set(train_units) | set(test_units)
     if control == "C1":
@@ -347,11 +387,58 @@ def make_controls(control, units_df, train_units, test_units, origin_year, train
     raise ValueError(f"unknown control {control}")
 
 
-def make_controls_for_split(control, split, units_df, panel=None, emb_df=None, seed=0, **kw):
-    """Convenience: training rows = panel rows under row_masks(...)['train_target_ok']."""
-    train_rows = None
+C1_PERIODS = ("auto", "pre_train", "train")
+
+
+def c1_source_rows(panel, split, period="auto"):
+    """Rows and cutoff year C1 is computed from, as (rows, cutoff); unit_level uses year < cutoff.
+
+    pre_train: training units, panel years strictly before the first training target year
+    (Brazil 2014-2017 for every origin), flag_gap weeks dropped like training targets. Fully
+    causal, identical for training and test rows and across origins.
+    train (legacy): the training target rows (row_masks train_target_ok), years < origin. Under
+    seen-unit splits (S0/S1) this leaks each training row's own target into its feature.
+    auto: pre_train when every test unit is a training unit (S0/S1), else train (S2-S4,
+    where training units get leave-one-out kNN values and test units are not in the pool)."""
+    from pop.splits.splits import row_masks
+    if period not in C1_PERIODS:
+        raise ValueError(f"c1 period must be one of {C1_PERIODS}, got {period!r}")
+    if period == "auto":
+        period = "pre_train" if set(split.test_units) <= set(split.train_units) else "train"
+    if period == "train":
+        return panel[row_masks(panel, split)["train_target_ok"]], split.origin
+    first = min(split.train_years)
+    gap = panel["flag_gap"].fillna(False).to_numpy(bool) if "flag_gap" in panel else False
+    keep = panel.unit_id.isin(split.train_units).to_numpy() & (panel.year < first).to_numpy() & ~gap
+    return panel[keep], first
+
+
+def c1_matched_rule(split, country=None, buffer_km=None) -> dict:
+    """Leave-out rule held-out units face, for C1 train_mode='matched' (S2: same adm1; S3: within
+    D km, D from splits_v1/buffer_distance.json unless `buffer_km` is given; others: plain LOO)."""
+    if split.name in ("S2", "S2L"):
+        return {"exclude_group": "adm1"}
+    if split.name in ("S3", "S3B"):
+        if buffer_km is None:
+            import json
+            from pop.splits.splits import SPLIT_DIR
+            buffer_km = json.loads((SPLIT_DIR / "buffer_distance.json").read_text())[
+                country or split.country]["D_km"]
+        return {"exclude_within_km": float(buffer_km)}
+    return {}
+
+
+def make_controls_for_split(control, split, units_df, panel=None, emb_df=None, seed=0,
+                            c1_period="auto", c1_buffer_km=None, **kw):
+    """Convenience wrapper. C1 source rows come from c1_source_rows(panel, split, c1_period):
+    by default pre-training years for S0/S1 and training target rows for S2-S4. C1's default
+    train_mode 'matched' takes its leave-out rule from c1_matched_rule(split) (c1_buffer_km
+    overrides the S3 buffer D)."""
+    train_rows, origin = None, split.origin
     if control == "C1":
-        from pop.splits.splits import row_masks
-        train_rows = panel[row_masks(panel, split)["train_target_ok"]]
-    return make_controls(control, units_df, split.train_units, split.test_units, split.origin,
+        train_rows, origin = c1_source_rows(panel, split, c1_period)
+        if kw.get("train_mode", "matched") == "matched" and not set(split.test_units) <= set(split.train_units):
+            for key, v in c1_matched_rule(split, buffer_km=c1_buffer_km).items():
+                kw.setdefault(key, v)
+    return make_controls(control, units_df, split.train_units, split.test_units, origin,
                          train_rows, emb_df, seed, **kw)

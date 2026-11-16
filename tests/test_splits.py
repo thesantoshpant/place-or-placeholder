@@ -27,27 +27,47 @@ def test_years_no_leakage(name):
         assert s.origin <= S.LAST_YEAR[s.country]
 
 
-@pytest.mark.parametrize("name", ["S2", "S3", "S4", "S5"])
+@pytest.mark.parametrize("name", ["S2", "S2L", "S3", "S3B", "S4", "S5"])
 def test_units_disjoint(name):
     for s in S.iter_folds(name):
         assert s.test_units and s.train_units
         assert not (s.train_units & s.test_units)
 
 
-def test_s3_buffer_excluded(uf, ex):
-    for s in S.iter_folds("S3"):
-        e = set(ex.excluded_unit_id[(ex.country == s.country) & (ex.test_block == s.fold)])
+@pytest.mark.parametrize("name", ["S3", "S3B"])
+def test_s3_buffer_excluded(uf, ex, name):
+    for s in S.iter_folds(name):
+        cu = uf[uf.country == s.country]
+        blocks = set(cu.s3_block[cu.unit_id.isin(s.test_units)].astype(int))
+        e = set(ex.excluded_unit_id[(ex.country == s.country) & ex.test_block.isin(blocks)])
         assert not (s.train_units & e)
-        cu = set(uf.unit_id[uf.country == s.country])
-        assert s.train_units | s.test_units | e == cu
+        assert s.train_units | s.test_units | e == set(cu.unit_id)
 
 
-def test_s3_buffer_distance(uf, ex):
-    """Every retained training unit is farther than D from every test-block unit."""
+@pytest.mark.parametrize("name", ["S3", "S3B"])
+def test_s3_buffer_complete(uf, name):
+    """Buffer = exactly the non-test units within D of some held-out unit of the fold."""
     import json
     D = json.loads((S.SPLIT_DIR / "buffer_distance.json").read_text())
     c = uf.set_index("unit_id")
-    for s in S.iter_folds("S3"):
+    for s in S.iter_folds(name):
+        if s.origin != S.FIRST_TEST_ORIGIN:
+            continue
+        cu = set(uf.unit_id[uf.country == s.country])
+        buf = sorted(cu - s.train_units - s.test_units)
+        te = c.loc[sorted(s.test_units)]
+        if buf:
+            b = c.loc[buf]
+            assert sp.haversine_matrix(te.lon, te.lat, b.lon, b.lat).min(0).max() <= D[s.country]["D_km"]
+
+
+@pytest.mark.parametrize("name", ["S3", "S3B"])
+def test_s3_buffer_distance(uf, ex, name):
+    """Every retained training unit is farther than D from every held-out unit of the fold."""
+    import json
+    D = json.loads((S.SPLIT_DIR / "buffer_distance.json").read_text())
+    c = uf.set_index("unit_id")
+    for s in S.iter_folds(name):
         if s.origin != S.FIRST_TEST_ORIGIN:
             continue
         te, tr = c.loc[sorted(s.test_units)], c.loc[sorted(s.train_units)]
@@ -55,7 +75,8 @@ def test_s3_buffer_distance(uf, ex):
         assert d.min() > D[s.country]["D_km"]
 
 
-@pytest.mark.parametrize("name,col", [("S2", "s2_fold"), ("S4", "s4_fold"), ("S3", "s3_block")])
+@pytest.mark.parametrize("name,col", [("S2", "s2_fold"), ("S2L", "s2l_fold"), ("S4", "s4_fold"),
+                                      ("S3", "s3_fold"), ("S3B", "s3_block")])
 def test_each_unit_tested_once(uf, name, col):
     for c in S.SPLIT_COUNTRIES[name]:
         cu = uf[uf.country == c]
@@ -64,6 +85,46 @@ def test_each_unit_tested_once(uf, name, col):
         for f in S.folds(name, c):
             tested += list(S.get_split(name, c, f, 2020).test_units)
         assert len(tested) == len(set(tested)) == len(cu)
+
+
+def test_s2_grouped_states(uf):
+    """S2: 5 folds; every adm1 in exactly one fold; held-out states never in training; balanced."""
+    for c in S.SPLIT_COUNTRIES["S2"]:
+        cu = uf[uf.country == c]
+        assert S.folds("S2", c) == [0, 1, 2, 3, 4]
+        assert (cu.groupby("adm1").s2_fold.nunique() == 1).all()
+        sizes = cu.s2_fold.value_counts()
+        assert sizes.max() - sizes.min() <= cu.adm1.value_counts().max()
+        assert sizes.max() / sizes.min() < 1.1  # greedy balance is tight for BR and CO
+        for f in S.folds("S2", c):
+            s = S.get_split("S2", c, f, 2022)
+            te_states = set(cu.adm1[cu.unit_id.isin(s.test_units)])
+            tr_states = set(cu.adm1[cu.unit_id.isin(s.train_units)])
+            assert not (te_states & tr_states)
+            assert s.test_units | s.train_units == set(cu.unit_id)
+
+
+def test_s2_grouping_deterministic(uf):
+    cu = uf[uf.country == "BRAZIL"]
+    a, b = S.group_adm1_folds(cu), S.group_adm1_folds(cu)
+    assert (a == b).all() and (a.to_numpy() == cu.s2_fold.to_numpy()).all()
+    assert S.group_adm1_folds(cu, seed=1).notna().all()
+    toy = pd.DataFrame({"adm1": list("AABBC")})
+    assert set(S.group_adm1_folds(toy, k=5)) == {0, 1, 2}  # k capped at the number of adm1s
+
+
+def test_s3_grouped_blocks(uf):
+    """S3: BR 10 blocks -> 5 folds of exactly 2 blocks; CO keeps 6 single-block folds."""
+    br = uf[uf.country == "BRAZIL"]
+    assert br.s3_block.nunique() == 10 and S.folds("S3", "BRAZIL") == [0, 1, 2, 3, 4]
+    assert (br.groupby("s3_fold").s3_block.nunique() == 2).all()
+    assert (br.groupby("s3_block").s3_fold.nunique() == 1).all()
+    co = uf[uf.country == "COLOMBIA"]
+    assert S.folds("S3", "COLOMBIA") == list(range(6))
+    assert (co.s3_fold.astype(int) == co.s3_block.astype(int)).all()
+    assert S.folds("S3B", "BRAZIL") == list(range(10))
+    g = S.group_blocks(pd.Series([0] * 5 + [1] * 1 + [2] * 3 + [3] * 2), 2)
+    assert g == {0: 0, 1: 0, 2: 1, 3: 1}  # largest with smallest
 
 
 def test_s4_stratified(uf):
