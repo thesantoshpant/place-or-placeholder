@@ -1,0 +1,137 @@
+# Primary hypothesis family (deviations_from_protocol.md row 12, fixed 2026-11-16).
+# Pooled-over-horizons G_excess = WIS(L3+C*) - WIS(L4+C*), history arm, one cell per
+# country x split; Holm across the 14 cells (scripts/run/primary_family.py).
+# runs: role -> run dir (or a list of dirs, e.g. extra-seed runs). For S1 the cells use the
+# shared-params rule (runs/<c>_s1_shared); when `plan` is given, a stage marked
+# "reuse:<dir>" in that plan.json replaces the listed dir. A cell is available only when all
+# four roles have scores.parquet; otherwise it is reported as pending.
+# Spatial splits are named as split_pipeline.sh writes them: runs/<country>_<split>_<stage>
+# (S5: country = held-out country).
+cells:
+  - country: brazil
+    split: S1
+    arm: history
+    plan: runs/brazil_s1_shared/plan.json
+    runs:
+      L3: runs/brazil_s1_shared_L3
+      L4: runs/brazil_s1_shared_L4
+      L3C: runs/brazil_s1_shared_L3_Cstar
+      L4C: runs/brazil_s1_shared_L4_Cstar
+  - country: brazil
+    split: S2
+    arm: history
+    plan: runs/brazil_s2/plan.json
+    runs:
+      L3: runs/brazil_s2_L3
+      L4: runs/brazil_s2_L4
+      L3C: runs/brazil_s2_L3_Cstar
+      L4C: runs/brazil_s2_L4_Cstar
+  - country: brazil
+    split: S3
+    arm: history
+    plan: runs/brazil_s3/plan.json
+    runs:
+      L3: runs/brazil_s3_L3
+      L4: runs/brazil_s3_L4
+      L3C: runs/brazil_s3_L3_Cstar
+      L4C: runs/brazil_s3_L4_Cstar
+  - country: brazil
+    split: S4
+    arm: history
+    plan: runs/brazil_s4/plan.json
+    runs:
+      L3: runs/brazil_s4_L3
+      L4: runs/brazil_s4_L4
+      L3C: runs/brazil_s4_L3_Cstar
+      L4C: runs/brazil_s4_L4_Cstar
+  - country: brazil
+    split: S5
+    arm: history
+    plan: runs/brazil_s5/plan.json
+    runs:
+      L3: runs/brazil_s5_L3
+      L4: runs/brazil_s5_L4
+      L3C: runs/brazil_s5_L3_Cstar
+      L4C: runs/brazil_s5_L4_Cstar
+  - country: colombia
+    split: S1
+    arm: history
+    plan: runs/colombia_s1_shared/plan.json
+    runs:
+      L3: runs/colombia_s1_shared_L3
+      L4: runs/colombia_s1_shared_L4
+      L3C: runs/colombia_s1_shared_L3_Cstar
+      L4C: runs/colombia_s1_shared_L4_Cstar
+  - country: colombia
+    split: S2
+    arm: history
+    plan: runs/colombia_s2/plan.json
+    runs:
+      L3: runs/colombia_s2_L3
+      L4: runs/colombia_s2_L4
+      L3C: runs/colombia_s2_L3_Cstar
+      L4C: runs/colombia_s2_L4_Cstar
+  - country: colombia
+    split: S3
+    arm: history
+    plan: runs/colombia_s3/plan.json
+    runs:
+      L3: runs/colombia_s3_L3
+      L4: runs/colombia_s3_L4
+      L3C: runs/colombia_s3_L3_Cstar
+      L4C: runs/colombia_s3_L4_Cstar
+  - country: colombia
+    split: S4
+    arm: history
+    plan: runs/colombia_s4/plan.json
+    runs:
+      L3: runs/colombia_s4_L3
+      L4: runs/colombia_s4_L4
+      L3C: runs/colombia_s4_L3_Cstar
+      L4C: runs/colombia_s4_L4_Cstar
+  - country: colombia
+    split: S5
+    arm: history
+    plan: runs/colombia_s5/plan.json
+    runs:
+      L3: runs/colombia_s5_L3
+      L4: runs/colombia_s5_L4
+      L3C: runs/colombia_s5_L3_Cstar
+      L4C: runs/colombia_s5_L4_Cstar
+  - country: peru
+    split: S1
+    arm: history
+    plan: runs/peru_s1_shared/plan.json
+    runs:
+      L3: runs/peru_s1_shared_L3
+      L4: runs/peru_s1_shared_L4
+      L3C: runs/peru_s1_shared_L3_Cstar
+      L4C: runs/peru_s1_shared_L4_Cstar
+  - country: peru
+    split: S5
+    arm: history
+    plan: runs/peru_s5/plan.json
+    runs:
+      L3: runs/peru_s5_L3
+      L4: runs/peru_s5_L4
+      L3C: runs/peru_s5_L3_Cstar
+      L4C: runs/peru_s5_L4_Cstar
+  - country: taiwan
+    split: S1
+    arm: history
+    plan: runs/taiwan_s1_shared/plan.json
+    runs:
+      L3: runs/taiwan_s1_shared_L3
+      L4: runs/taiwan_s1_shared_L4
+      L3C: runs/taiwan_s1_shared_L3_Cstar
+      L4C: runs/taiwan_s1_shared_L4_Cstar
+    note: "C* = C3 (per-year permutation; audit H2) - rerun pending the C3 fix"
+  - country: taiwan
+    split: S5
+    arm: history
+    plan: runs/taiwan_s5/plan.json
+    runs:
+      L3: runs/taiwan_s5_L3
+      L4: runs/taiwan_s5_L4
+      L3C: runs/taiwan_s5_L3_Cstar
+      L4C: runs/taiwan_s5_L4_Cstar

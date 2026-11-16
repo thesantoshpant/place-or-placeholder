@@ -180,3 +180,48 @@ def test_holm():
     assert np.isnan(adj[4])
     sm = pytest.importorskip("statsmodels.stats.multitest")
     np.testing.assert_allclose(adj[:4], sm.multipletests(p[:4], method="holm")[1])
+
+
+# ------------------------------------------------- inference policy v2
+def test_ewc_inference_ci_matches_dm():
+    rng = np.random.default_rng(11)
+    for k in range(40):
+        d = 0.15 * k / 40 + ar1(rng, 120, 0.5)
+        r = ST.ewc_inference(d, h=4)
+        dm = ST.dm_test(d, h=4)
+        assert r.p == pytest.approx(dm.p_value) and r.stat == pytest.approx(dm.stat)
+        assert r.se == pytest.approx(dm.se / dm.hln_factor)
+        assert (r.lo95 > 0 or r.hi95 < 0) == (r.p < 0.05)
+        assert r.lo95 < r.lo90 < r.estimate < r.hi90 < r.hi95
+        t975, t80 = (ST._st.t.ppf(q, r.df) for q in (0.975, 0.8))
+        assert r.mde == pytest.approx((t975 + t80) * r.se)
+
+
+def test_tost_matches_90ci():
+    rng = np.random.default_rng(12)
+    for k in range(60):
+        d = rng.normal(0.02 * (k % 7 - 3), 1, 200) * 0.1
+        r = ST.ewc_inference(d)
+        m = 0.03
+        inside = -m < r.lo90 and r.hi90 < m
+        assert (ST.tost_p(r.estimate, r.se, r.df, m) < 0.05) == inside
+
+
+@pytest.mark.parametrize("ci,p,cls", [
+    ((-0.5, 0.5, -0.4, 0.4), 0.9, "equivalent"),
+    ((0.2, 2.0, 0.3, 1.8), 0.01, "superior"),
+    ((-2.0, -0.2, -1.8, -0.3), 0.01, "inferior"),
+    ((-0.5, 2.0, -0.3, 1.8), 0.2, "inconclusive"),
+    ((0.1, 0.9, 0.2, 0.8), 0.01, "equivalent"),   # significant but inside the margin
+])
+def test_classify_effect(ci, p, cls):
+    assert ST.classify_effect(*ci, p, margin=1.0) == cls
+
+
+def test_pooled_horizon_series():
+    wk = pd.DataFrame({"horizon": [1, 1, 4, 4, 4], "target_week": [1, 2, 1, 2, 3],
+                       "v": [1.0, 2.0, 3.0, 6.0, 5.0]})
+    s = ST.pooled_horizon_series(wk, "v")
+    assert s.tolist() == [2.0, 4.0, 5.0]
+    with pytest.raises(ValueError):
+        ST.pooled_horizon_series(pd.concat([wk, wk]), "v")

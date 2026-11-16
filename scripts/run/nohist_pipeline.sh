@@ -3,6 +3,7 @@
 #
 #   bash scripts/run/nohist_pipeline.sh launch [s1 s2 s3 ...] [--workers N]   # own tmux pop_nohist
 #   bash scripts/run/nohist_pipeline.sh <split> --gen-only                    # write base configs
+#   bash scripts/run/nohist_pipeline.sh <split> --gen-controls                # controls_2019 only
 #   bash scripts/run/nohist_pipeline.sh <split> --inside [--workers N]        # one split, stage loop
 #
 # Brazil only. <split>: s1 (test years 2020-24, seen units) | s2 (grouped leave-states-out,
@@ -10,15 +11,22 @@
 # S1 L1 tuning (runs/brazil_s1_baselines/tuning_lgbm-L1.json); LST screen off (as Brazil S1).
 # Stages (skipped when runs/brazil_<s>_nohist/stage_<name>.done exists; chunks resume):
 #   gen_configs     configs/brazil_<s>_nohist_{controls_2019,N3,N4,N3_C1,N4_C1}.yaml
-#   controls_2019   2019 origin: N3 + target-free ID controls C2, C3 x3 seeds, C4 x3 seeds
+#   controls_2019   2019 origin: N3 + target-free ID controls C2, C3 x3 seeds, C4 x3 seeds,
+#                   C4s x3 seeds (C4 at range D = 225 km; added 2026-11-16)
 #                   (+ C6 = unit ID categorical in S1 only). C1 (target encoding) and C5
 #                   (AlphaEarth 2023) are NOT candidates for C*.
+#   gen_cstar clears the N3_Cstar/N4_Cstar markers (and moves old-C* chunks aside) when C*
+#   differs from the existing final config (scripts/run/supersede.py guard_final).
 #   select_control  scripts/run/select_control.py --ref lgbm-N3 -> selection.json
 #   gen_cstar       configs/brazil_<s>_nohist_{N3,N4}_Cstar.yaml (1 seed)
 #   N3, N4, N3_Cstar, N4_Cstar, N3_C1, N4_C1   test years 2020-2024
 # Markers: runs/brazil_<s>_nohist/{PIPELINE_DONE,PIPELINE_FAILED,pipeline.log}.
-# Workers: --workers (default 2) or WORKERS=N in runs/brazil_<s>_nohist/override.env (read at
-# each stage start).
+# Global scheduler (2026-11-16): S1 and S2 run as tier-3 queue items of scripts/run/scheduler.py
+# (POP_SCHED=1: a run stage writes runs/brazil_<s>_nohist/current_cfg, waits until all its chunks
+# are done, then one assembly pass; workers come from the scheduler). The separate tmux pop_nohist
+# is retired; S3 is dropped. Standalone: --workers (default 2) or WORKERS=N in
+# runs/brazil_<s>_nohist/override.env (read at each stage start). --inside takes a flock on
+# runs/brazil_<s>_nohist/.pipeline.lock (one pipeline per split).
 set -uo pipefail
 ROOT=/net/home/spant/0-100/group-research/place-or-placeholder
 cd "$ROOT" || exit 1
@@ -52,6 +60,7 @@ while (( $# )); do
     --workers) WORKERS=$2; shift 2;;
     --inside) MODE=inside; shift;;
     --gen-only) MODE=gen; shift;;
+    --gen-controls) MODE=genctl; shift;;
     *) echo "unknown arg $1"; exit 1;;
   esac
 done
@@ -74,11 +83,14 @@ assert Path(PF).exists(), PF
 FEAT = {"climate_lag_vars": ["tmean", "precip", "rh"], "yearly_ref": "target",
         "alphaearth": {"weights": "w", "normalize": True}}
 c4 = yaml.safe_load(Path("configs/brazil_s1_controls_2019.yaml").read_text())
-FEAT["control_kw"] = {"C1": {"c1_period": "auto"},
-                      "C4": {"range_km": float(c4["features"]["control_kw"]["C4"]["range_km"])}}
-SEEDED = ("C3", "C4")
-# target-free ID controls eligible for C* (plan review 2026-11-16): C2, C3, C4 (+ C6 where defined)
-CANDIDATES = ["C2", "C3", "C4"] + (["C6"] if SPLIT == "S1" else [])
+from pop.features.controls import c4s_range  # noqa: E402
+C4R = float(c4["features"]["control_kw"]["C4"]["range_km"])
+# C4s range = min(D, fitted C4 range) (rule 2026-11-16): Brazil min(225, 8483) = 225 km
+FEAT["control_kw"] = {"C1": {"c1_period": "auto"}, "C4": {"range_km": C4R},
+                      "C4s": {"range_km": min(c4s_range("BRAZIL"), C4R)}}
+SEEDED = ("C3", "C4", "C4s")
+# target-free ID controls eligible for C* (plan review 2026-11-16): C2, C3, C4, C4s (+ C6 where defined)
+CANDIDATES = ["C2", "C3", "C4", "C4s"] + (["C6"] if SPLIT == "S1" else [])
 
 
 def base(name, years, seeds, runs):
@@ -104,15 +116,21 @@ def write(name, d, note):
     print("wrote", f"configs/{NAME}_{name}.yaml")
 
 
-if what == "base":
+if what in ("base", "controls"):
     write("controls_2019", base("controls_2019", [2019], [0, 1, 2],
                                 [lg("N3")] + [lg(f"N3+{k}") for k in CANDIDATES]),
-          f"choice of C* among {CANDIDATES} on the 2019 origin only (C3/C4 3 seeds)")
+          f"choice of C* among {CANDIDATES} on the 2019 origin only (C3/C4/C4s 3 seeds)")
+if what == "base":
     for lvl in ("N3", "N4", "N3+C1", "N4+C1"):
         write(lvl.replace("+", "_"), base(lvl.replace("+", "_"), TEST, [0], [lg(lvl)]), f"LightGBM {lvl}")
-else:
+elif what == "cstar":
     k = json.loads(Path(f"runs/{NAME}_controls_2019/selection.json").read_text())["c_star"]
     assert k in CANDIDATES, k
+    sys.path.insert(0, "scripts/run")
+    from supersede import guard_final
+    for lvl in ("N3", "N4"):  # C*-changed guard before the config is overwritten
+        guard_final(f"runs/{NAME}", f"{lvl}_Cstar", f"configs/{NAME}_{lvl}_Cstar.yaml",
+                    f"runs/{NAME}_{lvl}_Cstar", f"{lvl}+{k}", log="runs/queue/invalidation_guard.md")
     for lvl in ("N3", "N4"):
         write(f"{lvl}_Cstar", base(f"{lvl}_Cstar", TEST, [0], [lg(f"{lvl}+{k}")]),
               f"LightGBM {lvl}+C* with C* = {k} (1 seed)")
@@ -120,16 +138,35 @@ EOF
 }
 
 if [[ $MODE == gen ]]; then gen_configs base; exit $?; fi
+if [[ $MODE == genctl ]]; then gen_configs controls; exit $?; fi
 
 say() { echo "$(date '+%F %T') [$NAME] $*"; }
 fail() { say "FAILED at stage $1"; echo "stage $1 failed $(date '+%F %T')" > "$PD/PIPELINE_FAILED"; exit 1; }
+sched_run() {  # $1 = config, $2 = run dir: workers come from scripts/run/scheduler.py
+  local cfg=$1 rd=$2 rem stem; stem=$(basename "$cfg" .yaml)
+  local pat="[r]un_experiment.py $cfg "
+  echo "$cfg" > "$PD/current_cfg.tmp" && mv "$PD/current_cfg.tmp" "$PD/current_cfg"
+  say "scheduled stage $cfg (workers from the global scheduler)"
+  while :; do
+    if [[ -f runs/queue/state/failed_$stem ]]; then
+      say "scheduler marked $cfg failed (runs/queue/state/exits.log)"; rm -f "$PD/current_cfg"; return 1
+    fi
+    rem=$(python scripts/run/scheduler.py remaining "$cfg" 9>&-)
+    [[ $rem == 0 ]] && ! pgrep -u "$(id -u)" -f "$pat" >/dev/null && break
+    sleep 30
+  done
+  rm -f "$PD/current_cfg"
+  say "final pass $cfg (assembly)"
+  python scripts/run/run_experiment.py "$cfg" --workers 1 --threads "$THREADS" >> "$rd/stdout.log" 2>&1 9>&-
+}
 run_cfg() {  # $1 = config suffix
   local cfg=configs/${NAME}_$1.yaml rd=runs/${NAME}_$1 W=$WORKERS
+  mkdir -p "$rd"
+  if [[ -n ${POP_SCHED:-} ]]; then sched_run "$cfg" "$rd"; return; fi
   [[ -f $PD/override.env ]] && source "$PD/override.env" && W=${WORKERS:-$W}
   (( W > 2 )) && W=2
-  mkdir -p "$rd"
   say "run $cfg (workers $W, threads $THREADS)"
-  python scripts/run/run_experiment.py "$cfg" --workers "$W" --threads "$THREADS" >> "$rd/stdout.log" 2>&1
+  python scripts/run/run_experiment.py "$cfg" --workers "$W" --threads "$THREADS" >> "$rd/stdout.log" 2>&1 9>&-
 }
 stage() {
   local n=$1; shift
@@ -139,8 +176,10 @@ stage() {
   date '+%F %T' > "$PD/stage_$n.done"
   say "done $n"
 }
-rm -f "$PD/PIPELINE_FAILED" "$PD/PIPELINE_DONE"
-say "pipeline start"
+exec 9> "$PD/.pipeline.lock"
+if ! flock -n 9; then say "another pipeline holds $PD/.pipeline.lock; exiting"; exit 3; fi
+rm -f "$PD/PIPELINE_FAILED" "$PD/PIPELINE_DONE" "$PD/current_cfg"
+say "pipeline start (${POP_SCHED:+global scheduler}${POP_SCHED:-standalone})"
 stage gen_configs gen_configs base
 stage controls_2019 run_cfg controls_2019
 stage select_control python scripts/run/select_control.py "runs/${NAME}_controls_2019" --ref lgbm-N3

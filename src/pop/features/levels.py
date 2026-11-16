@@ -30,6 +30,9 @@ Availability rules (asserted at read time):
     weekly  source week <= origin week                       (history._take)
     monthly source month ended before the origin week starts (month index < month of origin)
     yearly  source year < target epi-year (y-1)               ("yearly_ref: origin" -> < origin year)
+    cases   option "report_delay: d" (default 0; sensitivity): every case-history feature (L0/L1
+            lags and seasonal terms) may read only weeks <= origin - d; the lags are taken relative
+            to origin - d. Calendar, climate, remote sensing, embeddings and controls are unchanged.
 """
 from __future__ import annotations
 
@@ -57,7 +60,7 @@ MONTHS_BACK = (1, 2, 3)
 YEARLY_VARS = ("ntl_pw", "built_share")
 AE_DIM = 64
 AE_BANDS = [f"A{i:02d}" for i in range(AE_DIM)]
-CONTROLS = ("C1", "C2", "C3", "C4", "C5", "C6")  # C6 = unit ID (categorical)
+CONTROLS = ("C1", "C2", "C3", "C4", "C4s", "C5", "C6")  # C6 = unit ID (categorical); C4s = C4 at range D
 
 PATHS = {
     "climate": ["data/interim/climate/climate_weekly_{c}_v1.parquet"],
@@ -81,7 +84,7 @@ class MissingInput(FileNotFoundError):
 class Context:
     """Per-country inputs for the feature levels.
 
-    options: climate_lag_vars, yearly_ref ('target' | 'origin'),
+    options: climate_lag_vars, yearly_ref ('target' | 'origin'), report_delay (weeks, default 0),
              remote_sensing {version: 'v1' (default) | 'v2'} (v2 = QC-masked MODIS LST; monthly table only),
                             {lst_screen: bool} (default false; LST outlier screen, see screen_lst),
              alphaearth {weights: 'w' | 'u', normalize: bool}, control_kw {C4: {range_km: ...}}.
@@ -342,16 +345,24 @@ def control_block(control, grid, idx, ctx) -> pd.DataFrame:
 
 
 # ------------------------------------------------------------------ registry
+def _delayed(idx, ctx):
+    """idx with the origin moved back by the report delay (case-history features only)."""
+    d = int(ctx.options.get("report_delay", 0)) if ctx is not None else 0
+    if d < 0:
+        raise ValueError(f"report_delay must be >= 0, got {d}")
+    return idx if d == 0 else idx.assign(o=idx["o"].to_numpy() - d)
+
+
 def _l0(grid, idx, h, ctx=None):
-    return H.l0_features(grid, idx, h)
+    return H.l0_features(grid, _delayed(idx, ctx), h)
 
 
 def _l1(grid, idx, h, ctx=None):
-    return H.l1_features(grid, idx, h)
+    return H.l1_features(grid, _delayed(idx, ctx), h)
 
 
 def _l2(grid, idx, h, ctx):
-    return pd.concat([H.l1_features(grid, idx, h), climate_block(grid, idx, ctx)], axis=1)
+    return pd.concat([_l1(grid, idx, h, ctx), climate_block(grid, idx, ctx)], axis=1)
 
 
 def _l3(grid, idx, h, ctx):

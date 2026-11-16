@@ -433,3 +433,33 @@ def test_c6_is_categorical_in_lgbm(grid, split_dir):
     j = list(X.columns).index("c6_unit_cat")
     assert b.dump_model()["feature_infos"]["c6_unit_cat"]["values"]  # categorical: list of values
     assert j >= 0
+
+
+@pytest.mark.parametrize("h", [1, 4])
+@pytest.mark.parametrize("level", ["L1", "L3", "L4"])
+def test_report_delay_ignores_last_two_weeks_of_cases(grid, level, h):
+    """report_delay: 2 -> no case value from weeks origin-1 and origin is read; lags shift by 2."""
+    c = ctx(report_delay=2)
+    for o in (320, 401, 517):
+        idx = H.design_index(grid, np.array([o + h]), h)
+        base = LV.LEVELS[level](grid, idx, h, c)
+        g = H.Grid(**{**grid.__dict__, "y": grid.y.copy()})
+        for poison in (np.nan, 1e9):  # weeks origin-1, origin and everything later
+            g.y[:, o - 1:] = poison
+            pd.testing.assert_frame_equal(LV.LEVELS[level](g, idx, h, c), base)
+        u = idx["u"].to_numpy()
+        for k in (0, 5, 11):
+            np.testing.assert_array_equal(base[f"lag_{k}"].to_numpy(), grid.y[u, o - 2 - k])
+        # without the delay the same poisoning changes the features (the test has power)
+        nd = LV.LEVELS[level](grid, idx, h, ctx())
+        assert not LV.LEVELS[level](g, idx, h, ctx()).equals(nd)
+        # calendar / climate / remote sensing / embedding columns equal the undelayed level
+        keep = [k for k in nd.columns if not (k.startswith("lag_") or k.startswith("sy"))]
+        pd.testing.assert_frame_equal(base[keep], nd[keep])
+
+
+def test_report_delay_zero_is_the_default(grid):
+    idx = rows(grid, 4)
+    for level in ("L0", "L1", "L3"):
+        pd.testing.assert_frame_equal(LV.LEVELS[level](grid, idx, 4, ctx(report_delay=0)),
+                                      LV.LEVELS[level](grid, idx, 4, ctx()))

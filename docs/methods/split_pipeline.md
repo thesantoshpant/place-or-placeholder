@@ -1,6 +1,6 @@
 # Split pipeline and queue (S0, S2–S5, S1 shared-params)
 
-`scripts/run/split_pipeline.sh <country> <split>` runs one (country, split) end to end. `scripts/run/queue.sh` runs every job in two tmux lanes. Both were launched on 2026-11-16 at 12:26.
+`scripts/run/split_pipeline.sh <country> <split>` runs one (country, split) end to end. Since 2026-11-16 14:36 every job runs under ONE global priority scheduler (`scripts/run/scheduler.py`, section "Global scheduler" at the end); the lane sections below are history.
 
 ## Pipeline (`split_pipeline.sh`)
 - **Splits.** `s0`, `s2`, `s3`, `s4`, `s5` (the country argument is the held-out country), `s1brp` (Taiwan S1 with Brazil's params and C\* = C1), and `s1_shared` (S1 under the shared-params rule).
@@ -97,3 +97,43 @@
   | New layout at the 52-thread fallback | 34 h | 48 h |
 
   The floor is total work ÷ threads: 421 worker-h needs ≈ 29 h at 15 workers (12 while CO S1 runs). Finishing in ≤ 24 h would take ~70 threads, which is more than the 64 on the machine.
+
+## Control fixes 2026-11-16
+- C3 (fixed source per unit), C1 in S2–S4 (pre-training years) and the new C4s (C4 at range D) are described in `docs/methods/controls.md`, section "Control fixes 2026-11-16". controls_2019 now has C4s ×3 seeds as a seventh candidate.
+- Lanes were stopped at 13:40–13:48 (lanes A/B at once; C, D and `pop_nohist` after their in-flight chunks of unaffected runs had finished), the affected chunks were moved aside (`runs/queue/invalidation_2026-11-16.md`, `scripts/run/invalidate_control_fixes.py`), and everything was relaunched at 13:49 with `queue.sh launch`, `nohist_pipeline.sh launch s1 s2 s3` and `s1_pipeline.sh peru|taiwan` (per-level selection rerun). `pop_s1_colombia` finishes its superseded L3+C4 stage, skips L4_Cstar (PAUSE marker), and `tmp/fix/colombia_watch.sh` (tmux `pop_fixwatch`) then invalidates and relaunches it.
+- `gen_cstar` now resets the final stages when C\* changes (`scripts/run/supersede.py guard_final`), so a rerun selection that picks a different C\* regenerates the C\* configs and reruns L3_Cstar/L4_Cstar; an unchanged, unaffected C\* final run is kept.
+
+
+## Global scheduler 2026-11-16 (replaces the lanes above)
+- **What.** `scripts/run/scheduler.py run` (tmux `pop_sched`; `queue.sh launch | status | eta | stop`) is the only process that starts `run_experiment.py` workers for the queue. Each item is one pipeline in tmux `pop_q_<item>` (`split_pipeline.sh` / `nohist_pipeline.sh` with `POP_SCHED=1`). The pipelines keep their stage order. On entering a run stage, a pipeline writes `runs/<item>/current_cfg`, waits until every chunk of that config has a `.done.json`, then runs one assembly pass (`--workers 1`). Log `runs/queue/scheduler.log`; snapshot `runs/queue/state/snapshot.json`; chunk lists `runs/queue/state/tasks/`; exit codes of scheduler-started workers `runs/queue/state/exits.log` (3 non-signal failures on a config → `state/failed_<config>` → that stage fails).
+- **Priority** (tier, then list order):
+  - **T1:** BR S1-shared; PE/TW S1-shared; CO S1 per-level (`pop_s1_colombia`, external); CO S1-shared (waits for `pop_s1_colombia`); TW S1-BRparams.
+  - **T2:** BR S1 extra seeds (`sens_seeds`, waits for the BR S1-shared `gen_cstar`); S5 BR/CO/PE/TW; CO S2/S3/S4; BR S2; BR S3.
+  - **T3:** no-history BR S1, then BR S2 (queue items now; `pop_nohist` retired; **no-history S3 dropped**).
+  - **T4:** BR S1 sensitivity `sens_yref`, `sens_delay`, `sens_ctrl`.
+  - **T5:** BR S4.
+- **Allocation (every 20 s).** Budget = 60 threads, or 52 while other users use > 4 cores (`BUDGET=` in `runs/queue/override.env` pins it) → 15 workers × 4 threads. Every `run_experiment.py` of this user counts against it, including external sessions and leftovers. A worker is "held" while its tree has a chunk in flight (a live `.lock` file). A process younger than 5 min holds its full `--workers`, to cover data loading. Free workers go to items in priority order, each up to the unclaimed chunks of its current stage; one new process per item per tick (MemAvailable ≥ 12 GiB). Pipelines of pending items start one per tick, since their config and selection stages cost nothing.
+- **Flow to higher tiers (lossless).** If a stage has unmet demand for 2 ticks and no worker is free, the scheduler takes the flocks of the unclaimed chunks of the lowest-priority running stage(s) of a strictly lower tier. This is the same `chunks/<name>.lock` claim a worker makes. Those processes finish their in-flight chunks and then cannot claim more. A process tree with no chunk in flight for 2 ticks is stopped, and the reservation is released once the stage has no process left. No running chunk is ever killed. Within a tier there is no preemption.
+- **External.** `pop_s1_colombia` keeps its own processes. The scheduler writes its `runs/colombia_s1/override.env` `WORKERS`, which `s1_pipeline.sh` reads at each stage start.
+- **Safety.**
+  - Chunks are claimed by flock and skipped once `.done.json` exists, so nothing completed is recomputed. The scheduler takes reservations only on chunks that are neither done nor locked.
+  - `--inside` takes `runs/<item>/.pipeline.lock` (flock, fd closed for child processes), so a second pipeline on the same item exits at once. The scheduler also refuses to start an item while a pipeline process for it exists (bracket `pgrep`).
+  - A second scheduler exits (`runs/queue/.scheduler.lock`). Stopping `pop_sched` leaves items and workers running; reservations are released with the process.
+  - Unchanged: chunk definitions, params, seeds and threads (4), so results are unchanged.
+- **Sensitivity items (Brazil S1; horizons {1, 4}; shared params `runs/brazil_s1_baselines/tuning_lgbm-L1.json`; 4 threads; 2020–24).** Configs are copies of `configs/brazil_s1_shared_*.yaml`; run dirs `runs/brazil_s1_sens_<stage>/`; pipeline state `runs/brazil_s1_sens_{seeds,yref,delay,ctrl}/`.
+  - (a) `seed{1,2}_{L3,L4,L3_Cstar,L4_Cstar}`: same run names as the shared runs (`lgbm-L3`, …), seed 1 or 2, so they pool as extra seeds. The shared seed-0 L3 is `runs/brazil_s1_L3_leaves127` (run name `lgbm-L3-leaves127`).
+  - (b) `yref_{L3,L4}`: `yearly_ref: origin`.
+  - (c) `delay2_{L3,L4}`: `report_delay: 2` (levels.py: L0/L1 lags and seasonal terms read only weeks ≤ origin − 2, lags taken relative to origin − 2; calendar, climate, RS, embeddings, controls unchanged; tests `test_report_delay_*`).
+  - (d) `ctrl_{L3,L4}_{C3,C6}`: controls panel, seed 0.
+- **Handover 14:36.** The lane loops were ended, the scheduler started, and every completed chunk was kept. Freezing the lane sessions' pane shells (SIGSTOP) did not protect their workers: tmux sends SIGCONT to a stopped pane process, so the shells exited and the hang-up killed the lanes' in-flight chunks (≈ 45–75 worker-min; `runs/queue/handover_2026-11-16_scheduler.md`). **Next time:** stop the scheduler (`queue.sh stop`) and replace files with `mv`. Item pipelines read their scripts at start, and workers are in their own sessions (`setsid`), so neither needs killing.
+- **ETA** (`queue.sh eta`: chunk-level event simulation at 15 workers in priority order. Per-chunk seconds come from the stage's own finished chunks, else the country's S1 L3 median × level multipliers; C\* assumed C1. Run at 14:45):
+
+  | Tier | worker-h | complete |
+  |---|---|---|
+  | T1 (BR S1-shared 49, CO S1 39, CO S1-shared 6, TW < 1) | ≈ 95 | +7.7 h, Mon Nov 16 ~22:30 |
+  | T2 (sens seeds 40, S5 77, CO S2–S4 37, BR S2 106, BR S3 106) | ≈ 365 | +32.5 h, Tue Nov 17 ~23:00 |
+  | T3 (nohist S1 36, S2 109) | ≈ 145 | +44 h, Wed Nov 18 ~11:00 |
+  | T4 (yref 10, delay 10, ctrl 31) | ≈ 51 | +44.5 h, Wed Nov 18 ~11:00 |
+  | T5 (BR S4) | ≈ 108 | +52 h, Wed Nov 18 ~19:00 |
+
+  The simulation assumes perfect chunk-level flow. Real flow waits up to one chunk (≤ 30 min for BR) at each preemption, and CO S1 per-level gets new workers only at its stage starts.

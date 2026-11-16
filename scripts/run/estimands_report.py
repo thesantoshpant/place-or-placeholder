@@ -1,35 +1,53 @@
 #!/usr/bin/env python
-"""Paper-1 estimands (G_emb, G_id, G_excess, ID share) for one country x split.
+"""Paper-1 estimands (G_emb, G_id, G_excess, ID share) for one country x split, inference policy v2.
 
 Usage:
     python scripts/run/estimands_report.py --l3 runs/brazil_s1_L3 --l4 runs/brazil_s1_L4 \
-        --l3c runs/brazil_s1_L3_Cstar --l4c runs/brazil_s1_L4_Cstar \
-        [--ladder runs/brazil_s1_baselines runs/brazil_s1_timesfm_zs runs/brazil_s1_L2 ...] \
-        [--pairs lgbm-L3:lgbm-L2 ...] [--out runs/brazil_s1_analysis] [--prefix estimands]
-        [--n-boot 2000] [--block-len 8] [--seed 0]
+        --l3c runs/brazil_s1_L3_Cstar --l4c runs/brazil_s1_L4_Cstar [--ref-name L3|N3] \
+        [--ladder RUN ...] [--pairs A:B ...] [--out DIR] [--prefix estimands] \
+        [--n-boot 2000] [--block-len 52] [--boot-seed 0] [--margin-rel 0.01] \
+        [--exclude-units FILE | --no-exclude-units] [--exclude-weeks FILE | --no-exclude-weeks] \
+        [--exclude-weeks-action exclude|sensitivity|all ...] \
+        [--universe-first-year-max [--late-entry FILE]]
 
-Definitions (positive = lower log-WIS for the second model, i.e. an improvement):
+Each role accepts one or more run dirs (concatenated; e.g. extra-seed runs). Rows are told apart
+by the ``seed`` column of scores.parquet (absent = seed 0); a duplicated (key, seed) is an error.
+
+Definitions (positive = lower log1p WIS for the second model, i.e. an improvement):
   G_emb = WIS(L3) - WIS(L4); G_id = WIS(L3) - WIS(L3+C*); G_excess = WIS(L3+C*) - WIS(L4+C*).
-  ID share = G_id / G_emb, only if the 95% CI of G_emb excludes 0 and G_emb >= 1% of WIS(L3)
-  (pop.eval.estimands.compute_estimands).
+  In the no-history arm pass N3/N4 runs as --l3/--l4 etc. and --ref-name N3.
 
-Inference (library code only):
-  - CIs: pop.eval.stats.block_bootstrap_means: each replicate resamples states (adm1) with
-    replacement and, shared across states, circular 8-week blocks of target weeks; row-level
-    means of the per-row gains; percentile 95% CI; all estimands from the same replicates.
-  - DM: pop.eval.stats.dm_test on the per-target-week mean of the per-row gain (= mean WIS
-    difference), EWC long-run variance (B = floor(0.4 T^(2/3)), t_B reference) x HLN factor.
-    Holm across the 4 horizons, separately for each estimand (and each extra pair).
+Inference (deviations rows 9, 11, 12, 16; library code pop.eval.estimands.infer_estimand):
+  - Seeds: per row, each role's log-WIS is averaged over its seeds (seed-averaged loss); all
+    CIs/tests use these. Per-seed estimands use a role's own seed-s loss where present, else
+    its seed-averaged loss; point estimate = mean over seeds (= estimate on seed-averaged
+    losses); seed SD over the seeds actually present (NaN with one seed).
+  - Weekly series: per (horizon, target week) cross-unit mean gain; pooled-h = per-week mean
+    over the horizons present. Primary: DM on that series, EWC long-run variance
+    (B = floor(0.4 T^(2/3)), t_B), HLN with the largest horizon; se = se_EWC/HLN;
+    CI = dbar -/+ t_B se (95%, and 90% for TOST).
+  - TOST margin = 1% of WIS(ref) (ref = L3, or N3); class: equivalent (90% CI inside
+    +-margin) / superior (95% CI > 0 and p < .05) / inferior / inconclusive.
+    MDE = (t_{B,.975} + t_{B,.80}) se.
+  - Sensitivity: states (adm1) x 52-week circular blocks (shared across states) bootstrap,
+    2,000 reps, percentile 95% CI of the row-level mean gain.
+  - ID share = G_id/G_emb only if the primary 95% CI of G_emb excludes 0 and G_emb >= 1% of
+    WIS(L3) (bootstrap ratio CI).
+  - No multiplicity correction here: the primary family (pooled-h G_excess, Holm over the 14
+    country x split cells) lives in scripts/run/primary_family.py.
 
-Rows: all runs are restricted to the common (test_year, unit_id, origin_week, target_week,
-horizon) keys with non-NaN log-WIS; flag_gap target weeks are dropped. The row-set check is
-written to <prefix>_rowcheck.csv and must show zero mismatches for the estimand runs.
-Outbreak week: target cases >= max(unit p90 of weekly cases over 2013-2019, 5) (panel weeks,
-flag_gap excluded). Strata use the panel's zero_filled flag.
+Rows: keys (test_year, unit, origin, target, horizon) scored by all four roles; flag_gap target
+weeks dropped; then the exclusions (pop.eval.exclusions), in this order: no-geometry units
+(default ON, data/processed/exclusions_v1/no_geometry_units.csv), incomplete weeks (default ON,
+incomplete_weeks.csv rows with action == "exclude", i.e. the primary k = 0.5 flags; see
+docs/data/completeness_v1.md; `--exclude-weeks-action all` adds the sensitivity flags),
+late-entry units (only with --universe-first-year-max: first case year > test year). Counts are reported.
+Outbreak week: target cases >= max(unit p90 of weekly cases over 2013-2019, 5).
 """
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import sys
 from pathlib import Path
@@ -43,29 +61,53 @@ import pyarrow.parquet as pq
 import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from analyze_run import load_run, md  # noqa: E402
+from analyze_run import md  # noqa: E402
 
-from pop.eval.estimands import compute_estimands, gain_frame  # noqa: E402
-from pop.eval.stats import dm_test, holm, loss_diff_series  # noqa: E402
+from pop.eval import exclusions as X  # noqa: E402
+from pop.eval.estimands import (ESTIMANDS, ROLES, compute_estimands_v2, infer_estimand,  # noqa: E402
+                                seed_gain_frame, weekly_pooled)
+from pop.eval.stats import ewc_inference  # noqa: E402
 
 KEYS = ["test_year", "unit_id", "origin_week", "target_week", "horizon"]
-EST = ["G_emb", "G_id", "G_excess"]
+EST = list(ESTIMANDS)
+EXCL_DIR = Path("data/processed/exclusions_v1")
+DEFAULT_UNITS = EXCL_DIR / "no_geometry_units.csv"
+DEFAULT_LATE = EXCL_DIR / "late_entry_units.csv"
+DEFAULT_WEEKS = EXCL_DIR / "incomplete_weeks.csv"
 
 
-def run_label(d: Path) -> str:
-    return str(load_run(d).model.iloc[0])
+# ---------------------------------------------------------------------------- loading
+def read_scores(dirs, cols=("wis_log", "cases", "cov_40", "cov_80")) -> pd.DataFrame:
+    """Concatenate scores.parquet of the dirs; adds seed (0 if absent) and run label."""
+    out = []
+    for d in map(Path, dirs):
+        names = pq.ParquetFile(d / "scores.parquet").schema.names
+        use = KEYS + [c for c in cols if c in names] + [c for c in ("seed", "run") if c in names]
+        s = pd.read_parquet(d / "scores.parquet", columns=use)
+        if "seed" not in s:
+            s["seed"] = 0
+        s["seed"] = s.seed.astype(int)
+        s["label"] = s["run"].astype(str) if "run" in s else d.name
+        s["dir"] = d.name
+        s["test_year"] = s.test_year.astype(int)
+        s["unit_id"] = s.unit_id.astype(str)
+        s["origin_week"] = pd.to_datetime(s.origin_week)
+        s["target_week"] = pd.to_datetime(s.target_week)
+        s["horizon"] = s.horizon.astype(int)
+        out.append(s.drop(columns=[c for c in ("run",) if c in s]))
+    return pd.concat(out, ignore_index=True)
 
 
-def chunk_rows(d: Path) -> int | None:
-    ch = sorted((d / "chunks").glob("*.scores.parquet")) if (d / "chunks").exists() else []
-    return sum(pq.ParquetFile(c).metadata.num_rows for c in ch) if ch else None
+def run_complete(d) -> bool:
+    """A run counts as complete when scores.parquet exists (written after all chunks)."""
+    return (Path(d) / "scores.parquet").exists()
 
 
 def load_panel(panel: str, country: str | None) -> pd.DataFrame:
     cols = ["unit_id", "country", "adm1", "week_start", "year", "cases", "zero_filled", "flag_gap"]
     p = pd.read_parquet(panel, columns=cols)
     if country:
-        p = p[p.country == country]
+        p = p[p.country.astype(str).str.upper() == str(country).upper()]
     p = p.drop(columns="country")
     p["unit_id"] = p.unit_id.astype(str)
     p["week_start"] = pd.to_datetime(p.week_start)
@@ -74,225 +116,268 @@ def load_panel(panel: str, country: str | None) -> pd.DataFrame:
 
 def outbreak_threshold(p: pd.DataFrame) -> pd.Series:
     base = p[(p.year >= 2013) & (p.year <= 2019) & ~p.flag_gap.fillna(False).astype(bool)]
-    q = base.groupby("unit_id").cases.quantile(0.9)
-    return np.maximum(q, 5.0)
+    return np.maximum(base.groupby("unit_id").cases.quantile(0.9), 5.0)
 
 
-def est_rows(g: pd.DataFrame, label: dict, kw: dict) -> list[dict]:
-    r = compute_estimands(g, **kw)
-    out = []
-    w = r["WIS_L3"]["estimate"]
-    for k in EST + ["WIS_L3", "ID_share"]:
-        e = r[k]
-        row = {**label, "estimand": k, "estimate": e["estimate"], "lo": e["lo"], "hi": e["hi"],
-               "pct_of_wis_l3": 100 * e["estimate"] / w if k in EST else np.nan,
-               "n_rows": len(g), "n_weeks": g.target_week.nunique()}
-        if k == "ID_share":
-            row["reason"] = e["reason"]
-        out.append(row)
-    return out
+def load_cell(roles: dict, *, panel: str | None = None, country: str | None = None,
+              exclude_units=DEFAULT_UNITS, exclude_weeks=DEFAULT_WEEKS, late_entry=None,
+              week_actions=("exclude",)) -> tuple:
+    """Load the four role runs of one cell and build the seed-aware gain frame.
+
+    roles: {"L3": [dirs], "L4": [...], "L3C": [...], "L4C": [...]}.
+    Returns (g, info): g from ``seed_gain_frame`` with state/zero_filled/outbreak columns,
+    info = dict of labels, seeds, row counts and exclusion counts.
+    """
+    first = Path(roles["L3"][0])
+    cfg = yaml.safe_load((first / "config_resolved.yaml").read_text())
+    country = country or cfg.get("country")
+    pnl = load_panel(panel or cfg["panel"], country)
+    info = {"country": country, "roles": {}, "excluded": {}}
+    frames = []
+    for r in ROLES:
+        s = read_scores(roles[r], cols=("wis_log", "cases"))
+        info["roles"][r] = {"dirs": [str(d) for d in roles[r]],
+                            "labels": sorted(s.label.unique()),
+                            "seeds": sorted(int(x) for x in s.seed.unique()),
+                            "rows": int(len(s)),
+                            "seeds_by_h": {int(h): sorted(int(x) for x in v.unique())
+                                           for h, v in s.groupby("horizon").seed},
+                            "nan_wis": int(s.wis_log.isna().sum())}
+        frames.append(s.assign(model=r))
+        if r == "L3":
+            cases = s.drop_duplicates(KEYS).set_index(KEYS)["cases"]
+    sc = pd.concat(frames, ignore_index=True)
+    sc = sc[sc.wis_log.notna()]
+    g = seed_gain_frame(sc, {r: r for r in ROLES}, metric="wis_log", keys=KEYS)
+    seeds = g.attrs["seeds"]
+    n_union = len(sc.drop_duplicates(KEYS))
+    info["rows_common"] = int(len(g))
+    info["rows_not_common"] = int(n_union - len(g))
+    pm = pnl.rename(columns={"week_start": "target_week", "cases": "panel_cases"})[
+        ["unit_id", "target_week", "adm1", "panel_cases", "zero_filled", "flag_gap"]]
+    g = g.merge(pm, on=["unit_id", "target_week"], how="left", validate="many_to_one")
+    g["cases"] = cases.reindex(pd.MultiIndex.from_frame(g[KEYS])).to_numpy()
+    info["no_panel_match"] = int(g.adm1.isna().sum())
+    info["case_mismatch"] = int((~np.isclose(g.cases, g.panel_cases)).sum())
+    gap = g.flag_gap.fillna(False).astype(bool).to_numpy()
+    g = g[~gap]
+    info["excluded"]["flag_gap"] = int(gap.sum())
+    g["state"] = g.adm1.astype(str)
+    g["zero_filled"] = g.zero_filled.fillna(False).astype(bool)
+    g["outbreak"] = g.cases >= g.unit_id.map(outbreak_threshold(pnl)).fillna(5.0)
+    for name, path, fn, kw in (
+            ("no_geometry_units", exclude_units, X.exclude_units, {}),
+            ("incomplete_weeks", exclude_weeks, X.exclude_weeks,
+             {"country": country, "actions": week_actions}),
+            ("late_entry_units", late_entry, X.exclude_late_entry, {})):
+        if path is None:
+            info["excluded"][name] = "off"
+        elif not Path(path).exists():
+            info["excluded"][name] = f"file missing ({path}); not applied"
+        else:
+            g, n = fn(g, path, **kw)
+            info["excluded"][name] = int(n)
+    g = g.reset_index(drop=True)
+    g.attrs["seeds"] = seeds
+    info["rows_scored"] = int(len(g))
+    info["seeds"] = seeds
+    return g, info
+
+
+def resolve_roles(a) -> dict:
+    return {"L3": a.l3, "L4": a.l4, "L3C": a.l3c, "L4C": a.l4c}
+
+
+def add_exclusion_args(ap: argparse.ArgumentParser) -> None:
+    ap.add_argument("--exclude-units", default=str(DEFAULT_UNITS),
+                    help="unit_id CSV dropped from scoring (default: no-geometry units)")
+    ap.add_argument("--no-exclude-units", action="store_true")
+    ap.add_argument("--exclude-weeks", default=str(DEFAULT_WEEKS),
+                    help="incomplete-weeks CSV (country, week_start, scope, adm1, action); "
+                         "default ON with the primary rows (action == exclude, k = 0.5)")
+    ap.add_argument("--no-exclude-weeks", action="store_true")
+    ap.add_argument("--exclude-weeks-action", nargs="+", default=["exclude"],
+                    help="action values of incomplete_weeks.csv to drop (default: exclude = "
+                         "primary k=0.5 flags); 'all' = every row incl. sensitivity flags")
+    ap.add_argument("--universe-first-year-max", action="store_true",
+                    help="sensitivity: drop units whose first case year is after the origin year")
+    ap.add_argument("--late-entry", default=str(DEFAULT_LATE))
+
+
+def exclusion_kw(a) -> dict:
+    return {"exclude_units": None if a.no_exclude_units else a.exclude_units,
+            "exclude_weeks": None if a.no_exclude_weeks else a.exclude_weeks,
+            "late_entry": a.late_entry if a.universe_first_year_max else None,
+            "week_actions": (None if [x.lower() for x in a.exclude_weeks_action] == ["all"]
+                             else a.exclude_weeks_action)}
+
+
+# ---------------------------------------------------------------------------- tables
+FIELDS = ["estimate", "se", "df", "T", "stat", "p", "lo95", "hi95", "lo90", "hi90", "wis_ref",
+          "margin", "pct_of_ref", "tost_p", "cls", "mde", "mde_pct", "n_seeds", "seed_mean",
+          "seed_sd", "boot_lo", "boot_hi", "n_rows", "n_weeks"]
+
+
+def est_rows(g, label, kw, bootstrap=True):
+    r = compute_estimands_v2(g, bootstrap=bootstrap, **kw)
+    rows = []
+    for e in EST:
+        row = {**label, "estimand": e, **{f: r[e].get(f, np.nan) for f in FIELDS}}
+        row["seed_estimates"] = json.dumps({str(k): v for k, v in r[e]["seed_estimates"].items()})
+        rows.append(row)
+    rows.append({**label, "estimand": "ID_share", "estimate": r["ID_share"]["estimate"],
+                 "boot_lo": r["ID_share"].get("boot_lo", np.nan),
+                 "boot_hi": r["ID_share"].get("boot_hi", np.nan),
+                 "reason": r["ID_share"]["reason"]})
+    return rows
+
+
+def fmt_table(t: pd.DataFrame, lead: list[str]) -> str:
+    t = t[t.estimand.isin(EST)].copy()
+    t["CI95"] = [f"[{a:+.5f}, {b:+.5f}]" for a, b in zip(t.lo95, t.hi95)]
+    t["CI90"] = [f"[{a:+.5f}, {b:+.5f}]" for a, b in zip(t.lo90, t.hi90)]
+    t["boot95_52wk"] = [f"[{a:+.5f}, {b:+.5f}]" if np.isfinite(a) else "-"
+                        for a, b in zip(t.boot_lo.astype(float), t.boot_hi.astype(float))]
+    t["margin"] = t.margin.map(lambda v: f"{v:.5f}")
+    t["MDE (% ref)"] = [f"{m:.5f} ({p:.2f}%)" for m, p in zip(t.mde, t.mde_pct)]
+    t["n_seeds"] = t.n_seeds.astype(int)
+    t["seed SD"] = [f"{v:.5f}" if np.isfinite(v) else "-" for v in t.seed_sd.astype(float)]
+    cols = lead + ["estimand", "estimate", "pct_of_ref", "CI95", "CI90", "p", "margin", "tost_p",
+                   "cls", "MDE (% ref)", "n_seeds", "seed SD", "boot95_52wk"]
+    return md(t[cols], 5, index=False)
 
 
 def main() -> None:
     ap = argparse.ArgumentParser()
     for r in ("l3", "l4", "l3c", "l4c"):
-        ap.add_argument(f"--{r}", required=True)
+        ap.add_argument(f"--{r}", required=True, nargs="+")
+    ap.add_argument("--ref-name", default="L3", help="label of the reference level (L3 or N3)")
     ap.add_argument("--ladder", nargs="*", default=[], help="extra run dirs for the ladder table")
     ap.add_argument("--pairs", nargs="*", default=[], metavar="A:B",
-                    help="extra DM pairs (labels) on the ladder rows; d = WIS(A) - WIS(B)")
+                    help="extra EWC pairs on ladder labels; d = WIS(A) - WIS(B)")
     ap.add_argument("--out", default=None)
-    ap.add_argument("--prefix", default="estimands")
+    ap.add_argument("--prefix", default="estimands_v2")
     ap.add_argument("--panel", default=None)
     ap.add_argument("--country", default=None)
     ap.add_argument("--n-boot", type=int, default=2000)
-    ap.add_argument("--block-len", type=int, default=8)
-    ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--block-len", type=int, default=52)
+    ap.add_argument("--boot-seed", type=int, default=0)
+    ap.add_argument("--margin-rel", type=float, default=0.01)
+    add_exclusion_args(ap)
     a = ap.parse_args()
 
-    roles = {"L3": Path(a.l3), "L4": Path(a.l4), "L3C": Path(a.l3c), "L4C": Path(a.l4c)}
-    ladder = [Path(x) for x in a.ladder]
-    out = Path(a.out) if a.out else roles["L3"].parent / (roles["L3"].name + "_analysis")
+    roles = resolve_roles(a)
+    l3 = Path(roles["L3"][0])
+    out = Path(a.out) if a.out else l3.parent / (l3.name + "_analysis")
     out.mkdir(parents=True, exist_ok=True)
     pre = out / a.prefix
-    cfg = yaml.safe_load((roles["L3"] / "config_resolved.yaml").read_text())
-    panel = load_panel(a.panel or cfg["panel"], a.country or cfg.get("country"))
     lines: list[str] = []
 
     def emit(title, body):
         print(f"\n## {title}\n{body}", flush=True)
         lines.extend([f"## {title}", "", body, ""])
 
-    # ---------------------------------------------------------------- load + row check
-    dirs = list(roles.values()) + [d for d in ladder if d not in roles.values()]
-    frames, rc = [], []
-    for d in dirs:
-        s = load_run(d)
-        for m, sm in s.groupby("model", sort=False):
-            dup = int(sm.duplicated(KEYS).sum())
-            rc.append({"run": d.name, "model": m, "rows": len(sm), "dup_keys": dup,
-                       "nan_wis_log": int(sm.wis_log.isna().sum()),
-                       "chunk_rows": chunk_rows(d) if s.model.nunique() == 1 else None})
-        frames.append(s)
-    sc = pd.concat(frames, ignore_index=True)
-    lab = {r: run_label(d) for r, d in roles.items()}
-    models = list(dict.fromkeys(sc.model))
+    g, info = load_cell(roles, panel=a.panel, country=a.country, **exclusion_kw(a))
+    rt = pd.DataFrame([{"role": r, "dirs": " ".join(Path(d).name for d in v["dirs"]),
+                        "labels": ",".join(v["labels"]), "rows": v["rows"],
+                        "seeds": ",".join(map(str, v["seeds"])), "nan_wis": v["nan_wis"],
+                        "seeds_by_h": "; ".join(f"h{h}:{','.join(map(str, s))}"
+                                                for h, s in v["seeds_by_h"].items())}
+                       for r, v in info["roles"].items()])
+    emit("Rows, seeds and exclusions", md(rt, 0, index=False) + "\n\n"
+         + f"Keys scored by all four roles: {info['rows_common']} (keys missing from at least one "
+           f"role: {info['rows_not_common']}); no panel match: {info['no_panel_match']}; score "
+           f"cases != panel cases: {info['case_mismatch']}. Removed: "
+         + "; ".join(f"{k}: {v}" for k, v in info["excluded"].items())
+         + f". Rows scored: {info['rows_scored']}; states: {g.state.nunique()}; "
+           f"outbreak share: {g.outbreak.mean():.4f}.")
+    (Path(f"{pre}_info.json")).write_text(json.dumps(info, indent=1, default=str))
 
-    # per-test-year key-set comparison vs L3 (all models)
-    ref = sc[sc.model == lab["L3"]]
-    def hk(df):
-        return np.unique(pd.util.hash_pandas_object(df[KEYS[1:]], index=False).to_numpy())
-    refk = {y: hk(g) for y, g in ref.groupby("test_year")}
-    yr = []
-    for m in models:
-        sm = sc[sc.model == m]
-        for y, g in sm.groupby("test_year"):
-            k = hk(g)
-            r0 = refk.get(y, np.array([], dtype=np.uint64))
-            yr.append({"model": m, "test_year": y, "rows": len(g),
-                       "only_here": len(np.setdiff1d(k, r0, assume_unique=True)),
-                       "only_in_L3": len(np.setdiff1d(r0, k, assume_unique=True))})
-    yr = pd.DataFrame(yr)
-    rc = pd.DataFrame(rc)
-    rc.to_csv(f"{pre}_rowcheck_runs.csv", index=False)
-    yr.to_csv(f"{pre}_rowcheck.csv", index=False)
-    est_ok = yr[yr.model.isin(lab.values())][["only_here", "only_in_L3"]].to_numpy().sum() == 0
-    all_ok = yr[["only_here", "only_in_L3"]].to_numpy().sum() == 0
-    emit("Row-set check", md(rc, 0, index=False) + "\n\n"
-         + md(yr.pivot_table(index="model", columns="test_year", values="rows").reindex(models), 0)
-         + f"\n\nKey sets (unit, origin, target, horizon) identical to L3 per test year: "
-           f"estimand runs {est_ok}; all runs {all_ok} (mismatch counts in {pre.name}_rowcheck.csv).")
-
-    # ---------------------------------------------------------------- panel merge
-    thr = outbreak_threshold(panel)
-    pm = panel.rename(columns={"week_start": "target_week", "cases": "panel_cases",
-                               "zero_filled": "zf_panel"})[
-        ["unit_id", "target_week", "adm1", "panel_cases", "zf_panel", "flag_gap"]]
-    sc = sc.merge(pm, on=["unit_id", "target_week"], how="left", validate="many_to_one")
-    miss = int(sc.adm1.isna().sum())
-    cmis = int((~np.isclose(sc.cases, sc.panel_cases)).sum())
-    gap = sc.flag_gap.fillna(False).astype(bool)
-    sc = sc[~gap & sc.wis_log.notna()]
-    cnt = sc.groupby(KEYS, sort=False).model.transform("size")
-    n_before = len(sc)
-    sc = sc[cnt == len(models)].reset_index(drop=True)
-    sc["state"] = sc.adm1.astype(str)
-    sc["zero_filled"] = sc.zf_panel.fillna(False).astype(bool)
-    sc["thr"] = sc.unit_id.map(thr).fillna(5.0)
-    sc["outbreak"] = sc.cases >= sc.thr
-    emit("Panel join", f"rows without panel match: {miss}; score cases != panel cases: {cmis}; "
-         f"zero_filled taken from the panel; flag_gap rows dropped: {int(gap.sum())}; rows dropped "
-         f"as not common to all {len(models)} models: {n_before - len(sc)}; states: "
-         f"{sc.state.nunique()}; outbreak share of rows: {sc[sc.model == lab['L3']].outbreak.mean():.4f}")
-
-    # ---------------------------------------------------------------- estimands
-    g = gain_frame(sc[sc.model.isin(lab.values())], lab, metric="wis_log",
-                   keys=KEYS[1:], extra_cols=["test_year", "state", "zero_filled", "outbreak"])
     kw = dict(cluster_col="state", time_col="target_week", block_len=a.block_len,
-              n_boot=a.n_boot, seed=a.seed)
+              n_boot=a.n_boot, seed=a.boot_seed, margin_rel=a.margin_rel)
     rows = []
     for h, gh in g.groupby("horizon"):
+        gh.attrs = dict(g.attrs)
         rows += est_rows(gh, {"horizon": h, "test_year": "pooled", "stratum": "all"}, kw)
     rows += est_rows(g, {"horizon": "pooled", "test_year": "pooled", "stratum": "all"}, kw)
     for y, gy in g.groupby("test_year"):
-        rows += est_rows(gy, {"horizon": "pooled", "test_year": y, "stratum": "all"}, kw)
-    E = pd.DataFrame(rows)
-
-    # DM per horizon per estimand, Holm across horizons
-    dm = []
-    for h, gh in g.groupby("horizon"):
-        for e in EST:
-            d = gh.groupby("target_week")[e].mean().sort_index()
-            r = dm_test(d.to_numpy(), h=int(h))
-            dm.append({"horizon": h, "estimand": e, "mean_d": r.mean_d, "stat": r.stat, "df": r.df,
-                       "p": r.p_value, "T": r.T})
-    dm = pd.DataFrame(dm)
-    dm["p_holm"] = dm.groupby("estimand").p.transform(lambda p: holm(p.to_numpy()))
-    E = E.merge(dm[["horizon", "estimand", "stat", "p", "p_holm"]], on=["horizon", "estimand"],
-                how="left")
-    E.to_csv(f"{pre}_main.csv", index=False)
-    dm.to_csv(f"{pre}_dm.csv", index=False)
-
-    def tab(sub):
-        t = sub[sub.estimand.isin(EST)].copy()
-        t["CI95"] = t.apply(lambda r: f"[{r.lo:+.5f}, {r.hi:+.5f}]", axis=1)
-        cols = ["estimand", "estimate", "CI95", "pct_of_wis_l3"] + \
-               [c for c in ["p", "p_holm"] if c in t and t[c].notna().any()]
-        return t, cols
-
-    t, cols = tab(E[E.test_year.astype(str) == "pooled"])
-    t = t.sort_values(["estimand", "horizon"], key=lambda s: s.astype(str))
-    emit("Main estimands, pooled test years (log1p WIS; + = improvement)",
-         md(t[["horizon"] + cols], 5, index=False)
-         + "\n\nWIS(L3): " + ", ".join(f"h{r.horizon}={r.estimate:.5f}" for r in
-                                      E[(E.estimand == "WIS_L3") & (E.test_year.astype(str) == "pooled")]
-                                      .itertuples()))
-    t, cols = tab(E[E.test_year.astype(str) != "pooled"])
-    emit("Per test year (pooled over h)", md(t[["test_year"] + cols], 5, index=False))
-    ids = E[E.estimand == "ID_share"][["horizon", "test_year", "estimate", "lo", "hi", "reason"]]
-    emit("ID share rule", md(ids, 4, index=False))
-
-    # ---------------------------------------------------------------- strata
-    srows = []
+        gy.attrs = dict(g.attrs)
+        rows += est_rows(gy, {"horizon": "pooled", "test_year": y, "stratum": "all"}, kw,
+                         bootstrap=False)
     strata = {"observed": ~g.zero_filled, "zero_filled": g.zero_filled,
-              "outbreak": g.outbreak, "non_outbreak": ~g.outbreak,
-              "observed_non_outbreak": ~g.zero_filled & ~g.outbreak}
+              "outbreak": g.outbreak, "non_outbreak": ~g.outbreak}
     for name, msk in strata.items():
-        srows += est_rows(g[msk], {"horizon": "pooled", "test_year": "pooled", "stratum": name}, kw)
-    last = int(g.test_year.max())
-    gl = g[g.test_year == last]
-    for name, msk in {"all": slice(None), "observed": ~gl.zero_filled, "zero_filled": gl.zero_filled,
-                      "outbreak": gl.outbreak, "non_outbreak": ~gl.outbreak}.items():
-        srows += est_rows(gl[msk], {"horizon": "pooled", "test_year": last, "stratum": name}, kw)
-    for h, gh in gl.groupby("horizon"):
-        srows += est_rows(gh, {"horizon": h, "test_year": last, "stratum": "all"}, kw)
-    S = pd.DataFrame(srows)
-    S.to_csv(f"{pre}_strata.csv", index=False)
-    t, cols = tab(S)
-    emit("Strata (pooled over h unless stated)",
-         md(t[["test_year", "horizon", "stratum", "n_rows"] + cols], 5, index=False)
-         + "\n\nWIS(L3) by stratum: " + ", ".join(
-             f"{r.stratum}/{r.test_year}/h{r.horizon}={r.estimate:.4f}"
-             for r in S[S.estimand == "WIS_L3"].itertuples()))
-    # share of the total G (sum over rows) contributed by each stratum
-    tot = g[EST].sum()
-    shares = pd.DataFrame({n: g.loc[m, EST].sum() / tot for n, m in strata.items()}).T
-    shares["row_share"] = [m.mean() for m in strata.values()]
-    shares.to_csv(f"{pre}_strata_contrib.csv")
-    emit("Share of the pooled total gain contributed by each stratum (sum of row gains / total)",
-         md(shares, 3))
+        gs = g[msk]
+        gs.attrs = dict(g.attrs)
+        rows += est_rows(gs, {"horizon": "pooled", "test_year": "pooled", "stratum": name}, kw,
+                         bootstrap=False)
+    E = pd.DataFrame(rows)
+    E.to_csv(f"{pre}_main.csv", index=False)
+    pooled = E[(E.test_year.astype(str) == "pooled") & (E.stratum == "all")]
+    ref = a.ref_name
+    emit(f"Main estimands, pooled test years (log1p WIS; + = improvement; ref = {ref})",
+         fmt_table(pooled.sort_values(["estimand", "horizon"], key=lambda s: s.astype(str)),
+                   ["horizon"])
+         + f"\n\nWIS({ref}) (pooled weekly mean): " + ", ".join(
+             f"h{r.horizon}={r.wis_ref:.5f}" for r in pooled[pooled.estimand == "G_excess"].itertuples()))
+    py = E[(E.test_year.astype(str) != "pooled")]
+    emit("Per test year (pooled over h; secondary; EWC with T = 52-53 weeks, B = 5)",
+         fmt_table(py, ["test_year"]))
+    st = E[(E.stratum != "all")]
+    emit("Strata (pooled over h and years; secondary; weeks with no stratum rows dropped)",
+         fmt_table(st, ["stratum"]))
+    ids = E[E.estimand == "ID_share"][["horizon", "test_year", "stratum", "estimate", "boot_lo",
+                                       "boot_hi", "reason"]]
+    emit("ID share rule (gate on the primary EWC 95% CI of G_emb)",
+         md(ids[ids.stratum == "all"], 4, index=False))
+    pr = pooled[(pooled.estimand == "G_excess") & (pooled.horizon.astype(str) == "pooled")].iloc[0]
+    (Path(f"{pre}_primary.json")).write_text(json.dumps(
+        {k: (v.item() if hasattr(v, "item") else v) for k, v in pr.items()}, indent=1, default=str))
 
-    # ---------------------------------------------------------------- ladder
-    lad = sc.pivot_table(index="model", columns="horizon", values="wis_log", aggfunc="mean").reindex(models)
-    lad["mean"] = lad.mean(axis=1)
-    nz = sc.cases > 0
-    lad["cov80_all"] = sc.groupby("model").cov_80.mean()
-    lad["cov80_nonzero"] = sc[nz].groupby("model").cov_80.mean()
-    lad["cov40_all"] = sc.groupby("model").cov_40.mean()
-    lad["cov40_nonzero"] = sc[nz].groupby("model").cov_40.mean()
-    lad.to_csv(f"{pre}_ladder.csv")
-    emit("Ladder: mean log1p WIS by horizon (pooled test years) and coverage", md(lad, 4))
-
-    pr = [tuple(p.split(":", 1)) for p in a.pairs]
-    pr = [(x, y) for x, y in pr if x in models and y in models]
-    if pr:
+    # ---------------------------------------------------------------- ladder (optional)
+    if a.ladder:
+        lad_sc = read_scores(a.ladder)
+        keyset = pd.MultiIndex.from_frame(g[KEYS])
+        lad_sc = lad_sc[pd.MultiIndex.from_frame(lad_sc[KEYS]).isin(keyset) & lad_sc.wis_log.notna()]
+        avg = lad_sc.groupby(["label"] + KEYS, sort=False)[["wis_log", "cov_40", "cov_80", "cases"]].mean()
+        avg = avg.reset_index()
+        cnt = avg.groupby(KEYS).label.transform("size")
+        nl = avg.label.nunique()
+        avg = avg[cnt == nl]
+        tb = avg.pivot_table(index="label", columns="horizon", values="wis_log", aggfunc="mean")
+        tb["mean"] = tb.mean(axis=1)
+        nz = avg.cases > 0
+        tb["cov80_all"] = avg.groupby("label").cov_80.mean()
+        tb["cov80_nonzero"] = avg[nz].groupby("label").cov_80.mean()
+        tb.to_csv(f"{pre}_ladder.csv")
+        emit(f"Ladder (seed-averaged; keys common to all ladder runs within the estimand rows: "
+             f"{len(avg) // max(nl, 1)})", md(tb, 4))
         dl = []
-        for x, y in pr:
-            for h in sorted(sc.horizon.unique()):
-                d = loss_diff_series(sc[sc.horizon == h], x, y, metric="wis_log",
-                                     keys=KEYS[1:])
-                r = dm_test(d.to_numpy(), h=int(h))
-                dl.append({"A": x, "B": y, "horizon": h, "mean_d": r.mean_d, "stat": r.stat,
-                           "df": r.df, "p": r.p_value, "T": r.T})
-        dl = pd.DataFrame(dl)
-        dl["p_holm"] = dl.groupby(["A", "B"]).p.transform(lambda p: holm(p.to_numpy()))
-        dl.to_csv(f"{pre}_ladder_dm.csv", index=False)
-        emit("Ladder DM tests (d = WIS(A) - WIS(B); Holm across horizons within each pair)",
-             md(dl, 5, index=False))
+        for p in a.pairs:
+            x, y = p.split(":", 1)
+            if x not in tb.index or y not in tb.index:
+                continue
+            w = avg[avg.label.isin([x, y])].pivot_table(index=KEYS, columns="label",
+                                                        values="wis_log").reset_index()
+            w["d"] = w[x] - w[y]
+            for h in sorted(w.horizon.unique()) + ["pooled"]:
+                wh = w if h == "pooled" else w[w.horizon == h]
+                r = ewc_inference(weekly_pooled(wh, "d").to_numpy(), h=int(wh.horizon.max()))
+                dl.append({"A": x, "B": y, "horizon": h, "mean_d": r.estimate, "lo95": r.lo95,
+                           "hi95": r.hi95, "p": r.p, "df": r.df, "T": r.T})
+        if dl:
+            dl = pd.DataFrame(dl)
+            dl.to_csv(f"{pre}_ladder_ewc.csv", index=False)
+            emit("Ladder pairs (d = WIS(A) - WIS(B); EWC + HLN; no multiplicity correction)",
+                 md(dl, 5, index=False))
 
-    (Path(f"{pre}_tables.md")).write_text(
-        "# Estimands report\n\nRoles: " + ", ".join(f"{k}={v} ({roles[k]})" for k, v in lab.items())
-        + f"\n\nBootstrap: {a.n_boot} reps, states x {a.block_len}-week circular blocks (shared "
-          f"across states), seed {a.seed}.\n\n" + "\n".join(lines))
+    Path(f"{pre}_tables.md").write_text(
+        "# Estimands report (inference policy v2)\n\nRoles: " + ", ".join(
+            f"{k}={' '.join(map(str, v))}" for k, v in roles.items())
+        + f"\n\nPrimary: DM/EWC + HLN on the weekly cross-unit mean gain (pooled-h = per-week "
+          f"mean over horizons); TOST margin {a.margin_rel:.0%} of WIS({ref}). Sensitivity "
+          f"bootstrap: {a.n_boot} reps, states x {a.block_len}-week circular blocks, seed "
+          f"{a.boot_seed}.\n\n" + "\n".join(lines))
     print(f"\nwrote {pre}_*", flush=True)
 
 

@@ -255,3 +255,101 @@ def holm(pvals) -> np.ndarray:
     res[order] = adj
     out[ok] = res
     return out
+
+
+# ------------------------------------------------- primary inference policy (2026-11-16)
+# Deviations log rows 9, 11 and 16 (docs/plans/deviations_from_protocol.md).
+@dataclass
+class EwcInference:
+    """DM/EWC inference for the mean of a weekly loss-difference series.
+
+    estimate   dbar = mean of the weekly series d_t (t = 1..T, time order)
+    se_ewc     sqrt(omega_EWC / T), omega_EWC from ``ewc_var`` with B = floor(0.4 T^(2/3))
+    se         se_ewc / HLN; the SE used for every CI, the MDE and TOST, so that the
+               95% CI excludes 0 exactly when the DM p < 0.05
+    df         B (fixed-b t_B reference)
+    stat, p    DM statistic HLN * dbar / se_ewc and its two-sided t_B p-value
+    ci95/ci90  dbar -/+ t_{B, 0.975} * se  and  dbar -/+ t_{B, 0.95} * se
+    mde        (t_{B, 0.975} + t_{B, 0.80}) * se (two-sided 5% test, 80% power)
+    """
+    estimate: float
+    se_ewc: float
+    se: float
+    df: float
+    T: int
+    h: int
+    hln_factor: float
+    stat: float
+    p: float
+    lo95: float
+    hi95: float
+    lo90: float
+    hi90: float
+    mde: float
+
+    def to_dict(self) -> dict:
+        return asdict(self)
+
+
+def ewc_inference(d, h: int = 1) -> EwcInference:
+    """Primary inference (policy row 11) for the mean of the weekly series ``d``.
+
+    ``d`` is the per-week (cross-unit mean) loss difference in time order; NaN weeks are
+    dropped. ``h`` only enters through the HLN factor (for a series pooled over horizons pass
+    the largest pooled horizon, which gives the smallest HLN factor, i.e. the widest CI).
+    The test is ``dm_test(d, h, lag="ewc")``; the CI uses the same EWC variance, the t_B
+    reference and the HLN correction (se = se_ewc / HLN), so the 95% CI and the DM test
+    agree. If the long-run variance is 0 the CI collapses to the point.
+    """
+    d = np.asarray(d, float)
+    d = d[~np.isnan(d)]
+    r = dm_test(d, h=h, lag="ewc")
+    B = r.df
+    se = r.se / r.hln_factor if r.hln_factor > 0 else np.nan
+    t975, t95, t80 = (_st.t.ppf(q, df=B) for q in (0.975, 0.95, 0.80))
+    return EwcInference(
+        estimate=r.mean_d, se_ewc=r.se, se=float(se), df=float(B), T=r.T, h=int(h),
+        hln_factor=r.hln_factor, stat=float(r.stat), p=float(r.p_value),
+        lo95=float(r.mean_d - t975 * se), hi95=float(r.mean_d + t975 * se),
+        lo90=float(r.mean_d - t95 * se), hi90=float(r.mean_d + t95 * se),
+        mde=float((t975 + t80) * se))
+
+
+def tost_p(estimate: float, se: float, df: float, margin: float) -> float:
+    """Two one-sided tests (Schuirmann 1987) for |mean| < margin with a t_df reference.
+
+    p = max(P(t_df > (est + margin)/se), P(t_df < (est - margin)/se)); equivalence at level
+    0.05 <=> the 90% CI lies inside (-margin, +margin).
+    """
+    if not (se > 0):
+        return 0.0 if abs(estimate) < margin else 1.0
+    p_lo = _st.t.sf((estimate + margin) / se, df=df)
+    p_hi = _st.t.cdf((estimate - margin) / se, df=df)
+    return float(max(p_lo, p_hi))
+
+
+def classify_effect(lo95: float, hi95: float, lo90: float, hi90: float, p: float,
+                    margin: float, alpha: float = 0.05) -> str:
+    """Policy row 9 classification of a gain (positive = improvement).
+
+    "equivalent"   90% CI inside (-margin, +margin) (TOST at 5%), checked first;
+    "superior"     95% CI entirely > 0 and DM p < alpha;
+    "inferior"     95% CI entirely < 0 and DM p < alpha;
+    "inconclusive" otherwise.
+    """
+    if -margin < lo90 and hi90 < margin:
+        return "equivalent"
+    if lo95 > 0 and p < alpha:
+        return "superior"
+    if hi95 < 0 and p < alpha:
+        return "inferior"
+    return "inconclusive"
+
+
+def pooled_horizon_series(weekly: pd.DataFrame, value_col: str, *,
+                          time_col: str = "target_week", horizon_col: str = "horizon") -> pd.Series:
+    """Pool a per-(horizon, week) series over horizons: for each week the unweighted mean of
+    the per-horizon weekly values that exist. ``weekly`` has one row per (horizon, week)."""
+    if weekly.duplicated([horizon_col, time_col]).any():
+        raise ValueError("weekly frame must have one row per (horizon, week)")
+    return weekly.groupby(time_col)[value_col].mean().sort_index()

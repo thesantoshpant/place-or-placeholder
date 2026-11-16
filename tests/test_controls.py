@@ -144,21 +144,55 @@ def test_c1_s1_legacy_train_period_available():
         C.make_controls_for_split("C1", sp, u, panel=panel, c1_period="bogus")
 
 
-def test_c1_unseen_splits_unchanged():
-    """Legacy rule (train_mode='loo_knn') reproduces the pre-2026-11-16 output in S2-S4, and the
-    default 'matched' mode equals it in S4 (plain leave-one-out)."""
+def test_c1_unseen_splits_legacy_available():
+    """c1_period='train' + train_mode='loo_knn' reproduces the pre-2026-11-16 output in S2-S4;
+    with pre-training rows, the default 'matched' mode equals plain leave-one-out in S4."""
     from pop.splits.splits import row_masks
     for name in ("S2", "S3", "S4"):
         u, panel, sp = _panel_and_split(name, 2021)
-        new = C.make_controls_for_split("C1", sp, u, panel=panel, train_mode="loo_knn")
+        leg = C.make_controls_for_split("C1", sp, u, panel=panel, c1_period="train", train_mode="loo_knn")
         tr = panel[row_masks(panel, sp)["train_target_ok"]]
         old = C.make_controls("C1", u, sp.train_units, sp.test_units, sp.origin, train_rows=tr,
                               train_mode="auto")
-        pd.testing.assert_frame_equal(new, old)
-        pd.testing.assert_frame_equal(new, C.make_controls_for_split(
-            "C1", sp, u, panel=panel, c1_period="train", train_mode="loo_knn"))
+        pd.testing.assert_frame_equal(leg, old)
         if name == "S4":
-            pd.testing.assert_frame_equal(new, C.make_controls_for_split("C1", sp, u, panel=panel))
+            pd.testing.assert_frame_equal(
+                C.make_controls_for_split("C1", sp, u, panel=panel, train_mode="loo_knn"),
+                C.make_controls_for_split("C1", sp, u, panel=panel))
+
+
+@pytest.mark.parametrize("name", ["S1", "S2", "S3", "S4"])
+@pytest.mark.parametrize("origin", [2019, 2021])
+def test_c1_no_2018plus_target_enters_any_split(name, origin):
+    """Fix 2026-11-16: C1 reads only pre-training years (< first training target year 2018) in
+    every split, including the matched kNN encodings of S2-S4."""
+    u = _states(synth_units(n=150))
+    rng = np.random.default_rng(7)
+    xs = sorted(u.unit_id[u.country == "X"])
+    panel = pd.DataFrame([{"unit_id": x, "year": y, "cases": float(rng.poisson(1 + i % 9)),
+                           "flag_gap": False}
+                          for i, x in enumerate(xs) for y in range(2014, origin + 1) for _ in range(3)])
+    if name == "S1":
+        from pop.splits.splits import Split
+        sp = Split("S1", "X", None, origin, frozenset(xs), frozenset(xs), tuple(range(2018, origin)),
+                   (origin,))
+    else:
+        sp = _matched_split(name, u, origin=origin)
+    a = C.make_controls_for_split("C1", sp, u, panel=panel, c1_buffer_km=150.0).set_index("unit_id").c1_te
+    poisoned = panel.copy()
+    poisoned.loc[poisoned.year >= 2018, "cases"] = 1e12
+    b = C.make_controls_for_split("C1", sp, u, panel=poisoned, c1_buffer_km=150.0).set_index("unit_id").c1_te
+    pd.testing.assert_series_equal(a, b)
+    assert a.notna().all() and a.max() < 10
+    # and the kNN pool is the neighbours' 2014-2017 means (training units only)
+    pre = panel[(panel.year < 2018) & panel.unit_id.isin(sp.train_units)]
+    own = np.log1p(pre.cases).groupby(pre.unit_id).mean()
+    te = u[u.unit_id.isin(sp.test_units - sp.train_units)]
+    if len(te):
+        tr = u[u.unit_id.isin(sp.train_units)]
+        assert np.allclose(a.loc[te.unit_id], C.knn_encode(te, tr, own, exclude_self=True))
+    else:
+        assert np.allclose(a.loc[own.index], own)
 
 
 # ---------------------------------------------------- C1 matched leave-out (2026-11-16)
@@ -200,14 +234,12 @@ def _panel(u, origin=2021, seed=4):
 
 @pytest.mark.parametrize("name", ["S2", "S3"])
 def test_c1_matched_training_neighbours_follow_heldout_rule(name):
-    from pop.splits.splits import row_masks
     d_km = 150.0
     u = _states(synth_units(n=150))
     panel = _panel(u)
     sp = _matched_split(name, u, d_km=d_km)
     got = C.make_controls_for_split("C1", sp, u, panel=panel, c1_buffer_km=d_km).set_index("unit_id").c1_te
-    tr_rows = panel[row_masks(panel, sp)["train_target_ok"]]
-    own = C.unit_level(tr_rows, sp.train_units, sp.origin)
+    own = C.unit_level(panel, sp.train_units, min(sp.train_years))  # pre-training years (fix 2026-11-16)
     tr = u[u.unit_id.isin(sp.train_units)]
     rule = {"exclude_group": "adm1"} if name == "S2" else {"exclude_within_km": d_km}
     exp, nb = C.knn_encode(tr, tr, own, exclude_self=True, return_neighbours=True, **rule)
@@ -290,9 +322,9 @@ def test_c3_permutation_within_country_year():
         assert (g.c3_src_unit != g.unit_id).mean() > 0.5
     src = e.set_index(["unit_id", "year"]).loc[list(zip(a.c3_src_unit, a.year)), C.BANDS].to_numpy()
     assert np.array_equal(a[[f"c3_{x}" for x in C.BANDS]].to_numpy(), src)
-    # permutation differs across years
+    # fix 2026-11-16: one source per unit across all years
     s = a.pivot(index="unit_id", columns="year", values="c3_src_unit")
-    assert not (s[2018] == s[2019]).all()
+    assert s.nunique(axis=1).eq(1).all()
 
 
 def test_c3_unseen_units_draw_from_training():
@@ -314,7 +346,87 @@ def test_c3_unseen_units_draw_from_training():
         assert sorted(g.c3_src_unit) == sorted(g.unit_id)
 
 
+@pytest.mark.parametrize("mode", ["seen", "unseen", "s5"])
+def test_c3_fixed_source_across_years_and_differs_across_seeds(mode):
+    """Fix 2026-11-16: unit i takes its embedding from the same source unit pi(i) in every year;
+    the values change with the source's real per-year embedding; the map differs across seeds."""
+    u = synth_units()
+    e = synth_emb(u)
+    xs, ys = set(u.unit_id[u.country == "X"]), set(u.unit_id[u.country == "Y"])
+    train, test = {"seen": (xs | ys, xs | ys), "unseen": (xs - set(sorted(xs)[:10]), set(sorted(xs)[:10])),
+                   "s5": (xs, ys)}[mode]
+    maps = []
+    for seed in (0, 1, 2):
+        a = C.shuffle_embeddings(e, u, train, test, seed=seed, return_source=True)
+        s = a.pivot(index="unit_id", columns="year", values="c3_src_unit")
+        assert s.notna().all().all() and s.nunique(axis=1).eq(1).all()  # same source every year
+        m = s.iloc[:, 0]
+        pd.testing.assert_series_equal(
+            m.astype(object), C.c3_source_map(u, train, test, seed).reindex(m.index), check_names=False,
+            check_index_type=False)
+        assert (m != m.index).mean() > 0.5
+        # values = the source's real embedding of that year, so they change across years
+        ref = e.set_index(["unit_id", "year"])[C.BANDS]
+        got = a.set_index(["unit_id", "year"])[[f"c3_{b}" for b in C.BANDS]]
+        exp = ref.loc[list(zip(a.c3_src_unit, a.year))].to_numpy()
+        assert np.array_equal(got.to_numpy(), exp)
+        v = a[a.unit_id == a.unit_id.iloc[0]].c3_A00
+        assert v.nunique() > 1
+        maps.append(m)
+    assert not maps[0].equals(maps[1]) and not maps[1].equals(maps[2])
+    if mode != "seen":
+        tst = maps[0][maps[0].index.isin(test)]
+        assert tst.isin(train if mode == "unseen" else test).all()
+
+
+def test_c3_missing_source_year_is_nan():
+    u = synth_units(20, countries=("X",))
+    e = synth_emb(u)
+    allu = set(u.unit_id)
+    m = C.c3_source_map(u, allu, allu, seed=0)
+    victim = m.iloc[0]  # the source of the first unit loses its 2020 embedding
+    e2 = e[~((e.unit_id == victim) & (e.year == 2020))]
+    a = C.shuffle_embeddings(e2, u, allu, allu, seed=0, return_source=True)
+    row = a[(a.unit_id == m.index[0]) & (a.year == 2020)]
+    assert row.c3_src_unit.iloc[0] == victim and row.c3_A00.isna().all()
+
+
 # ---------------------------------------------------------------------------------- C4
+def test_c4s_is_c4_at_buffer_range(tmp_path):
+    import json
+    rng = np.random.default_rng(0)
+    n = 300
+    pts = pd.DataFrame({"unit_id": [f"U{i}" for i in range(n)], "country": "BRAZIL",
+                        "lat": rng.uniform(-5, 5, n), "lon": rng.uniform(-5, 5, n)})
+    allu = set(pts.unit_id)
+    a = C.make_controls("C4s", pts, allu, set(), 2021, seed=1, range_km=225.0)
+    b = C.make_controls("C4", pts, allu, set(), 2021, seed=1, range_km=225.0)
+    assert list(a.columns) == ["unit_id"] + [f"c4s_f{i:02d}" for i in range(64)]
+    assert np.array_equal(a.drop(columns="unit_id").to_numpy(), b.drop(columns="unit_id").to_numpy())
+    far = C.make_controls("C4", pts, allu, set(), 2021, seed=1, range_km=8483.0)
+    assert not np.allclose(a.drop(columns="unit_id").to_numpy(), far.drop(columns="unit_id").to_numpy())
+    # default range comes from the C4s range file, per country
+    f = tmp_path / "r.json"
+    f.write_text(json.dumps({"BRAZIL": {"range_km": 225.0, "method": "s3_buffer_D"},
+                             "TAIWAN": {"range_km": 12.5, "method": "x"}}))
+    assert C.c4s_range("brazil", path=f) == 225.0 and C.c4s_range(path=f)["TAIWAN"] == 12.5
+    assert "C4s" in C.CONTROLS and "C4s" in C.SEEDED_CONTROLS
+    from pop.features import levels as LV
+    assert {"L3+C4s", "L4+C4s", "N3+C4s", "N4+C4s"} <= set(LV.LEVELS)
+
+
+def test_c4s_range_file_matches_buffer_D():
+    """BR/CO C4s range = the S3 buffer D in splits_v1/buffer_distance.json (when built)."""
+    import json
+    if not C.C4S_RANGE_FILE.exists():
+        pytest.skip("c4s range file not built")
+    D = json.loads((C.C4S_RANGE_FILE.parent / "buffer_distance.json").read_text())
+    r = C.c4s_range()
+    for c in ("BRAZIL", "COLOMBIA"):
+        assert r[c] == D[c]["D_km"]
+    assert set(r) >= {"BRAZIL", "COLOMBIA", "PERU", "TAIWAN"} and all(v > 0 for v in r.values())
+
+
 def test_c4_unit_variance_range_and_determinism():
     rng = np.random.default_rng(0)
     n, r = 1500, 150.0

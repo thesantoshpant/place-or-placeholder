@@ -3,6 +3,7 @@
 #
 #   bash scripts/run/s1_pipeline.sh <colombia|peru|taiwan> [--workers N] [--threads T]   # launch
 #   bash scripts/run/s1_pipeline.sh <country> --gen-only        # (re)write configs/<country>_s1_*.yaml
+#   bash scripts/run/s1_pipeline.sh <country> --gen-controls    # rewrite controls_2019 only
 #   bash scripts/run/s1_pipeline.sh <country> --inside ...      # stage loop (what tmux runs)
 #
 # Stages (each skipped when runs/<country>_s1/stage_<name>.done exists; run_experiment.py resumes
@@ -10,6 +11,9 @@
 #   1 baselines (naive-L0, nb-L1, lgbm-L1)  2 L2  3 L3  4 L4  5 controls_2019 (L3 + C1..C5 at the
 #   2019 origin, L3 tuning frozen)  6 select_control  7 write the L3/L4 + C* configs from
 #   selection.json  8 L3+C* and L4+C* (params_from the L3 and L4 tunings).
+# Control fixes 2026-11-16: C4s (C4 at range D, scripts/features/estimate_c4s_range.py) is a C*
+# candidate (seeded like C3/C4); gen_cstar clears the L3_Cstar/L4_Cstar markers and moves old-C*
+# chunks aside when C* differs from the existing final config (scripts/run/supersede.py).
 # Markers: runs/<country>_s1/PIPELINE_DONE or PIPELINE_FAILED (with the failing stage).
 # Log: runs/<country>_s1/pipeline.log. Worker/thread override between stages: write
 # "WORKERS=N" / "THREADS=T" lines into runs/<country>_s1/override.env (read at each stage start;
@@ -31,6 +35,7 @@ while (( $# )); do
     --threads) THREADS=$2; shift 2;;
     --inside) MODE=inside; shift;;
     --gen-only) MODE=gen; shift;;
+    --gen-controls) MODE=genctl; shift;;
     *) echo "unknown arg $1"; exit 1;;
   esac
 done
@@ -88,7 +93,23 @@ def c4_range():
     return r
 
 
-if what == "base":
+def controls_config():
+    l3p = f"runs/{c}_s1_L3/tuning_lgbm-L3.json"
+    runs = [{"model": "lgbm", "level": "L3", "name": "lgbm-L3", "seeded": False, "params_from": l3p}]
+    for k in ("C1", "C2", "C5", "C3", "C4", "C4s"):
+        runs.append({"model": "lgbm", "level": f"L3+{k}", "name": f"lgbm-L3+{k}",
+                     "seeded": k in ("C3", "C4", "C4s"), "params_from": l3p})
+    from pop.features.controls import c4s_range
+    ckw = {"C1": {"c1_period": "auto"}, "C4": {"range_km": round(c4_range(), 2)},
+           "C4s": {"range_km": c4s_range(CU)}}
+    write("controls_2019", base("controls_2019", [2019], list(range(10)), runs,
+          {**FEAT, "alphaearth": AE, "control_kw": ckw}),
+          "choice of C* on the 2019 origin only (L3 tuning frozen; C3/C4/C4s 10 seeds)")
+
+
+if what == "controls":
+    controls_config()
+elif what == "base":
     lg = lambda lvl: {"model": "lgbm", "level": lvl, "params": LGB, "tune": TUNE}
     write("baselines", base("baselines", TEST, [0],
           [{"model": "naive", "level": "L0"}, {"model": "nb", "level": "L1"}, lg("L1")], FEAT,
@@ -98,20 +119,17 @@ if what == "base":
     write("L3", base("L3", TEST, [0], [lg("L3")], FEAT), "LightGBM L3 (+RS, population)")
     write("L4", base("L4", TEST, [0], [lg("L4")], {**FEAT, "alphaearth": AE}),
           "LightGBM L4 (L3 + AlphaEarth y-1, renormalised)")
-    l3p = f"runs/{c}_s1_L3/tuning_lgbm-L3.json"
-    runs = [{"model": "lgbm", "level": "L3", "name": "lgbm-L3", "seeded": False, "params_from": l3p}]
-    for k in ("C1", "C2", "C5", "C3", "C4"):
-        runs.append({"model": "lgbm", "level": f"L3+{k}", "name": f"lgbm-L3+{k}",
-                     "seeded": k in ("C3", "C4"), "params_from": l3p})
-    ckw = {"C1": {"c1_period": "auto"}, "C4": {"range_km": round(c4_range(), 2)}}
-    write("controls_2019", base("controls_2019", [2019], list(range(10)), runs,
-          {**FEAT, "alphaearth": AE, "control_kw": ckw}),
-          "choice of C* on the 2019 origin only (L3 tuning frozen; C3/C4 10 seeds)")
+    controls_config()
 else:
     sel = json.loads((Path(f"runs/{c}_s1_controls_2019") / "selection.json").read_text())
     k = sel["c_star"]
-    seeded = k in ("C3", "C4")
+    seeded = k in ("C3", "C4", "C4s")
     ckw = yaml.safe_load(Path(f"configs/{c}_s1_controls_2019.yaml").read_text())["features"]["control_kw"]
+    sys.path.insert(0, "scripts/run")
+    from supersede import guard_final
+    for lvl in ("L3", "L4"):  # C*-changed guard before the config is overwritten
+        guard_final(f"runs/{c}_s1", f"{lvl}_Cstar", f"configs/{c}_s1_{lvl}_Cstar.yaml",
+                    f"runs/{c}_s1_{lvl}_Cstar", f"{lvl}+{k}", log="runs/queue/invalidation_guard.md")
     for lvl in ("L3", "L4"):
         run = {"model": "lgbm", "level": f"{lvl}+{k}", "name": f"lgbm-{lvl}+{k}", "seeded": seeded,
                "params_from": f"runs/{c}_s1_{lvl}/tuning_lgbm-{lvl}.json"}
@@ -122,6 +140,7 @@ EOF
 }
 
 if [[ $MODE == gen ]]; then gen_configs base; exit $?; fi
+if [[ $MODE == genctl ]]; then gen_configs controls; exit $?; fi
 
 if [[ $MODE == launch ]]; then
   if tmux has-session -t "$SESS" 2>/dev/null; then echo "tmux session $SESS already exists"; exit 1; fi

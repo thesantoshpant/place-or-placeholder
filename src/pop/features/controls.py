@@ -2,13 +2,15 @@
 
 Each control replaces the AlphaEarth block in L4 ("L3 + C"). Everything is computed at fit time
 for one split instance (train_units, test_units, origin_year). C1 uses outcome rows of training
-units only: pre-training years under S0/S1, training target rows under S2-S4 (c1_source_rows).
+units only, from the pre-training years in every split (c1_source_rows; fixed 2026-11-16).
 
 Column contracts (all outputs carry ``unit_id``; C3 also ``year``):
     C1  target_encoding         -> unit_id, c1_te                     (static within an origin)
     C2  coordinate_harmonics    -> unit_id, c2_lat, c2_lon, c2_sh_l{l}_m{m}   (m<0 written 'mn')
-    C3  shuffle_embeddings      -> unit_id, year, c3_A00..c3_A63        (year = embedding year)
-    C4  random_smooth_fields    -> unit_id, c4_f00..c4_f63            (static)
+    C3  shuffle_embeddings      -> unit_id, year, c3_A00..c3_A63        (year = embedding year;
+                                   one fixed source unit per unit and seed across all years)
+    C4  random_smooth_fields    -> unit_id, c4_f00..c4_f63            (static; fitted range)
+    C4s random_smooth_fields    -> unit_id, c4s_f00..c4s_f63          (static; range = S3 buffer D)
     C5  static_embedding        -> unit_id, c5_A00..c5_A63            (static; AlphaEarth 2023)
     C6  unit_id_categorical     -> unit_id, c6_unit_cat               (pure ID; LightGBM categorical,
                                    columns ending in '_cat'; seen-unit splits only, else NotApplicable)
@@ -32,11 +34,15 @@ from scipy.special import gammaln, lpmv
 
 R_EARTH_KM = 6371.0088
 BANDS = [f"A{i:02d}" for i in range(64)]
-CONTROLS = ("C1", "C2", "C3", "C4", "C5", "C6")
+CONTROLS = ("C1", "C2", "C3", "C4", "C4s", "C5", "C6")
+SEEDED_CONTROLS = ("C3", "C4", "C4s")  # several seeds at the 2019 selection
 N_SEEDS = 10  # C3 / C4 draws
 STATIC_YEAR = 2023
 ROOT = Path(__file__).resolve().parents[3]
 BOUNDARIES = ROOT / "data/interim/boundaries/opendengue_units_v1.parquet"
+# C4s range per country (BR/CO = S3 buffer D; PE/TW by the same rule or the 10th-NN fallback),
+# written by scripts/features/estimate_c4s_range.py
+C4S_RANGE_FILE = ROOT / "data/processed/splits_v1/c4s_range_km.json"
 
 
 class ControlNotApplicable(ValueError):
@@ -217,35 +223,51 @@ def _perm(n, rng) -> np.ndarray:
     return p
 
 
-def shuffle_embeddings(emb_df, units_df, train_units, test_units, seed=0, return_source=False):
-    """C3. Seen units or unseen country (S0/S1/S5): permute embeddings across units within each
-    country-year (S5: the target country is permuted among its own units). Unseen units in a
-    seen country (S2-S4): training units permuted within country-year; each held-out unit gets
-    the embedding of a training unit of the same country-year drawn at random (with replacement)."""
+def c3_source_map(units_df, train_units, test_units, seed=0) -> pd.Series:
+    """C3 source unit per unit (index unit_id -> source unit_id), ONE draw per seed and country
+    that is used for every year (fixed 2026-11-16; it used to be redrawn per year).
+    Seen units or unseen country (S0/S1/S5): a random permutation of the country's units
+    (never the identity; S5: the target country among its own units). Unseen units in a seen
+    country (S2-S4): training units permuted among themselves; each held-out unit gets one training
+    unit of its country drawn at random (with replacement)."""
     train_units, test_units = set(train_units), set(test_units)
     cty = _subset(units_df, train_units | test_units)[["unit_id", "country"]]
-    e = emb_df.merge(cty, on="unit_id", how="inner")
     train_c = set(cty.country[cty.unit_id.isin(train_units)])
     test_c = set(cty.country[cty.unit_id.isin(test_units)])
     within = test_units <= train_units or not (test_c & train_c)
-    src = pd.Series(index=e.index, dtype=object)
-    for (c, y), g in e.groupby(["country", "year"], sort=True):
-        rng, ids = _rng(seed, "C3", c, y), g.unit_id.to_numpy()
+    out = {}
+    for c, g in cty.groupby("country", sort=True):
+        rng, ids = _rng(seed, "C3", c), np.sort(g.unit_id.astype(str).to_numpy())
         if within:
-            src.loc[g.index] = ids[_perm(len(ids), rng)]
+            out.update(zip(ids, ids[_perm(len(ids), rng)]))
             continue
-        is_tr = np.isin(ids, list(train_units))
+        is_tr = np.isin(ids, [str(x) for x in train_units])
         tr_ids = ids[is_tr]
-        src.loc[g.index[is_tr]] = tr_ids[_perm(len(tr_ids), rng)]
+        out.update(zip(tr_ids, tr_ids[_perm(len(tr_ids), rng)]))
         if (~is_tr).any():
-            src.loc[g.index[~is_tr]] = tr_ids[rng.integers(0, len(tr_ids), (~is_tr).sum())]
+            out.update(zip(ids[~is_tr], tr_ids[rng.integers(0, len(tr_ids), (~is_tr).sum())]))
+    return pd.Series(out, dtype=object, name="c3_src_unit")
+
+
+def shuffle_embeddings(emb_df, units_df, train_units, test_units, seed=0, return_source=False):
+    """C3. Unit i takes, in every embedding year y, the real year-y embedding of its fixed source
+    unit pi(i) from c3_source_map (one permutation per seed across ALL years, so C3 is a stable
+    fake district ID whose values move with the source's real embedding). A source without an
+    embedding in year y gives NaN for that year."""
+    units_df = units_df.assign(unit_id=units_df.unit_id.astype(str))
+    e = emb_df.assign(unit_id=emb_df.unit_id.astype(str))
+    have = set(e.unit_id)  # units with at least one embedding year
+    smap = c3_source_map(units_df, {str(x) for x in train_units} & have,
+                         {str(x) for x in test_units} & have, seed)
+    e = e[e.unit_id.isin(smap.index)].reset_index(drop=True)
+    src = smap.reindex(e.unit_id).to_numpy()
     lookup = e.set_index(["unit_id", "year"])[BANDS]
-    vals = lookup.loc[list(zip(src, e.year))].to_numpy()
+    vals = lookup.reindex(pd.MultiIndex.from_arrays([src, e.year.to_numpy()])).to_numpy()
     out = pd.DataFrame(vals, columns=[f"c3_{b}" for b in BANDS])
     out.insert(0, "year", e.year.to_numpy())
     out.insert(0, "unit_id", e.unit_id.to_numpy())
     if return_source:
-        out["c3_src_unit"] = src.to_numpy()
+        out["c3_src_unit"] = src
     return out
 
 
@@ -284,9 +306,10 @@ def gaussian_random_fields(lat, lon, range_km, n_fields=64, rng=None, method="au
 
 
 def random_smooth_fields(units_df, units, range_km, seed=0, n_fields=64, method="auto",
-                         standardize=True) -> pd.DataFrame:
-    """C4. Independent fields per country; range_km is a float or {country: float}.
-    Depends only on geography and seed (no target), so no refit leakage is possible."""
+                         standardize=True, prefix="c4") -> pd.DataFrame:
+    """C4 / C4s. Independent fields per country; range_km is a float or {country: float}.
+    Depends only on geography and seed (no target), so no refit leakage is possible. C4s uses the
+    same white noise per seed and country as C4 (only the range differs) and prefix 'c4s'."""
     u = _subset(units_df, units)
     parts = []
     for c, g in u.groupby("country", sort=True):
@@ -294,10 +317,20 @@ def random_smooth_fields(units_df, units, range_km, seed=0, n_fields=64, method=
         F = gaussian_random_fields(*_latlon(g), r, n_fields, _rng(seed, "C4", c), method)
         if standardize:
             F = (F - F.mean(0)) / np.where(F.std(0) > 0, F.std(0), 1.0)
-        parts.append(pd.DataFrame(F, columns=[f"c4_f{i:02d}" for i in range(n_fields)]).assign(
+        parts.append(pd.DataFrame(F, columns=[f"{prefix}_f{i:02d}" for i in range(n_fields)]).assign(
             unit_id=g.unit_id.to_numpy()))
     out = pd.concat(parts, ignore_index=True)
     return out[["unit_id"] + [c for c in out.columns if c != "unit_id"]]
+
+
+def c4s_range(country=None, path=None):
+    """C4s range_km: the country's S3 buffer D (BR 225, CO 130 km); PE/TW from the same correlogram
+    rule, else the median distance to the 10th-nearest unit (see C4S_RANGE_FILE['method']).
+    Returns {COUNTRY: km} for country=None, else that country's km."""
+    import json
+    d = json.loads(Path(path or C4S_RANGE_FILE).read_text())
+    r = {k.upper(): float(v["range_km"]) for k, v in d.items() if isinstance(v, dict) and "range_km" in v}
+    return r if country is None else r[country.upper()]
 
 
 def empirical_variogram(values, lat, lon, max_pairs=2_000_000, seed=0):
@@ -385,7 +418,8 @@ def unit_id_categorical(units_df, train_units, test_units) -> pd.DataFrame:
 def make_controls(control, units_df, train_units, test_units, origin_year, train_rows=None,
                   emb_df=None, seed=0, **kw) -> pd.DataFrame:
     """Features for units in train_units | test_units. kw: C1 population/k/eps_km/train_mode/exclude_group/exclude_within_km;
-    C2 L; C3 return_source; C4 range_km (required), n_fields, method; C5 year."""
+    C2 L; C3 return_source; C4 range_km (required), n_fields, method; C4s as C4 (range_km
+    defaults to c4s_range() per country); C5 year."""
     allu = set(train_units) | set(test_units)
     if control == "C1":
         if train_rows is None:
@@ -397,6 +431,10 @@ def make_controls(control, units_df, train_units, test_units, origin_year, train
         return shuffle_embeddings(emb_df, units_df, train_units, test_units, seed=seed, **kw)
     if control == "C4":
         return random_smooth_fields(units_df, allu, seed=seed, **kw)
+    if control == "C4s":
+        if kw.get("range_km") is None:
+            kw["range_km"] = c4s_range()
+        return random_smooth_fields(units_df, allu, seed=seed, prefix="c4s", **kw)
     if control == "C5":
         return static_embedding(emb_df, allu, **kw)
     if control == "C6":
@@ -414,14 +452,15 @@ def c1_source_rows(panel, split, period="auto"):
     (Brazil 2014-2017 for every origin), flag_gap weeks dropped like training targets. Fully
     causal, identical for training and test rows and across origins.
     train (legacy): the training target rows (row_masks train_target_ok), years < origin. Under
-    seen-unit splits (S0/S1) this leaks each training row's own target into its feature.
-    auto: pre_train when every test unit is a training unit (S0/S1), else train (S2-S4,
-    where training units get leave-one-out kNN values and test units are not in the pool)."""
+    seen-unit splits (S0/S1) this leaks each training row's own target into its feature; under
+    S2-S4 the neighbours' targets are contemporaneous with the training targets (diluted leak).
+    auto: pre_train in every split (fixed 2026-11-16; S2-S4 used 'train' before). In S2-S4 the
+    matched kNN encoding is then built from the neighbours' pre-training-years means."""
     from pop.splits.splits import row_masks
     if period not in C1_PERIODS:
         raise ValueError(f"c1 period must be one of {C1_PERIODS}, got {period!r}")
     if period == "auto":
-        period = "pre_train" if set(split.test_units) <= set(split.train_units) else "train"
+        period = "pre_train"
     if period == "train":
         return panel[row_masks(panel, split)["train_target_ok"]], split.origin
     first = min(split.train_years)
@@ -448,7 +487,7 @@ def c1_matched_rule(split, country=None, buffer_km=None) -> dict:
 def make_controls_for_split(control, split, units_df, panel=None, emb_df=None, seed=0,
                             c1_period="auto", c1_buffer_km=None, **kw):
     """Convenience wrapper. C1 source rows come from c1_source_rows(panel, split, c1_period):
-    by default pre-training years for S0/S1 and training target rows for S2-S4. C1's default
+    by default the pre-training years in every split (S0-S4). C1's default
     train_mode 'matched' takes its leave-out rule from c1_matched_rule(split) (c1_buffer_km
     overrides the S3 buffer D)."""
     train_rows, origin = None, split.origin

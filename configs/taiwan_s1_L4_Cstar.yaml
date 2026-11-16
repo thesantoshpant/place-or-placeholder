@@ -50,6 +50,8 @@ features:
       c1_period: auto
     C4:
       range_km: 27.12
+    C4s:
+      range_km: 170.0
 runs:
 - model: lgbm
   level: L4+C1
