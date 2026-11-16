@@ -1,0 +1,379 @@
+
+=== PAGE 1 ===
+Paper 2 — Fine-tuned Satellite Model for Dengue Forecasting: Build
+Plan
+Nov 15, 2026 · @Adithya
+Summary
+Paper 2 builds a model that learns dengue-relevant features straight from satellite images and uses them
+to forecast weekly district cases. It is submitted around September 2027 and runs on the team's RTX
+A6000 in about 300–600 GPU-hours.
+Working title: Learning where dengue grows: fine-tuning an Earth-observation foundation model for
+district-level forecasting.
+What we build:
+1. A satellite encoder: Prithvi-EO-2.0 (300M parameters, open licence) fine-tuned with low-rank
+adapters (LoRA) on NASA's Harmonized Landsat-Sentinel (HLS) image chips.
+2. A learned pooling layer that decides which chips in a district matter, instead of a plain average.
+3. A forecaster that combines the district's image features, past cases, climate and its neighbours'
+cases, and outputs weekly case ranges 1–4 weeks ahead.
+Why it is new: recent dengue papers use frozen, pre-computed embeddings averaged over a district.
+None fine-tunes a satellite foundation model on dengue at national scale, learns which places inside a
+district matter, or tests transfer to another continent.
+The test it must pass: beat Paper 1's best model (LightGBM with AlphaEarth embeddings), using Paper
+1's splits and location-only controls, including on Taiwan, which it never sees in training.
+Target venues: ML4H 2027 (full paper; deadline expected early September) or the second KDD 2028
+cycle. A health-journal companion on hospital access follows (see Companion study).
+Novelty vs prior work
+No paper we found trains a satellite encoder on dengue at national scale, learns which places inside a
+district matter, or tests on another continent. Paper 2 does all three.
+Paper Imagery input Encoder
+trained on
+dengue?
+Within-distric
+t pooling
+Scale Unseen-c
+ountry
+test
+Paper 2 (ours) HLS chips, 30 m,
+multi-date
+Yes (LoRA
+fine-tuning)
+Learned
+(attention)
+~7,000 districts,
+3 countries +
+Taiwan
+Yes
+Paper 1 (ours) AlphaEarth and
+PDFM embeddings
+No (frozen) Mean ~7,000 districts,
+4 countries
+Yes
+=== PAGE 2 ===
+Paper Imagery input Encoder
+trained on
+dengue?
+Within-distric
+t pooling
+Scale Unseen-c
+ountry
+test
+Brittain et al.,
+2026
+PDFM place
+embeddings
+No (frozen) Pre-compute
+d per district
+Brazil No
+Muslim et al.,
+2026
+PDFM place
+embeddings
+No (frozen) Pre-compute
+d per district
+Mexico No
+Nazir et al.,
+2026
+AlphaEarth
+embeddings
+No (frozen) Mean Several health
+outcomes
+No
+DengueNet,
+2024
+Sentinel-2 images Small model,
+trained on 5
+towns
+Whole-scene 5 municipalities,
+Colombia
+No
+SatelliteBench,
+2024
+Sentinel-2 images No (frozen) Whole-scene 81 municipalities,
+Colombia
+No
+The closest risk is a group adding fine-tuning to Brittain's or Nazir's pipeline. The learned pooling and the
+Taiwan test are what keep Paper 2 distinct if that happens.
+Architecture
+The model has two parts. An image path turns each district's satellite chips into one learned feature
+vector per year. A forecaster joins that vector with the district's case history and its neighbours to predict
+weekly cases.
+=== PAGE 3 ===
+Paper 2 model · image path and forecaster
+The highlighted encoder is the only expensive part, and it runs once per setting. The forecaster on the
+right is small and trains in an hour or two. That split is what keeps the project inside one A6000.
+Data and imagery pipeline
+The new work in Paper 2 is about 1.6 million satellite image chips, roughly 1.0 TB at full size. Case,
+climate and population tables are reused from Paper 1 unchanged. The pipeline starts in January 2027,
+while Paper 1 experiments run.
+Imagery source: Harmonized Landsat Sentinel-2 (HLS) v2 from Microsoft Planetary Computer. It is free,
+30 m resolution, with images every 2–3 days, and has the six bands Prithvi was pretrained on (blue,
+green, red, near-infrared, two shortwave infrared).
+How chips are made:
+1. Pick places. In each district, sample up to 16 chip centres, weighted by population (WorldPop)
+and built-up area (GHSL). Districts with few people get fewer chips. Paper 1's RQ5 results decide
+whether to over-sample fast-growing urban edges.
+2. Pick dates. Make two cloud-masked median composites per year, one for the wet season and
+one for the dry season, using HLS's own cloud mask (Fmask).
+3. Cut chips. 224 × 224 pixels (about 6.7 km on a side), 6 bands, stored as 16-bit integers in Zarr
+shards by country and year.
+4. Years. 2017–2024, so each forecast year can use the previous year's images, as in Paper 1.
+Volume:
+=== PAGE 4 ===
+Item Count Size at 224 px Size at 112 px
+Chips per district per year up to 16 places × 2
+seasons = 32
+~19 MB ~5 MB
+All districts (~7,000) × 7 forecast
+years
+~1.6 million ~1.0 TB ~0.25 TB
+Plan for storage: start at 112 px (about 0.25 TB) for the prototype. Move to 224 px only if the May gate
+shows resolution matters. A 2–4 TB SSD covers both.
+Download time: Planetary Computer is free but rate-limited. Run the download by country in parallel
+jobs from January; allow 6–8 weeks for all four countries. Cache composites, not raw scenes, so a re-run
+never re-downloads.
+Training and experiments
+Training happens in three stages, so the expensive image step runs once per setting instead of inside
+every forecast run. Every result is scored on Paper 1's splits, metrics and controls.
+Stage A: teach the encoder about dengue (about 50–70 GPU-hours)
+•
+•
+•
+•
+Input: all chips for one district-year.
+Task: predict that district's dengue incidence for the year (log cases per 100,000).
+Model: Prithvi-EO-2.0 with LoRA adapters (rank 8–16 on attention layers, about 1% of weights
+trained), then attention pooling across chips.
+Train on Brazil, Colombia and Peru for 2018–2019 only, so no test year leaks into the encoder. For
+the spatial splits (S2–S5), Stage A is re-run per fold on training districts only; otherwise held-out
+districts leak in through their 2018–2019 labels.
+Stage B: extract features (about 4 GPU-hours per pass)
+•
+Run the tuned encoder once over every district-year. Save one feature vector per district-year,
+plus the pooling weights for each chip.
+Stage C: train the forecaster (about 1–2 GPU-hours per run)
+•
+•
+•
+•
+•
+A temporal transformer reads the past 52 weeks of cases and climate for each district.
+Graph attention adds information from neighbouring districts (shared borders plus 5 nearest).
+The year's image features enter as one extra token.
+Output: 23 quantiles for 1–4 weeks ahead, trained with quantile (pinball) loss, so the WIS from
+Paper 1 applies directly.
+Optional final step: a short end-to-end fine-tune of Stages A and C together, if the May gate
+shows headroom.
+Main comparisons
+=== PAGE 5 ===
+ID Compare Answers
+E1 Full model vs Paper 1's best (LightGBM +
+AlphaEarth)
+Is a trained image model worth the cost?
+E2 LoRA-tuned vs frozen Prithvi Does training on dengue help, or is a general
+encoder enough?
+E3 Attention pooling vs mean Does it matter which places inside a district we
+look at?
+E4 Prithvi features vs AlphaEarth inside the
+same forecaster
+Is the gain from our encoder or from the
+forecaster?
+E5 Image features vs Paper 1's location
+controls (C1–C5)
+Are the learned features more than a district
+label?
+E6 Graph on vs off How much comes from neighbours' cases?
+E7 112 vs 224 px; 4, 8 or 16 chips per district How much imagery is enough?
+Taiwan transfer
+•
+•
+•
+Zero-shot: apply the model trained on the three Latin American countries to Taiwan, with no
+Taiwan data in training.
+Few-shot: fine-tune only the forecaster on 1 and 2 years of Taiwan data.
+Report both against Taiwan-only LightGBM. This is the paper's strongest claim if it works, and an
+honest limit if it does not.
+Interpretation: map the pooling weights. If the model attends to urban edges, informal housing and
+water bodies, that matches known dengue ecology and supports the companion study.
+Companion study: dengue and hospital access
+A second, health-focused paper asks whether forecast dengue surges fall hardest on districts that are far
+from hospitals, and how that differs between rural and urban areas. It reuses Paper 2's forecasts, so it
+costs almost no extra compute. The healthcare lead owns it, from August to October 2027.
+Questions
+1. Do rural districts with long travel times to care have more severe dengue (more hospitalizations
+or deaths per reported case)?
+2. During forecast surge weeks, how many people live more than 60 minutes from a hospital in the
+districts with the highest forecast cases?
+3. Does the urban–rural gap in severe outcomes shrink or grow over 2013–2021 (the years with
+hospitalization data)?
+Data
+=== PAGE 6 ===
+Dataset What it gives Access
+MAP travel time to
+healthcare, 2019
+Minutes to the nearest health facility, by car and on
+foot, 1 km grid
+Free download
+GHSL Degree of Urbanisation Each district classed as city, town or rural Free
+Brazil dengue
+hospitalizations, 1999–2021
+Admissions by municipality and month Free (found
+during planning;
+confirm licence)
+WorldPop People per grid cell, to weight travel times Free
+Paper 2 forecasts Weekly forecast cases and ranges per district Ours
+Design: population-weighted travel time per district, crossed with urban–rural class. Model
+hospitalizations per reported case with a negative binomial regression, adjusting for age structure and
+year. Then overlay forecast surge weeks to estimate people at risk who are far from care.
+Scope: Brazil first, since it has hospitalization data. Colombia, Peru and Taiwan get the travel-time overlay
+only, unless English-language hospitalization data turn up.
+Target venues: PLOS Neglected Tropical Diseases or Lancet Planetary Health.
+Team
+The same three roles carry over from Paper 1. The weight shifts toward ML/CV and geospatial; the
+healthcare lead takes the companion paper.
+Role Owns in Paper 2 Busiest months
+ML / CV lead Prithvi + LoRA fine-tuning, attention pooling, the
+forecaster, experiments E1–E7, training runs on the
+A6000
+May–Aug 2027
+Geospatial lead HLS download, compositing and chipping, Zarr
+storage, neighbour graph, pooling-weight maps
+Jan–Apr 2027
+(overlaps Paper 1
+experiments)
+Healthcare / epi lead Taiwan transfer framing, interpretation against
+dengue ecology, the hospital-access companion
+paper
+Jul–Oct 2027
+Adi (also a lead above) Data versioning, experiment tracking, faculty
+sponsor, submission logistics
+Throughout
+Skills to build early: the ML lead should run TerraTorch (IBM's fine-tuning toolkit for Prithvi) on one
+public benchmark in February. That shakes out setup problems before real data is ready.
+=== PAGE 7 ===
+Compute, storage and budget
+Paper 2 fits on the team's RTX A6000 (48 GB) in about 300–600 GPU-hours, roughly 2–4 weeks of
+continuous running spread over May–August. The only purchase is a 2–4 TB SSD for about $150–300.
+Step GPU-hours (A6000) Notes
+Prototype at 112 px (Mar–Apr) 30–60 Frozen and LoRA encoder on Brazil only
+Stage A encoder fine-tuning, 5
+spatial folds
+50–120 300M model with LoRA fits in 48 GB with
+mixed precision
+Stage B feature extraction 20–40 About 4 hours per full pass; one pass per
+encoder variant
+Stage C forecaster runs 100–200 1–2 hours a run; splits × ablations ×
+seeds
+Ablations E2, E3, E7 (encoder
+side)
+80–160 Mostly at 112 px
+Taiwan zero- and few-shot 10–20 Forecaster only
+Total ~300–600
+Storage: about 0.25 TB at 112 px, 1.0 TB at 224 px, plus features and checkpoints. A 2–4 TB NVMe SSD
+covers it.
+Free downloads: HLS (Planetary Computer), Prithvi weights (Hugging Face), MAP travel time, GHSL,
+WorldPop.
+Backup compute if the A6000 is busy: UW's Tillicum cluster rents H200 GPUs at $0.90 per GPU-hour.
+Student credits of $250 cover roughly 275 H200-hours. UW Hyak through the Research Computing Club
+is not allowed for faculty research or class projects, so check eligibility before relying on it.
+Timeline
+Paper 2 runs from January to a September 10, 2027 submission. Imagery work starts while Paper 1
+experiments run, and the full build waits on one gate on May 3.
+=== PAGE 8 ===
+Paper 2 timeline · Jan to Oct 2027
+May 3 gate, go if both hold on Brazil at 112 px:
+•
+•
+The LoRA-tuned encoder beats frozen Prithvi by a clear WIS margin on split S1 (E2).
+The image features beat Paper 1's best location control on cold-start districts, split S4 (E5).
+If the gate fails: skip the 224 px build and write up the pooling maps and Taiwan transfer as a workshop
+paper by July. The hospital-access paper goes ahead either way.
+ML4H's 2027 date is not announced yet; the 2026 deadline was Sep 10. If ML4H moves, the second KDD
+2028 cycle is the fallback.
+Risks and fallbacks
+The main risk is that a fine-tuned encoder does no better than frozen AlphaEarth. The May 3 gate is
+there to find that out early, while there is still time to change course.
+Risk Likelihood Effect Fallback
+Fine-tuned model does not
+beat Paper 1's LightGBM +
+AlphaEarth (E1)
+Medium Headline
+claim fails
+Reframe around E3 and the pooling maps
+(which places matter), plus Taiwan
+transfer; still a solid workshop or ML4H
+paper
+HLS download or
+compositing takes longer
+than 8 weeks
+Medium Gate slips Brazil-only prototype at 112 px; add other
+countries after the gate
+Cloud cover leaves gaps in
+wet-season composites
+High in
+some
+districts
+Missing
+chips
+Fall back to the nearest clear composite;
+flag districts with fewer than 4 clear chips
+=== PAGE 9 ===
+Risk Likelihood Effect Fallback
+(Amazon, Colombian
+Andes)
+A6000 shared with other
+projects
+Medium Fewer
+ablations
+Tillicum H200 time with student credits;
+cut E7 first
+Stage A overfits with only 2
+training years
+Medium Encoder
+learns
+district
+identity
+Stronger LoRA regularisation, fewer
+trainable layers; Paper 1's controls (E5)
+catch it
+A competing paper
+fine-tunes a foundation
+model for dengue first
+Low–mediu
+m
+Novelty
+drops
+Learned pooling, the location controls and
+Taiwan transfer still set this apart; post a
+preprint at the gate if needed
+Hospitalization data
+licence unclear
+Low Companion
+paper
+delayed
+Use travel-time overlay only; reported
+deaths as the severity outcome
+Sources
+Models and tools
+•
+Prithvi-EO-2.0-300M-TL (Hugging Face)
+•
+TerraTorch
+Data
+•
+•
+•
+•
+•
+Prior work
+•
+•
+•
+HLS v2 on Microsoft Planetary Computer
+OpenDengue
+MAP accessibility to healthcare
+Global Human Settlement Layer
+WorldPop
+Brittain et al., 2026 (medRxiv)
+Muslim et al., 2026 (arXiv)
+Nazir et al., 2026 (arXiv)
+This plan builds on the Paper 1 evaluation plan, which defines the splits, controls and metrics used here.

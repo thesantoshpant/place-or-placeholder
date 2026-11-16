@@ -1,0 +1,26 @@
+# Environment / tooling (lives on the GPU server only)
+.venv/
+.tools/
+.cache/
+tmp/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# Data & outputs (stored on the GPU server, never in git)
+data/
+outputs/
+runs/
+*.parquet
+*.zarr/
+*.tif
+*.nc
+*.zip
+
+# Secrets
+.env
+*credentials*
+*.json.key
+
+# OS
+.DS_Store

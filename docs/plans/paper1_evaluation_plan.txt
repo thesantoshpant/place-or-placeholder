@@ -1,0 +1,447 @@
+
+=== PAGE 1 ===
+Paper 1 — Place or Placeholder? Evaluation Plan
+Nov 15, 2026 · @Adithya
+Summary
+Paper 1 tests whether satellite embeddings genuinely improve dengue forecasts, or merely act as a
+district ID. Target: a preprint and journal submission by the end of April 2027, on about 5–20 GPU-hours.
+Working title: Place or placeholder? When satellite embeddings genuinely improve dengue forecasts.
+Why now: two papers from the last six weeks report that Google's place embeddings improve dengue
+forecasts, in Brazil (Brittain et al.) and Mexico (Muslim et al.). Both used one embedding snapshot from
+October 2023 for forecasts back to 2020. Neither compared the embeddings with a plain district ID, and
+neither tested on districts the model never saw. The AlphaEarth health paper (Nazir et al.) has the same
+gaps.
+Contribution: the first test of satellite embeddings for dengue forecasting that does all three:
+1. aligns every embedding in time, so only images from before the forecast date are used
+2. compares against location-only controls (a plain district ID or coordinates)
+3. tests on districts, states and a country the model never trained on
+It covers four countries, using English-language data from OpenDengue.
+Either result is publishable. If the gains vanish under these controls, that corrects a fast-growing
+literature. If they survive, we know where imagery helps, which designs Paper 2's model.
+Target venues: a medRxiv preprint, then Epidemics or PLOS Computational Biology. A short version can
+go to a spring 2027 ML workshop.
+Research questions and hypotheses
+The paper reports two numbers for every split. Embedding gain is how much the forecast improves
+when satellite embeddings are added. ID share is how much of that gain a location-only control
+reproduces.
+\text{Embedding gain}_
+s = \mathrm{WIS}_
+s(L3) - \mathrm{WIS}_
+s(L4)
+\text{ID share}_
+s = \frac{\mathrm{WIS}_
+s(L3) - \mathrm{WIS}_
+s(L3 + \text{best ID
+control})}{\text{Embedding gain}_
+s}
+Here s is the split and WIS is the weighted interval score (lower is better). L3 and L4 are the feature levels
+defined under Study design. An ID share near 1 means the embedding is acting as a district label. Near 0
+means it carries information a label cannot.
+=== PAGE 2 ===
+# Question Hypothesis Test
+RQ1 Do embeddings improve
+forecasts in the setting earlier
+papers used (rolling forward,
+same districts)?
+Yes: a small but significant gain,
+matching Brittain and Muslim
+Diebold–Mariano
+test, L4 vs L3, split
+S1
+RQ2 How much of that gain does a
+plain district ID or coordinates
+reproduce?
+Most of it (ID share above 0.5)
+when districts are seen in training
+ID share on S1 with
+controls C1–C4
+RQ3 Does the gain survive on
+districts, states or a country the
+model never saw?
+It shrinks but stays positive for
+unseen districts in the same
+country, and falls toward zero
+across countries
+Embedding gain on
+S2–S5 with
+bootstrap intervals
+RQ4 Does using imagery from before
+the forecast date (time-aligned)
+change the result vs one 2023
+snapshot?
+The static snapshot looks better on
+past years, because it leaks future
+land cover
+C5: static vs year
+t−1 embeddings
+RQ5 Where does imagery help most? Fast-growing urban edges and
+districts with few past cases, where
+history alone is weak
+Gain stratified by
+urban growth
+(GHSL), case history
+length, and
+population
+RQ5 is the bridge to Paper 2: it tells the model where imagery is worth the compute.
+Data
+Everything Paper 1 needs is free and in English. The only gated item is PDFM, which is optional. Cases
+come from OpenDengue and imagery from Google Earth Engine. Everything is joined on the GAUL
+district codes that OpenDengue already carries.
+Cases (OpenDengue v1.3.1, weekly, district level)
+Country Weekly spatial
+units
+Weekly years used Role in Paper 1
+Brazil 5,517 units 2013–2024 Main training and testing country
+Colombia 1,071 units 2013–2022 Second country; leave-one-country-out test
+Peru 115 units 2013–2023 Third country; leave-one-country-out test
+Taiwan 287 units 2013–2024 Held out entirely; the cross-continent test
+Counts come from our tally of the OpenDengue v1.3.1 spatial extract, about 7,000 units in all. Peru's 115
+units are coarser than districts, so Peru mainly serves the cross-country test.
+=== PAGE 3 ===
+Imagery and covariates
+Dataset What it gives Resolution Access Use
+AlphaEarth
+Satellite
+64 learned features per
+pixel per year, 2017–2025
+10 m,
+annual
+Free, Earth
+Engine
+Main embedding. Year t−1
+for each forecast, so the
+first forecast year is 2018
+Embedding
+V1
+PDFM 330 features per district
+from search, maps and
+busyness data
+District
+level; Brazil
+covered
+(Brittain
+used it);
+check the
+other three
+Research
+access
+form
+Optional (L5); one static Oct
+2023 snapshot, which is
+what the earlier papers
+used
+ERA5-Land Temperature, rainfall,
+humidity
+~9 km, daily Free, Earth
+Engine
+Climate (L2), lagged 1–12
+weeks
+GHSL Built-up area and
+population, 5-year epochs
+100 m Free Urban growth (RQ5)
+WorldPop Population per district per
+year
+100 m Free Per-capita rates, weighting
+VIIRS night
+lights
+Night-time light per year 500 m Free, Earth
+Engine
+Standard remote sensing
+(L3)
+MODIS NDVI
+and
+land-surface
+temperature
+Vegetation and surface
+heat, 16-day
+250 m–1 km Free, Earth
+Engine
+Standard remote sensing
+(L3)
+Embeddings are averaged within each district, weighted by population. Unweighted means are a
+sensitivity check.
+Earth Engine quota: the free Community tier gives 150 compute-hours a month. Pooling ~7,000 districts
+× 8 years should fit. If it does not, the Contributor tier (1,000 hours) only needs a linked billing account
+and is not charged.
+Study design
+The experiment is a grid: 6 feature levels × 5 controls × 6 splits × 4 models, scored the same way
+everywhere. Each cell is cheap to run. The value is in running all of them under one protocol.
+Prediction target
+•
+Weekly reported dengue cases per district, modelled as log(1 + cases). Results are reported back
+on the case scale.
+=== PAGE 4 ===
+•
+•
+•
+Forecast horizons of 1, 2, 3 and 4 weeks ahead. A new forecast is made every week.
+Test period: 2020 onward. 2018–2019 is for tuning only.
+Reporting lag: the final data look cleaner than what was known on the forecast day. A sensitivity
+check drops the last 2 weeks of history before each forecast.
+Feature ladder (what the model is allowed to see)
+Level Adds Purpose
+L0 Nothing: same week last year Floor every model must beat
+L1 Past cases (lags 1–12 weeks, same week last 3
+years)
+History-only baseline
+L2 + Climate (ERA5-Land, lagged) Standard dengue forecasting setup
+L3 + Standard remote sensing (NDVI, land
+temperature, night lights, built-up area,
+population)
+What imagery offered before foundation
+models
+L4 + AlphaEarth embedding from year t−1 The test: does a foundation-model
+embedding add anything beyond L3?
+L5 + PDFM (static) Reproduces the earlier papers' setting
+Location-only controls (could a district label do the same job?)
+Control Replaces the embedding with What a match means
+C1 District ID, target-encoded (each district's
+average past incidence)
+Embedding is memorising which district
+is which
+C2 Latitude, longitude and spherical-harmonic
+terms
+Embedding is a smooth map of where
+things are
+C3 Real embeddings, shuffled between districts Any 64 numbers that differ by district
+would do
+C4 Random smooth spatial fields with the same
+spatial autocorrelation
+Gain comes from spatial smoothness,
+not content
+C5 Static 2023 embedding instead of year t−1 Gain partly comes from looking at the
+future
+Splits (how test districts and weeks are chosen)
+Split Train on Test on What it shows
+S0 Random weeks and
+districts
+The rest Upper bound; leaks across space and
+time, reported only for contrast
+=== PAGE 5 ===
+Split Train on Test on What it shows
+S1 All districts, past weeks Same districts, future
+weeks
+The setting the earlier papers used
+S2 All states but one The held-out state Transfer to an unseen region
+S3 Spatial blocks with a
+buffer zone removed
+Held-out blocks Removes leakage from neighbouring
+districts
+S4 Most districts Districts never seen in
+training
+Cold start: a new district with no case
+history in the model
+S5 Three countries The fourth (Taiwan
+first, then rotating)
+Transfer across countries
+Buffer width for S3 comes from the range of the case correlogram, estimated in week 2.
+Models
+1. Seasonal naive (L0 only).
+2. Negative binomial regression: the standard epidemiology baseline.
+3. LightGBM with quantile loss: the main model, fast enough for the whole grid.
+4. TimesFM 2.5 zero-shot forecasts, with LightGBM correcting the residuals using the extra
+features. This shows whether a modern forecasting foundation model changes the answer.
+Metrics
+•
+•
+•
+•
+Weighted interval score (WIS) from 23 quantiles, the standard used by forecasting hubs. This is
+the primary metric.
+Coverage of the 50% and 90% intervals.
+Mean absolute error on the case scale.
+Outbreak detection: an outbreak week is above that district's 2013–2019 90th percentile. Report
+sensitivity at a fixed 10% false-alarm rate.
+Statistics
+•
+•
+•
+Diebold–Mariano tests on WIS differences, with Harvey's small-sample correction.
+Moving-block bootstrap (block of 8 weeks, resampling districts within state) for confidence
+intervals on embedding gain and ID share.
+Holm correction across the main comparisons. The primary comparisons are fixed before any
+test-set result is seen (see the January design freeze).
+Team
+Three people cover the paper. Each owns one block of the pipeline, and every block has a named
+reviewer from another role.
+=== PAGE 6 ===
+Role Owns Reviews Week-1 task
+ML / CV lead Models (LightGBM, TimesFM),
+controls C1–C5, the experiment
+runner and result tables
+Split code Set up repo, config-driven
+runner, and seasonal-naive
+baseline on Brazil
+Geospatial
+lead
+Earth Engine extraction (AlphaEarth,
+ERA5-Land, MODIS, VIIRS), GAUL
+joins, spatial splits S2–S5 and buffers
+Feature
+pipeline
+Pull AlphaEarth means for 100
+test municipalities and check
+against GAUL boundaries
+Healthcare /
+epi lead
+Prediction target, reporting-lag check,
+outbreak definition, WIS and
+statistics, framing and discussion
+Controls and
+metrics
+Write the target and outbreak
+definitions; list what the earlier
+papers did and did not test
+Adi (also a
+lead above)
+OpenDengue cleaning, data
+versioning, faculty sponsor contact,
+submission logistics
+Everything
+at the
+design
+freeze
+Download OpenDengue v1.3.1
+and tabulate district-weeks per
+country
+Faculty sponsor: a medical-geography or epidemiology faculty member is worth asking in December.
+They are not needed for the work. They add credibility for the PhD application and for a health journal.
+Meetings: 30 minutes weekly, plus a 2-hour design freeze on Jan 15.
+Compute and budget
+Paper 1 costs $0 in compute: about 5–20 GPU-hours on the team's RTX A6000, a few hundred
+CPU-hours, and the free Earth Engine tier.
+Item Estimate Where it runs Cost
+Earth Engine extraction (embeddings,
+climate, MODIS, VIIRS for ~7,000 districts × 9
+years)
+30–100
+EECU-hours over
+2–3 months
+Earth Engine Community
+tier (150/month)
+$0
+LightGBM grid (levels × controls × splits ×
+horizons, with tuning)
+200–500
+CPU-hours
+Team workstation or lab
+server
+$0
+TimesFM 2.5 zero-shot inference 5–20 GPU-hours RTX A6000 (48 GB) $0
+Bootstrap and Diebold–Mariano tests ~20 CPU-hours Workstation $0
+Storage (tables, not images) under 50 GB Workstation plus a
+shared drive
+$0
+Possible costs, all optional:
+•
+Earth Engine Contributor tier if extraction runs over quota: needs a billing account, but is not
+charged.
+=== PAGE 7 ===
+•
+Journal fee: Epidemics can be published free via the subscription route. PLOS charges an
+open-access fee (PLOS NTD is $2,670); check whether UW has a publisher agreement first.
+The A6000 is barely used here. Its real job starts with the Paper 2 imagery pipeline in January.
+Timeline
+Paper 1 runs about 24 weeks, from Nov 17 to submission on Apr 30, 2027. The Jan 15 design freeze is
+the one gate: the primary comparisons and splits are locked before anyone looks at test results.
+Paper 1 timeline · Nov 2026 to Apr 2027
+If data building slips past Jan 15, cut Peru and Colombia to sensitivity analyses rather than moving the
+freeze. A Brazil-only preprint can go up in mid-March if a competing paper appears.
+Risks
+The biggest risk is being scooped, since two related papers came out in the past six weeks. Speed and
+the cross-country design are the defence.
+Risk Likelihood Effect Fallback
+Another group publishes a
+similar control study first
+Medium Novelty drops Post the preprint as soon as S1–S4
+on Brazil are done (target
+mid-March), then add countries
+OpenDengue gaps
+(monthly-only years,
+missing districts) in
+Colombia or Peru
+Medium Fewer country
+pairs for S5
+Use monthly data for that country,
+or swap in Mexico or Thailand from
+OpenDengue
+=== PAGE 8 ===
+Risk Likelihood Effect Fallback
+Earth Engine quota or
+timeouts
+Medium Data build
+slips 2–4
+weeks
+Export per state, run overnight, or
+move to the Contributor tier
+PDFM access not granted
+or not available outside
+Brazil
+Medium L5 limited to
+Brazil
+L5 is optional; the core result uses
+AlphaEarth only
+Results are null
+everywhere (embeddings
+never help)
+Low–medium Weaker
+headline
+Still publishable as a correction with
+the ID controls; RQ5 stratification
+shows where to look
+Reporting changes
+(COVID-19 years, new case
+definitions) distort
+2020–2021
+High Noisy test
+years
+Report 2020–2021 and 2022 onward
+separately; COVID-19 years are a
+sensitivity check
+Teammates' time drops
+during term
+Medium Experiments
+slip
+The config-driven runner lets one
+person run the full grid
+4. Data pipeline. District boundaries, case tables, climate features and population weights carry
+Hand-off to Paper 2
+Paper 1 is built so Paper 2 starts with its evaluation already done. The model paper reuses these five
+pieces unchanged.
+1. Splits S1–S5 and their buffers. The model is scored on exactly the same held-out districts, states
+and Taiwan.
+2. Controls C1–C5. Paper 2 must show its learned image features beat a district ID; the code is
+already written.
+3. Baselines. LightGBM with AlphaEarth (L4) becomes the number the fine-tuned model has to
+beat.
+over.
+5. RQ5 findings. Where imagery helped most decides which districts to sample image chips from,
+which saves storage and GPU time.
+Imagery pipeline overlap: downloading and chipping HLS imagery for Paper 2 starts in January, in
+parallel with Paper 1 experiments. The geospatial lead owns both, so the January–March workload
+needs watching.
+Sources
+Papers this one responds to
+•
+•
+Brittain et al., 2026: place embeddings for dengue forecasting in Brazil (medRxiv)
+Muslim et al., 2026: dengue forecasting in Mexico with place embeddings (arXiv)
+=== PAGE 9 ===
+•
+Nazir et al., 2026: AlphaEarth embeddings for health outcomes (arXiv)
+Data and tools
+•
+•
+•
+•
+•
+•
+•
+OpenDengue
+AlphaEarth Satellite Embedding V1 (Earth Engine catalog)
+Population Dynamics Foundation Model (PDFM)
+ERA5-Land daily aggregates (Earth Engine catalog)
+Global Human Settlement Layer
+WorldPop
+TimesFM
+The companion model-building plan (Paper 2) is a separate doc.
