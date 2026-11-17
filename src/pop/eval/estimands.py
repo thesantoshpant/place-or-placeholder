@@ -72,6 +72,8 @@ def id_share_gate(g_emb: float, lo: float, hi: float, wis_l3: float, min_rel: fl
     """Return (estimable, reason)."""
     if not (lo > 0 or hi < 0):
         return False, "not estimable: G_emb 95% CI includes 0"
+    if hi < 0:
+        return False, "not estimable: G_emb significantly negative (embeddings hurt)"
     if not g_emb >= min_rel * wis_l3:
         return False, f"not estimable: G_emb < {min_rel:.0%} of WIS(L3)"
     return True, ""
