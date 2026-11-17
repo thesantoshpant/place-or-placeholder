@@ -1,18 +1,18 @@
 variant,vs,estimand,variant_desc,variant_status,primary_status,variant_pct,variant_lo95_pct,variant_hi95_pct,variant_p,variant_cls,primary_pct,primary_cls,variant_horizons
-BR_S1_3seeds,BR_S1,G_emb,"Brazil S1, primary + 2 extra seeds (seed-averaged; extra seeds h1/h4)",pending,pending,,,,,pending,,pending,
-BR_S1_3seeds,BR_S1,G_id,"Brazil S1, primary + 2 extra seeds (seed-averaged; extra seeds h1/h4)",pending,pending,,,,,pending,,pending,
-BR_S1_3seeds,BR_S1,G_excess,"Brazil S1, primary + 2 extra seeds (seed-averaged; extra seeds h1/h4)",pending,pending,,,,,pending,,pending,
-BR_S1_yref,BR_S1,G_emb,Brazil S1 sensitivity: yearly features aligned to the origin year (strictly causal) (G_emb only),pending,pending,,,,,pending,,pending,
-BR_S1_delay2,BR_S1,G_emb,Brazil S1 sensitivity: 2-week reporting delay (G_emb only),pending,pending,,,,,pending,,pending,
-BR_S1_ctrlC3,BR_S1,G_emb,"Brazil S1 controls panel: C3 in place of C* (h1, h4)",pending,pending,,,,,pending,,pending,
-BR_S1_ctrlC3,BR_S1,G_id,"Brazil S1 controls panel: C3 in place of C* (h1, h4)",pending,pending,,,,,pending,,pending,
-BR_S1_ctrlC3,BR_S1,G_excess,"Brazil S1 controls panel: C3 in place of C* (h1, h4)",pending,pending,,,,,pending,,pending,
-BR_S1_ctrlC6,BR_S1,G_emb,"Brazil S1 controls panel: C6 in place of C* (h1, h4)",pending,pending,,,,,pending,,pending,
-BR_S1_ctrlC6,BR_S1,G_id,"Brazil S1 controls panel: C6 in place of C* (h1, h4)",pending,pending,,,,,pending,,pending,
-BR_S1_ctrlC6,BR_S1,G_excess,"Brazil S1 controls panel: C6 in place of C* (h1, h4)",pending,pending,,,,,pending,,pending,
-BR_S1_perlevel,BR_S1,G_emb,"Brazil S1, per-level tuning (L3/L4 31 leaves; superseded primary)",available,pending,0.23528364896259074,-0.07694125792148465,0.547508555846666,0.1297133513709073,equivalent,,pending,"1,2,3,4"
-BR_S1_perlevel,BR_S1,G_id,"Brazil S1, per-level tuning (L3/L4 31 leaves; superseded primary)",available,pending,-0.06909175415577332,-0.3133746226003003,0.17519111428875367,0.5571800392280055,equivalent,,pending,"1,2,3,4"
-BR_S1_perlevel,BR_S1,G_excess,"Brazil S1, per-level tuning (L3/L4 31 leaves; superseded primary)",available,pending,0.2645150665649089,-0.09920624094921812,0.628236374079036,0.14269227436427936,equivalent,,pending,"1,2,3,4"
+BR_S1_3seeds,BR_S1,G_emb,"Brazil S1, primary + 2 extra seeds (seed-averaged; extra seeds h1/h4)",available,available,0.28824533857020374,-0.35252194338431314,0.9290126205247206,0.3544587893890266,equivalent,0.28824533857020374,equivalent,"1,2,3,4"
+BR_S1_3seeds,BR_S1,G_id,"Brazil S1, primary + 2 extra seeds (seed-averaged; extra seeds h1/h4)",available,available,0.011671966705330236,-0.14708835929752404,0.1704322927081845,0.8780973663707295,equivalent,0.011671966705330236,equivalent,"1,2,3,4"
+BR_S1_3seeds,BR_S1,G_excess,"Brazil S1, primary + 2 extra seeds (seed-averaged; extra seeds h1/h4)",available,available,0.2614919199623063,-0.37887318359567224,0.9018570235202849,0.3994714430887798,equivalent,0.2614919199623063,equivalent,"1,2,3,4"
+BR_S1_yref,BR_S1,G_emb,Brazil S1 sensitivity: yearly features aligned to the origin year (strictly causal) (G_emb only),pending,available,,,,,pending,0.28824533857020374,equivalent,
+BR_S1_delay2,BR_S1,G_emb,Brazil S1 sensitivity: 2-week reporting delay (G_emb only),pending,available,,,,,pending,0.28824533857020374,equivalent,
+BR_S1_ctrlC3,BR_S1,G_emb,"Brazil S1 controls panel: C3 in place of C* (h1, h4)",pending,available,,,,,pending,0.28824533857020374,equivalent,
+BR_S1_ctrlC3,BR_S1,G_id,"Brazil S1 controls panel: C3 in place of C* (h1, h4)",pending,available,,,,,pending,0.011671966705330236,equivalent,
+BR_S1_ctrlC3,BR_S1,G_excess,"Brazil S1 controls panel: C3 in place of C* (h1, h4)",pending,available,,,,,pending,0.2614919199623063,equivalent,
+BR_S1_ctrlC6,BR_S1,G_emb,"Brazil S1 controls panel: C6 in place of C* (h1, h4)",pending,available,,,,,pending,0.28824533857020374,equivalent,
+BR_S1_ctrlC6,BR_S1,G_id,"Brazil S1 controls panel: C6 in place of C* (h1, h4)",pending,available,,,,,pending,0.011671966705330236,equivalent,
+BR_S1_ctrlC6,BR_S1,G_excess,"Brazil S1 controls panel: C6 in place of C* (h1, h4)",pending,available,,,,,pending,0.2614919199623063,equivalent,
+BR_S1_perlevel,BR_S1,G_emb,"Brazil S1, per-level tuning (L3/L4 31 leaves; superseded primary)",available,available,0.23528364896259074,-0.07694125792148465,0.547508555846666,0.1297133513709073,equivalent,0.28824533857020374,equivalent,"1,2,3,4"
+BR_S1_perlevel,BR_S1,G_id,"Brazil S1, per-level tuning (L3/L4 31 leaves; superseded primary)",available,available,-0.06909175415577332,-0.3133746226003003,0.17519111428875367,0.5571800392280055,equivalent,0.011671966705330236,equivalent,"1,2,3,4"
+BR_S1_perlevel,BR_S1,G_excess,"Brazil S1, per-level tuning (L3/L4 31 leaves; superseded primary)",available,available,0.2645150665649089,-0.09920624094921812,0.628236374079036,0.14269227436427936,equivalent,0.2614919199623063,equivalent,"1,2,3,4"
 TW_S1_BRparams,TW_S1,G_emb,Taiwan S1 with Brazil's tuned params and C*,available,available,-0.862820872606049,-1.7673989572334146,0.04175721202131654,0.060042995212279376,inconclusive,-0.9327580560427193,inferior,"1,2,3,4"
 TW_S1_BRparams,TW_S1,G_id,Taiwan S1 with Brazil's tuned params and C*,available,available,-0.7552492157667642,-1.72547957163356,0.21498114010003191,0.11720668687676235,inconclusive,-0.6516242520999181,inconclusive,"1,2,3,4"
 TW_S1_BRparams,TW_S1,G_excess,Taiwan S1 with Brazil's tuned params and C*,available,available,-0.27077178200240604,-0.9110549666509962,0.369511402646184,0.3797449555878734,equivalent,-0.39161610208549597,equivalent,"1,2,3,4"

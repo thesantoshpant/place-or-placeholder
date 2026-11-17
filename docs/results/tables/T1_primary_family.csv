@@ -1,9 +1,42 @@
-cell,country,split,C_star,status,horizons,missing,G_excess,pct_of_WIS_ref,lo95,hi95,lo90,hi90,lo95_pct,hi95_pct,lo90_pct,hi90_pct,DM_p,TOST_p,TOST_class,MDE,MDE_pct,WIS_ref,n_seeds,seed_sd,T_weeks,n_rows,sec_horizons,sec_G_excess,sec_pct,sec_lo95_pct,sec_hi95_pct,sec_DM_p,sec_TOST_class,Holm_p_available,p_bonf14
-BR_S1,brazil,S1,C1,pending,"h{1,4}",L4: brazil_s1_sens_seed2_L4: not started; L3C: brazil_s1_sens_seed2_L3_Cstar: not started; L4C: brazil_s1_sens_seed2_L4_Cstar: not started,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-BR_S2,brazil,S2,selection pending (stale),pending,"h{1,4}",L3: brazil_s2_L3: not started; L4: brazil_s2_L4: not started; L3C: brazil_s2_L3_Cstar: not started; L4C: brazil_s2_L4_Cstar: not started,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-BR_S3,brazil,S3,selection pending (stale),pending,"h{1,4}",L3: brazil_s3_L3: not started; L4: brazil_s3_L4: not started; L3C: brazil_s3_L3_Cstar: not started; L4C: brazil_s3_L4_Cstar: not started,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-BR_S4,brazil,S4,selection pending (stale),pending,"h{1,4}",L3: brazil_s4_L3: not started; L4: brazil_s4_L4: not started; L3C: brazil_s4_L3_Cstar: not started; L4C: brazil_s4_L4_Cstar: not started,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-BR_S5,brazil,S5,C3,available,"h{1,4}",,-0.0012072348793099872,-0.6328310988785667,-0.001670877515012184,-0.0007435922436077904,-0.0015890755726633732,-0.0008253941859566012,-0.8758720212929999,-0.3897901764641335,-0.8329915396616315,-0.4326706580955019,4.6613522796529594e-05,0.00277364552553806,equivalent,0.0006527532001532339,0.3421724570992974,0.19076731239177647,1.0,,"cell                BR_S5
+cell,country,split,C_star,status,horizons,G_excess,pct_of_WIS_ref,lo95,hi95,lo90,hi90,lo95_pct,hi95_pct,lo90_pct,hi90_pct,DM_p,TOST_p,TOST_class,MDE,MDE_pct,WIS_ref,n_seeds,seed_sd,T_weeks,n_rows,missing,sec_horizons,sec_G_excess,sec_pct,sec_lo95_pct,sec_hi95_pct,sec_DM_p,sec_TOST_class,Holm_p_available,p_bonf14
+BR_S1,brazil,S1,C1,available,"h{1,4}",0.00044037815080393976,0.2614919199623063,-0.0006380597611012782,0.0015188160627091578,-0.0004477875361087818,0.0013285438377166614,-0.37887318359567224,0.9018570235202849,-0.2658915351238819,0.7888753750484945,0.3994714430887798,0.013223130797430685,equivalent,0.001518311181836306,0.9015572305615441,0.1684098502421871,3.0,8.379534093183143e-06,"cell                BR_S1
+horizon            pooled
+test_year          pooled
+stratum               all
+pooled_over           1,4
+estimand         G_excess
+estimate          0.00044
+se               0.000509
+df                   16.0
+T                   261.0
+p                0.399471
+lo95            -0.000638
+hi95             0.001519
+lo90            -0.000448
+hi90             0.001329
+wis_ref           0.16841
+margin           0.001684
+pct_of_ref       0.261492
+tost_p           0.013223
+cls            equivalent
+mde              0.001518
+mde_pct          0.901557
+n_seeds               3.0
+seed_sd          0.000008
+boot_lo               NaN
+boot_hi               NaN
+n_rows          2879874.0
+n_weeks             261.0
+reason                NaN
+lo95_pct        -0.378873
+hi95_pct         0.901857
+lo90_pct        -0.265892
+hi90_pct         0.788875
+Name: 14, dtype: object",2879874.0,,pooled_h1-4,0.0004556353258137567,0.2690171258658315,-0.3675119527954904,0.9055462045271534,0.38356738965038173,equivalent,0.6513350896075908,1.0
+BR_S2,brazil,S2,C1,pending,"h{1,4}",,,,,,,,,,,,,,,,,,,,,L3: brazil_s2_L3: partial (4 chunks); L4: brazil_s2_L4: not started; L3C: brazil_s2_L3_Cstar: not started; L4C: brazil_s2_L4_Cstar: not started,,,,,,,,,
+BR_S3,brazil,S3,C1,pending,"h{1,4}",,,,,,,,,,,,,,,,,,,,,L3: brazil_s3_L3: not started; L4: brazil_s3_L4: not started; L3C: brazil_s3_L3_Cstar: not started; L4C: brazil_s3_L4_Cstar: not started,,,,,,,,,
+BR_S4,brazil,S4,selection pending (stale),pending,"h{1,4}",,,,,,,,,,,,,,,,,,,,,L3: brazil_s4_L3: not started; L4: brazil_s4_L4: not started; L3C: brazil_s4_L3_Cstar: not started; L4C: brazil_s4_L4_Cstar: not started,,,,,,,,,
+BR_S5,brazil,S5,C3,available,"h{1,4}",-0.0012072348793099872,-0.6328310988785667,-0.001670877515012184,-0.0007435922436077904,-0.0015890755726633732,-0.0008253941859566012,-0.8758720212929999,-0.3897901764641335,-0.8329915396616315,-0.4326706580955019,4.6613522796529594e-05,0.00277364552553806,equivalent,0.0006527532001532339,0.3421724570992974,0.19076731239177647,1.0,,"cell                BR_S5
 horizon            pooled
 test_year          pooled
 stratum               all
@@ -36,8 +69,8 @@ lo95_pct        -0.875872
 hi95_pct         -0.38979
 lo90_pct        -0.832992
 hi90_pct        -0.432671
-Name: 8, dtype: object",2879874.0,,,,,,,,0.00018645409118611838,0.0006525893191514144
-CO_S1,colombia,S1,C1,available,"h{1,4}",,-0.0004811134142903822,-0.3907774330619323,-0.0007099731056187962,-0.0002522537229619682,-0.000667850541247149,-0.0002943762873336154,-0.5766654171676618,-0.2048894489562029,-0.5424519716676715,-0.2391028944561933,0.0007320290363967303,8.613528520060977e-06,equivalent,0.00031989779742923796,0.2598323730090654,0.12311699028283779,1.0,,"cell                CO_S1
+Name: 113, dtype: object",2879874.0,,,,,,,,,0.0005127487507618256,0.0006525893191514144
+CO_S1,colombia,S1,C1,available,"h{1,4}",-0.0004811134142903822,-0.3907774330619323,-0.0007099731056187962,-0.0002522537229619682,-0.000667850541247149,-0.0002943762873336154,-0.5766654171676618,-0.2048894489562029,-0.5424519716676715,-0.2391028944561933,0.0007320290363967303,8.613528520060977e-06,equivalent,0.00031989779742923796,0.2598323730090654,0.12311699028283779,1.0,,"cell                CO_S1
 horizon            pooled
 test_year          pooled
 stratum               all
@@ -70,12 +103,144 @@ lo95_pct        -0.576665
 hi95_pct        -0.204889
 lo90_pct        -0.542452
 hi90_pct        -0.239103
-Name: 110, dtype: object",335980.0,pooled_h1-4,-0.00047361543329624723,-0.38439936256663715,-0.5962269459168188,-0.17257177921645547,0.002107402812446361,equivalent,0.002196087109190191,0.010248406509554223
-CO_S2,colombia,S2,selection pending (stale),pending,"h{1,4}",L3: colombia_s2_L3: not started; L4: colombia_s2_L4: not started; L3C: colombia_s2_L3_Cstar: not started; L4C: colombia_s2_L4_Cstar: not started,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-CO_S3,colombia,S3,selection pending (stale),pending,"h{1,4}",L3: colombia_s3_L3: not started; L4: colombia_s3_L4: not started; L3C: colombia_s3_L3_Cstar: not started; L4C: colombia_s3_L4_Cstar: not started,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-CO_S4,colombia,S4,selection pending (stale),pending,"h{1,4}",L3: colombia_s4_L3: not started; L4: colombia_s4_L4: not started; L3C: colombia_s4_L3_Cstar: not started; L4C: colombia_s4_L4_Cstar: not started,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-CO_S5,colombia,S5,C2,pending,"h{1,4}",L4: colombia_s5_L4: not started; L3C: colombia_s5_L3_Cstar: not started; L4C: colombia_s5_L4_Cstar: not started,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-PE_S1,peru,S1,C1,available,"h{1,4}",,-0.0015084031718033217,-0.6162820457138947,-0.0033094371628587744,0.00029263081925213087,-0.002987421780595919,-2.9384563010724334e-05,-1.3521230550383159,0.11955896361052655,-1.2205585620420296,-0.012005529385759777,0.09405014294872141,0.14110200163904316,inconclusive,0.0025299625024501698,1.033656316650024,0.2447585780397031,1.0,,"cell                  PE_S1
+Name: 215, dtype: object",335980.0,,pooled_h1-4,-0.00047361543329624723,-0.38439936256663715,-0.5962269459168188,-0.17257177921645547,0.002107402812446361,equivalent,0.005856232291173842,0.010248406509554223
+CO_S2,colombia,S2,C1,available,"h{1,4}",-0.0005899247055636411,-0.47755622672756415,-0.0008488818346616055,-0.00033096757646567667,-0.0008012197134876629,-0.00037862969763961926,-0.6871873682781962,-0.26792508517693203,-0.6486038973182663,-0.306508556136862,0.0003937349966694206,9.520338416479357e-05,equivalent,0.000361967696216816,0.2930203220382397,0.12352989502536228,1.0,,"cell                CO_S2
+horizon            pooled
+test_year          pooled
+stratum               all
+pooled_over           1,4
+estimand         G_excess
+estimate         -0.00059
+se               0.000118
+df                   11.0
+T                   157.0
+p                0.000394
+lo95            -0.000849
+hi95            -0.000331
+lo90            -0.000801
+hi90            -0.000379
+wis_ref           0.12353
+margin           0.001235
+pct_of_ref      -0.477556
+tost_p           0.000095
+cls            equivalent
+mde              0.000362
+mde_pct           0.29302
+n_seeds               1.0
+seed_sd               NaN
+boot_lo               NaN
+boot_hi               NaN
+n_rows           335980.0
+n_weeks             157.0
+reason                NaN
+lo95_pct        -0.687187
+hi95_pct        -0.267925
+lo90_pct        -0.648604
+hi90_pct        -0.306509
+Name: 284, dtype: object",335980.0,,,,,,,,,0.003543614970024785,0.0055122899533718885
+CO_S3,colombia,S3,C1,available,"h{1,4}",-0.0008563175394107257,-0.6825033224561375,-0.0013457706251091234,-0.00036686445371232796,-0.0012556847782325467,-0.00045695030058890465,-1.0726078593846273,-0.2923987855276476,-1.000807520176524,-0.36419912473575083,0.0026961898738871405,0.05038119489392451,inferior,0.0006841526489484607,0.5452842368449137,0.1254671605596116,1.0,,"cell              CO_S3
+horizon          pooled
+test_year        pooled
+stratum             all
+pooled_over         1,4
+estimand       G_excess
+estimate      -0.000856
+se             0.000222
+df                 11.0
+T                 157.0
+p              0.002696
+lo95          -0.001346
+hi95          -0.000367
+lo90          -0.001256
+hi90          -0.000457
+wis_ref        0.125467
+margin         0.001255
+pct_of_ref    -0.682503
+tost_p         0.050381
+cls            inferior
+mde            0.000684
+mde_pct        0.545284
+n_seeds             1.0
+seed_sd             NaN
+boot_lo             NaN
+boot_hi             NaN
+n_rows         335980.0
+n_weeks           157.0
+reason              NaN
+lo95_pct      -1.072608
+hi95_pct      -0.292399
+lo90_pct      -1.000808
+hi90_pct      -0.364199
+Name: 350, dtype: object",335980.0,,,,,,,,,0.01617713924332284,0.037746658234419965
+CO_S4,colombia,S4,C1,available,"h{1,4}",-0.0005438068949156018,-0.44089675281641844,-0.0008376434679291799,-0.00024997032190202367,-0.0007835616421185026,-0.0003040521477127009,-0.6791276250463435,-0.20266588058649332,-0.6352802564137493,-0.24651324921908746,0.0018407787508988777,0.0001553368518725715,equivalent,0.0004107218355735362,0.33299674077004005,0.12334109776082504,1.0,,"cell                CO_S4
+horizon            pooled
+test_year          pooled
+stratum               all
+pooled_over           1,4
+estimand         G_excess
+estimate        -0.000544
+se               0.000134
+df                   11.0
+T                   157.0
+p                0.001841
+lo95            -0.000838
+hi95             -0.00025
+lo90            -0.000784
+hi90            -0.000304
+wis_ref          0.123341
+margin           0.001233
+pct_of_ref      -0.440897
+tost_p           0.000155
+cls            equivalent
+mde              0.000411
+mde_pct          0.332997
+n_seeds               1.0
+seed_sd               NaN
+boot_lo               NaN
+boot_hi               NaN
+n_rows           335980.0
+n_weeks             157.0
+reason                NaN
+lo95_pct        -0.679128
+hi95_pct        -0.202666
+lo90_pct         -0.63528
+hi90_pct        -0.246513
+Name: 416, dtype: object",335980.0,,,,,,,,,0.012885451256292145,0.02577090251258429
+CO_S5,colombia,S5,C2,available,"h{1,4}",0.00023082006464694512,0.18451027023719185,-0.00026299256139176606,0.0007246326906856562,-0.00017210432324414574,0.000633744452538036,-0.21022794810749243,0.579248488581876,-0.13757476083952141,0.5065953013139052,0.3256675448037954,0.0004171044253252007,equivalent,0.0006902463710214704,0.5517611505837435,0.12509876244299087,1.0,,"cell                CO_S5
+horizon            pooled
+test_year          pooled
+stratum               all
+pooled_over           1,4
+estimand         G_excess
+estimate         0.000231
+se               0.000224
+df                   11.0
+T                   157.0
+p                0.325668
+lo95            -0.000263
+hi95             0.000725
+lo90            -0.000172
+hi90             0.000634
+wis_ref          0.125099
+margin           0.001251
+pct_of_ref        0.18451
+tost_p           0.000417
+cls            equivalent
+mde               0.00069
+mde_pct          0.551761
+n_seeds               1.0
+seed_sd               NaN
+boot_lo               NaN
+boot_hi               NaN
+n_rows           335980.0
+n_weeks             157.0
+reason                NaN
+lo95_pct        -0.210228
+hi95_pct         0.579248
+lo90_pct        -0.137575
+hi90_pct         0.506595
+Name: 482, dtype: object",335980.0,,,,,,,,,0.6513350896075908,1.0
+PE_S1,peru,S1,C1,available,"h{1,4}",-0.0015084031718033217,-0.6162820457138947,-0.0033094371628587744,0.00029263081925213087,-0.002987421780595919,-2.9384563010724334e-05,-1.3521230550383159,0.11955896361052655,-1.2205585620420296,-0.012005529385759777,0.09405014294872141,0.14110200163904316,inconclusive,0.0025299625024501698,1.033656316650024,0.2447585780397031,1.0,,"cell                  PE_S1
 horizon              pooled
 test_year            pooled
 stratum                 all
@@ -108,9 +273,42 @@ lo95_pct          -1.352123
 hi95_pct           0.119559
 lo90_pct          -1.220559
 hi90_pct          -0.012006
-Name: 185, dtype: object",48054.0,pooled_h1-4,-0.0014040705348052178,-0.5706644635894443,-1.292955819217536,0.15162689203864751,0.11228079110052418,inconclusive,0.18810028589744282,1.0
-PE_S5,peru,S5,C3,pending,"h{1,4}",L3: peru_s5_L3: partial (5 chunks); L4: peru_s5_L4: not started; L3C: peru_s5_L3_Cstar: not started; L4C: peru_s5_L4_Cstar: not started,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-TW_S1,taiwan,S1,C1,available,"h{1,4}",,-0.00015008556035703518,-0.39161610208549597,-0.0003848430902662251,8.467196955215476e-05,-0.0003428696815975245,4.2698560883454106e-05,-1.0041655610711204,0.22093335690012855,-0.894644947262734,0.11141274309174218,0.1918901202940992,0.025687313755361634,equivalent,0.00032977042675914057,0.860465249310252,0.038324665292815044,1.0,,"cell                TW_S1
+Name: 554, dtype: object",48054.0,,pooled_h1-4,-0.0014040705348052178,-0.5706644635894443,-1.292955819217536,0.15162689203864751,0.11228079110052418,inconclusive,0.37620057179488564,1.0
+PE_S5,peru,S5,C3,available,"h{1,4}",0.0024200051416860212,1.0084434845246382,4.3982195751191434e-05,0.004796028087620851,0.0004688025717131919,0.00437120771165885,0.018327877894290353,1.9985590911549855,0.1953553283127281,1.8215316407365478,0.046429540542370584,0.5071672958241809,superior,0.003337665467742538,1.390842910409211,0.23997429492310793,1.0,,"cell              PE_S5
+horizon          pooled
+test_year        pooled
+stratum             all
+pooled_over         1,4
+estimand       G_excess
+estimate        0.00242
+se             0.001108
+df                 14.0
+T                 209.0
+p               0.04643
+lo95           0.000044
+hi95           0.004796
+lo90           0.000469
+hi90           0.004371
+wis_ref        0.239974
+margin           0.0024
+pct_of_ref     1.008443
+tost_p         0.507167
+cls            superior
+mde            0.003338
+mde_pct        1.390843
+n_seeds             1.0
+seed_sd             NaN
+boot_lo             NaN
+boot_hi             NaN
+n_rows          48054.0
+n_weeks           209.0
+reason              NaN
+lo95_pct       0.018328
+hi95_pct       1.998559
+lo90_pct       0.195355
+hi90_pct       1.821532
+Name: 638, dtype: object",48054.0,,,,,,,,,0.23214770271185292,0.6500135675931882
+TW_S1,taiwan,S1,C1,available,"h{1,4}",-0.00015008556035703518,-0.39161610208549597,-0.0003848430902662251,8.467196955215476e-05,-0.0003428696815975245,4.2698560883454106e-05,-1.0041655610711204,0.22093335690012855,-0.894644947262734,0.11141274309174218,0.1918901202940992,0.025687313755361634,equivalent,0.00032977042675914057,0.860465249310252,0.038324665292815044,1.0,,"cell                TW_S1
 horizon            pooled
 test_year          pooled
 stratum               all
@@ -143,5 +341,38 @@ lo95_pct        -1.004166
 hi95_pct         0.220933
 lo90_pct        -0.894645
 hi90_pct         0.111413
-Name: 275, dtype: object",119130.0,pooled_h1-4,-0.00013603316458507281,-0.35276474458204454,-0.9347838553772895,0.22925436621320028,0.21460888708189688,equivalent,0.1918901202940992,1.0
-TW_S5,taiwan,S5,selection pending (stale),pending,"h{1,4}",L3: taiwan_s5_L3: not started; L4: taiwan_s5_L4: not started; L3C: taiwan_s5_L3_Cstar: not started; L4C: taiwan_s5_L4_Cstar: not started,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+Name: 725, dtype: object",119130.0,,pooled_h1-4,-0.00013603316458507281,-0.35276474458204454,-0.9347838553772895,0.22925436621320028,0.21460888708189688,equivalent,0.5756703608822975,1.0
+TW_S5,taiwan,S5,C3,available,"h{1,4}",-0.0028297348681622647,-11.530470484360213,-0.0038842856208975017,-0.0017751841154270277,-0.0036957375060678557,-0.0019637322302566737,-15.82750426850774,-7.233436700212688,-15.059217282548204,-8.001723686172225,4.978455917519668e-05,0.9999392545143886,inferior,0.0014813567509557378,6.036162781849505,0.02454136517673309,1.0,,"cell               TW_S5
+horizon           pooled
+test_year         pooled
+stratum              all
+pooled_over          1,4
+estimand        G_excess
+estimate        -0.00283
+se              0.000492
+df                  14.0
+T                  209.0
+p                0.00005
+lo95           -0.003884
+hi95           -0.001775
+lo90           -0.003696
+hi90           -0.001964
+wis_ref         0.024541
+margin          0.000245
+pct_of_ref     -11.53047
+tost_p          0.999939
+cls             inferior
+mde             0.001481
+mde_pct         6.036163
+n_seeds              1.0
+seed_sd              NaN
+boot_lo              NaN
+boot_hi              NaN
+n_rows          119130.0
+n_weeks            209.0
+reason               NaN
+lo95_pct      -15.827504
+hi95_pct       -7.233437
+lo90_pct      -15.059217
+hi90_pct       -8.001724
+Name: 797, dtype: object",119130.0,,,,,,,,,0.0005127487507618256,0.0006969838284527535
