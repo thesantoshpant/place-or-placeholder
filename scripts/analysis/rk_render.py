@@ -70,7 +70,7 @@ def _save(fig, fdir: Path, name: str):
     plt.close(fig)
 
 
-def fig_forest(t1: pd.DataFrame, sec: pd.DataFrame, fdir: Path) -> str:
+def fig_forest(t1: pd.DataFrame, sec: pd.DataFrame, fdir: Path, hlab: str = "h{1,4}") -> str:
     """F1: G_excess as % of WIS(ref), 95% (thin) and 90% (thick) CI, +-1% band."""
     plt = _plt()
     rows = [(f"{r.cell}", r, True) for r in t1.itertuples()] + \
@@ -96,7 +96,8 @@ def fig_forest(t1: pd.DataFrame, sec: pd.DataFrame, fdir: Path) -> str:
     if len(t1) and len(sec):
         ax.axhline(n - len(t1) - 0.5, color="#BBBBBB", lw=0.6, ls="--")
     ax.set_xlabel("G_excess = WIS(L3+C*) − WIS(L4+C*), % of WIS(L3)   (positive = AlphaEarth helps)")
-    ax.set_title("F1. Excess embedding gain beyond the best ID control (pooled over horizons)\n"
+    ax.set_title(f"F1. Excess embedding gain beyond the best ID control (pooled over {hlab}, "
+                 "primary horizons)\n"
                  "dot = estimate, thick = 90% CI (TOST), thin = 95% CI; blue = primary family, "
                  "grey = secondary", loc="left")
     ax.legend(loc="lower right", frameon=False)
@@ -119,12 +120,15 @@ def fig_ladder(lad: pd.DataFrame, cells: list[str], fdir: Path, name: str, title
     for ax, c in zip(axes[0], cl):
         d = lad[lad.cell == c]
         labs = [x for x in order if x in set(d.label) and x != "L0"]
-        hs = [h for h in d.horizon.unique() if h != "pooled"]
+        hs = [h for h in d.horizon.unique() if str(h).isdigit()]
+        po = d[d.horizon == "pooled"].pooled_over.iloc[0] if "pooled_over" in d and \
+            (d.horizon == "pooled").any() else ""
         for j, h in enumerate(sorted(hs, key=int) + ["pooled"]):
             v = d[d.horizon == h].set_index("label").reindex(labs).wis_log
             sty = dict(color="black", lw=1.6, marker="s", ms=4) if h == "pooled" else \
                 dict(color=OI[j % len(OI)], lw=1.0, marker="o", ms=3)
-            ax.plot(range(len(labs)), v.to_numpy(), label="pooled h" if h == "pooled" else f"h{h}", **sty)
+            ax.plot(range(len(labs)), v.to_numpy(), label=(f"pooled h{{{po}}}" if po else "pooled h") if h == "pooled" else f"h{h}",
+                    **sty)
         ax.set_xticks(range(len(labs)))
         ax.set_xticklabels([x.replace("C*", f"{cstars.get(c) or 'C*'}") for x in labs],
                            rotation=45, ha="right")
@@ -140,7 +144,7 @@ def fig_ladder(lad: pd.DataFrame, cells: list[str], fdir: Path, name: str, title
     return name
 
 
-def fig_per_year(est: pd.DataFrame, cells: list[str], fdir: Path) -> str | None:
+def fig_per_year(est: pd.DataFrame, cells: list[str], fdir: Path, hlab: str = "h{1,4}") -> str | None:
     d = est[(est.stratum == "all") & (est.horizon == "pooled") & (est.test_year != "pooled")
             & est.estimand.isin(["G_emb", "G_excess"]) & est.cell.isin(cells)]
     if d.empty:
@@ -169,7 +173,8 @@ def fig_per_year(est: pd.DataFrame, cells: list[str], fdir: Path) -> str | None:
         ax.set_ylabel("")
     hl, ll = axes[0][0].get_legend_handles_labels()
     fig.legend(hl, ll, loc="lower center", ncol=2, frameon=False, bbox_to_anchor=(0.5, -0.06))
-    fig.suptitle("F3. Per-test-year G_emb and G_excess (95% CI; band = ±1%)", x=0.01, ha="left",
+    fig.suptitle(f"F3. Per-test-year G_emb and G_excess, pooled over {hlab} (95% CI; band = ±1%)",
+                 x=0.01, ha="left",
                  fontsize=8.5)
     fig.tight_layout()
     _save(fig, fdir, "F3_per_year_gains")

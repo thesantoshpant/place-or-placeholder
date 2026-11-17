@@ -31,7 +31,7 @@ def _panel(path: Path) -> None:
     pd.DataFrame(rows).to_parquet(path)
 
 
-def _run(root: Path, name: str, label: str, shift: float, panel: Path, horizons=(1, 2)) -> str:
+def _run(root: Path, name: str, label: str, shift: float, panel: Path, horizons=(1, 2, 3, 4)) -> str:
     d = root / "runs" / name
     d.mkdir(parents=True)
     (d / "config_resolved.yaml").write_text(yaml.safe_dump({"country": "BRAZIL", "panel": str(panel)}))
@@ -55,6 +55,7 @@ def _cell(cid, dirs, group="primary"):
     return {"id": cid, "group": group, "arm": "history", "country": "brazil", "split": "S1",
             "desc": f"synthetic {cid}", "ref": "L3", "ladder": [], "selection": None,
             "cstar": "C1", "estimands": None, "role_labels": None,
+            "primary_horizons": [1, 4], "secondary_horizons": [1, 2, 3, 4],
             "roles": {r: {"dirs": [d], "markers": [None]} for r, d in dirs.items()}}
 
 
@@ -79,6 +80,33 @@ def test_kit_end_to_end(tmp_path, capsys):
     assert (tmp_path / "docs/results/figures/F1_forest_G_excess.pdf").exists()
     brief = (tmp_path / "docs/results/RESULTS_BRIEF.md").read_text()
     assert "CO_S1" in brief and "pending" in brief and "G_excess" in brief
+    assert "h{1,4}" in brief and "pooled_h1-4" in brief
+    # primary pooled = h{1,4} only; S1 secondary row pooled over h1-h4; per-horizon rows kept
+    t3 = pd.read_csv(tmp_path / "docs/results/tables/T3_estimands.csv", dtype={"horizon": str})
+    t3 = t3[(t3.cell == "BR_S1") & (t3.test_year == "pooled")]
+    assert set(t3.horizon) == {"1", "2", "3", "4", "pooled", "pooled_h1-4"}
+    assert set(t3[t3.horizon == "pooled"].pooled_over) == {"1,4"}
+    assert set(t3[t3.horizon == "pooled_h1-4"].pooled_over) == {"1,2,3,4"}
+    from estimands_report import load_cell
+    from pop.eval.estimands import infer_estimand
+    import os
+    cwd = os.getcwd()
+    os.chdir(tmp_path)
+    try:
+        g, _ = load_cell({r: [d] for r, d in dirs.items()}, exclude_units=None, exclude_weeks=None)
+    finally:
+        os.chdir(cwd)
+    for hs, lab in (([1, 4], "pooled"), ([1, 2, 3, 4], "pooled_h1-4")):
+        gp = g[g.horizon.isin(hs)].reset_index(drop=True)
+        gp.attrs = dict(g.attrs)
+        ref = infer_estimand(gp, "G_excess")
+        row = t3[(t3.horizon == lab) & (t3.estimand == "G_excess")].iloc[0]
+        assert abs(row.estimate - ref["estimate"]) < 1e-12 and abs(row.p - ref["p"]) < 1e-9
+        assert abs(row.lo95 - ref["lo95"]) < 1e-12
+    assert abs(r.G_excess - t3[(t3.horizon == "pooled") & (t3.estimand == "G_excess")].estimate.iloc[0]) < 1e-12
+    assert r.sec_horizons == "pooled_h1-4" and np.isfinite(r.sec_DM_p)
+    lad = pd.read_csv(tmp_path / "docs/results/tables/T2_ladder_long.csv", dtype={"horizon": str})
+    assert {"pooled", "pooled_h1-4"} <= set(lad.horizon)
     # second run: cache hit, no recomputation
     capsys.readouterr()
     assert make_results.main(args) == 0
@@ -95,3 +123,22 @@ def test_run_state(tmp_path):
     assert rk_cells.run_state(d) == "complete"
     (tmp_path / "pipe").mkdir()
     assert rk_cells.run_state(d, tmp_path / "pipe" / "stage_L3.done") == "stage not done"
+
+
+def test_cstar_rule_version(tmp_path):
+    sel = tmp_path / "x_controls_2019"
+    sel.mkdir()
+    assert rk_cells._cstar(sel, {"c_star": "C2"}) is None          # plan.json is never used
+    (sel / "selection.json").write_text(json.dumps({"c_star": "C4"}))   # pre-fix (no rule_version)
+    assert rk_cells._cstar(sel) is None
+    assert rk_cells.cstar_label({"cstar": rk_cells._cstar(sel)}) == "selection pending (stale)"
+    (sel / "selection.json").write_text(json.dumps({"c_star": "C1", "rule_version": 2}))
+    assert rk_cells._cstar(sel) == "C1"
+
+
+def test_resolve_horizons():
+    import rk_compute
+    assert rk_compute.resolve_horizons([1, 2, 3, 4], [1, 4], [1, 2, 3, 4]) == ([1, 4], [1, 2, 3, 4])
+    assert rk_compute.resolve_horizons([1, 4], [1, 4], [1, 2, 3, 4]) == ([1, 4], None)
+    assert rk_compute.resolve_horizons([1, 2], None, None) == ([1, 2], None)
+    assert rk_compute.sec_label([1, 2, 3, 4]) == "pooled_h1-4"

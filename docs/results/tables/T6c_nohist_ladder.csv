@@ -1,1 +1,1 @@
-cell,label,horizon,n_rows,wis_log,cov_40,cov_80,cov_80_nonzero
+cell,label,horizon,pooled_over,n_rows,wis_log,cov_40,cov_80,cov_80_nonzero

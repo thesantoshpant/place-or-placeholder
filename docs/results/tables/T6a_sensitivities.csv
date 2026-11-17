@@ -10,9 +10,9 @@ BR_S1_ctrlC3,BR_S1,G_excess,"Brazil S1 controls panel: C3 in place of C* (h1, h4
 BR_S1_ctrlC6,BR_S1,G_emb,"Brazil S1 controls panel: C6 in place of C* (h1, h4)",pending,pending,,,,,pending,,pending,
 BR_S1_ctrlC6,BR_S1,G_id,"Brazil S1 controls panel: C6 in place of C* (h1, h4)",pending,pending,,,,,pending,,pending,
 BR_S1_ctrlC6,BR_S1,G_excess,"Brazil S1 controls panel: C6 in place of C* (h1, h4)",pending,pending,,,,,pending,,pending,
-BR_S1_perlevel,BR_S1,G_emb,"Brazil S1, per-level tuning (L3/L4 31 leaves; superseded primary)",available,pending,0.24405425247618193,-0.10245623289337995,0.5905647378457438,0.15486968343459107,equivalent,,pending,"1,2,3,4"
-BR_S1_perlevel,BR_S1,G_id,"Brazil S1, per-level tuning (L3/L4 31 leaves; superseded primary)",available,pending,-0.06099440781254108,-0.2743327577578573,0.15234394213277516,0.5529568760445153,equivalent,,pending,"1,2,3,4"
-BR_S1_perlevel,BR_S1,G_excess,"Brazil S1, per-level tuning (L3/L4 31 leaves; superseded primary)",available,pending,0.25788910398639353,-0.08736791026213066,0.6031461182349178,0.13288057430958633,equivalent,,pending,"1,2,3,4"
-TW_S1_BRparams,TW_S1,G_emb,Taiwan S1 with Brazil's tuned params and C*,available,available,-0.6085130029942791,-1.4008872165722541,0.18386121058369578,0.12178807468312425,inconclusive,-0.7002480638937058,inconclusive,"1,2,3,4"
-TW_S1_BRparams,TW_S1,G_id,Taiwan S1 with Brazil's tuned params and C*,available,available,-0.5524117839228763,-1.3818603605197255,0.277036792673973,0.17509841023661513,inconclusive,-0.5354267491762322,inconclusive,"1,2,3,4"
-TW_S1_BRparams,TW_S1,G_excess,Taiwan S1 with Brazil's tuned params and C*,available,available,-0.28927157579061896,-0.8887623770850445,0.31021922550380654,0.31825238495006375,equivalent,-0.35649597556004203,equivalent,"1,2,3,4"
+BR_S1_perlevel,BR_S1,G_emb,"Brazil S1, per-level tuning (L3/L4 31 leaves; superseded primary)",available,pending,0.23528364896259074,-0.07694125792148465,0.547508555846666,0.1297133513709073,equivalent,,pending,"1,2,3,4"
+BR_S1_perlevel,BR_S1,G_id,"Brazil S1, per-level tuning (L3/L4 31 leaves; superseded primary)",available,pending,-0.06909175415577332,-0.3133746226003003,0.17519111428875367,0.5571800392280055,equivalent,,pending,"1,2,3,4"
+BR_S1_perlevel,BR_S1,G_excess,"Brazil S1, per-level tuning (L3/L4 31 leaves; superseded primary)",available,pending,0.2645150665649089,-0.09920624094921812,0.628236374079036,0.14269227436427936,equivalent,,pending,"1,2,3,4"
+TW_S1_BRparams,TW_S1,G_emb,Taiwan S1 with Brazil's tuned params and C*,available,available,-0.862820872606049,-1.7673989572334146,0.04175721202131654,0.060042995212279376,inconclusive,-0.9327580560427193,inferior,"1,2,3,4"
+TW_S1_BRparams,TW_S1,G_id,Taiwan S1 with Brazil's tuned params and C*,available,available,-0.7552492157667642,-1.72547957163356,0.21498114010003191,0.11720668687676235,inconclusive,-0.6516242520999181,inconclusive,"1,2,3,4"
+TW_S1_BRparams,TW_S1,G_excess,Taiwan S1 with Brazil's tuned params and C*,available,available,-0.27077178200240604,-0.9110549666509962,0.369511402646184,0.3797449555878734,equivalent,-0.39161610208549597,equivalent,"1,2,3,4"

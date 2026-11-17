@@ -53,11 +53,37 @@ def _plan(pdir: Path) -> dict:
     return json.loads(f.read_text()) if f.exists() else {}
 
 
-def _cstar(sel_dir: Path, plan: dict) -> str | None:
-    f = sel_dir / "selection.json"
-    if f.exists():
-        return json.loads(f.read_text()).get("c_star")
-    return plan.get("c_star")
+SELECTION_RULE_VERSION = 2   # scripts/run/select_control.py RULE_VERSION
+CSTAR_PENDING = "selection pending (stale)"
+PRIMARY_HORIZONS = [1, 4]          # defaults; build_registry reads the manifest's values
+SECONDARY_HORIZONS = [1, 2, 3, 4]
+
+
+def selection_ok(sel_dir: Path | str) -> bool:
+    """True only for a selection.json written under the current rule (rule_version 2)."""
+    f = Path(sel_dir) / "selection.json"
+    if not f.exists():
+        return False
+    try:
+        return json.loads(f.read_text()).get("rule_version") == SELECTION_RULE_VERSION
+    except (ValueError, OSError):
+        return False
+
+
+def _cstar(sel_dir: Path, plan: dict | None = None) -> str | None:
+    """C* only from a rule_version-2 selection.json; anything else (missing file, older rule,
+    plan.json c_star) -> None, shown as CSTAR_PENDING."""
+    if not selection_ok(sel_dir):
+        return None
+    return json.loads((Path(sel_dir) / "selection.json").read_text()).get("c_star")
+
+
+def cstar_label(cell: dict) -> str:
+    if cell.get("cstar"):
+        return cell["cstar"]
+    if cell.get("selection") is None and cell.get("estimands"):
+        return "n/a (no C* run)"
+    return CSTAR_PENDING
 
 
 def _role(d, marker=None):
@@ -82,7 +108,8 @@ def _pipeline_cell(cid, group, arm, country, split, desc, pdir, run_prefix, *, r
             "desc": desc, "roles": roles, "ref": ref, "ladder": list(ladder),
             "selection": {"dir": str(sel), "marker": str(pdir / "stage_select_control.done")},
             "cstar": _cstar(sel, plan), "note": note, "estimands": None,
-            "role_labels": None}
+            "role_labels": None, "primary_horizons": list(PRIMARY_HORIZONS),
+            "secondary_horizons": list(SECONDARY_HORIZONS) if split == "S1" else None}
 
 
 def s1_ladder(country: str) -> list[dict]:
@@ -93,8 +120,12 @@ def s1_ladder(country: str) -> list[dict]:
 
 
 def build_registry(manifest: str = "configs/primary_cells.yaml") -> list[dict]:
+    global PRIMARY_HORIZONS, SECONDARY_HORIZONS
     cells = []
-    for c in yaml.safe_load(Path(manifest).read_text())["cells"]:
+    man = yaml.safe_load(Path(manifest).read_text())
+    PRIMARY_HORIZONS = sorted(int(h) for h in man.get("primary_horizons", [1, 4]))
+    SECONDARY_HORIZONS = sorted(int(h) for h in man.get("secondary_horizons", [1, 2, 3, 4]))
+    for c in man["cells"]:
         country, split = c["country"], c["split"]
         pdir = Path(c["plan"]).parent if c.get("plan") else Path(c["runs"]["L3"]).parent
         plan = _plan(pdir)
@@ -107,7 +138,8 @@ def build_registry(manifest: str = "configs/primary_cells.yaml") -> list[dict]:
                 dirs = [p[len("reuse:"):]] + dirs[1:]
             roles[r] = {"dirs": dirs, "markers": [str(pdir / f"stage_{STAGE[r]}.done")]
                         + [None] * (len(dirs) - 1)}
-        prefix = str(c["runs"]["L3"]).rsplit("_L3", 1)[0]
+        l3 = c["runs"]["L3"]
+        prefix = str(l3 if isinstance(l3, str) else l3[0]).rsplit("_L3", 1)[0]
         sel = Path(f"{prefix}_controls_2019")
         cells.append({
             "id": f"{COUNTRY_CODE[country]}_{split}", "group": "primary", "arm": "history",
@@ -116,7 +148,9 @@ def build_registry(manifest: str = "configs/primary_cells.yaml") -> list[dict]:
             "roles": roles, "ref": "L3",
             "ladder": s1_ladder(country) if split == "S1" else [],
             "selection": {"dir": str(sel), "marker": str(pdir / "stage_select_control.done")},
-            "cstar": _cstar(sel, plan), "note": "", "estimands": None, "role_labels": None})
+            "cstar": _cstar(sel, plan), "note": "", "estimands": None, "role_labels": None,
+            "primary_horizons": list(PRIMARY_HORIZONS),
+            "secondary_horizons": list(SECONDARY_HORIZONS) if c.get("secondary") else None})
     by = {c["id"]: c for c in cells}
 
     # ---- secondary arms
@@ -127,9 +161,13 @@ def build_registry(manifest: str = "configs/primary_cells.yaml") -> list[dict]:
         roles = {}
         for r in ROLES:
             st = STAGE[r]
-            dirs = list(br["roles"][r]["dirs"]) + [f"runs/brazil_s1_sens_seed{k}_{st}" for k in (1, 2)]
-            mk = list(br["roles"][r]["markers"]) + [
-                f"runs/brazil_s1_sens_seeds/stage_seed{k}_{st}.done" for k in (1, 2)]
+            dirs = list(br["roles"][r]["dirs"])
+            mk = list(br["roles"][r]["markers"])
+            for k in (1, 2):   # skip seed runs the manifest already lists in BR_S1 (row 22)
+                d = f"runs/brazil_s1_sens_seed{k}_{st}"
+                if d not in dirs:
+                    dirs.append(d)
+                    mk.append(f"runs/brazil_s1_sens_seeds/stage_seed{k}_{st}.done")
             roles[r] = {"dirs": dirs, "markers": mk}
         sec.append({**br, "id": "BR_S1_3seeds", "group": "secondary", "arm": "sensitivity",
                     "desc": "Brazil S1, primary + 2 extra seeds (seed-averaged; extra seeds h1/h4)",

@@ -108,8 +108,21 @@ def main(argv=None) -> int:
     os.chdir(a.root)
     log = lambda m: print(m, flush=True)  # noqa: E731
 
-    cells = (json.loads(Path(a.registry).read_text()) if a.registry
-             else C.build_registry(a.manifest))
+    if a.registry:
+        cells = json.loads(Path(a.registry).read_text())
+        if Path(a.manifest).exists():   # horizons from the manifest even for a JSON registry
+            import yaml
+            man = yaml.safe_load(Path(a.manifest).read_text())
+            C.PRIMARY_HORIZONS = sorted(int(h) for h in man.get("primary_horizons", [1, 4]))
+            C.SECONDARY_HORIZONS = sorted(int(h) for h in man.get("secondary_horizons", [1, 2, 3, 4]))
+        for c in cells:
+            c.setdefault("primary_horizons", list(C.PRIMARY_HORIZONS))
+            c.setdefault("secondary_horizons", list(C.SECONDARY_HORIZONS) if c.get("split") == "S1"
+                         else None)
+    else:
+        cells = C.build_registry(a.manifest)
+    hlab = K.hlabel(C.PRIMARY_HORIZONS)
+    slab = K.sec_label(C.SECONDARY_HORIZONS)
     excl = ({"exclude_units": None, "exclude_weeks": None, "late_entry": None, "week_actions": ("exclude",)}
             if a.no_exclusions else
             {"exclude_units": str(DEFAULT_UNITS), "exclude_weeks": str(DEFAULT_WEEKS),
@@ -145,7 +158,8 @@ def main(argv=None) -> int:
     lad = pd.concat(lads, ignore_index=True) if lads else pd.DataFrame(
         columns=["cell", "label", "horizon", "n_rows", "wis_log", "cov_40", "cov_80", "cov_80_nonzero"])
     byid = {c["id"]: c for c in cells}
-    cstars = {c["id"]: c.get("cstar") for c in cells}
+    cstars = {c["id"]: c.get("cstar") for c in cells}             # raw (None = no valid C*)
+    cstar_txt = {c["id"]: C.cstar_label(c) for c in cells}          # display
     T, F = Path(a.out_tables), Path(a.out_figures)
     made = {}
 
@@ -155,7 +169,8 @@ def main(argv=None) -> int:
     for c in prim:
         r = pick(est, c["id"], "G_excess")
         base = {"cell": c["id"], "country": c["country"], "split": c["split"],
-                "C_star": cstars.get(c["id"]) or "", "status": status[c["id"]]["status"]}
+                "C_star": cstar_txt[c["id"]], "status": status[c["id"]]["status"],
+                "horizons": hlab}
         if r is None:
             rows.append({**base, "missing": "; ".join(f"{k}: {v}" for k, v in
                                                        status[c["id"]]["roles"].items() if v != "complete")})
@@ -166,6 +181,13 @@ def main(argv=None) -> int:
                      "hi90_pct": r.hi90_pct, "DM_p": r.p, "TOST_p": r.tost_p, "TOST_class": r.cls,
                      "MDE": r.mde, "MDE_pct": r.mde_pct, "WIS_ref": r.wis_ref, "n_seeds": r.n_seeds,
                      "seed_sd": r.seed_sd, "T_weeks": r.T, "n_rows": r.n_rows, "missing": ""})
+        rs = est[(est.cell == c["id"]) & (est.estimand == "G_excess") & (est.test_year == "pooled")
+                 & (est.stratum == "all") & est.horizon.str.startswith("pooled_h")]
+        if len(rs):   # secondary (S1): pooled over the secondary horizons; NOT in the Holm family
+            q = rs.iloc[0]
+            rows[-1].update({"sec_horizons": q.horizon, "sec_G_excess": q.estimate,
+                             "sec_pct": q.pct_of_ref, "sec_lo95_pct": q.lo95_pct,
+                             "sec_hi95_pct": q.hi95_pct, "sec_DM_p": q.p, "sec_TOST_class": q.cls})
     t1 = pd.DataFrame(rows)
     av = t1.status == "available"
     t1["Holm_p_available"] = np.nan
@@ -187,32 +209,43 @@ def main(argv=None) -> int:
     t1x["DM p"] = t1x.DM_p
     t1x["TOST"] = t1x.TOST_class.fillna("pending")
     t1x["MDE (%)"] = t1x.MDE_pct
+    t1x[f"secondary {slab} (%)"] = [
+        f"{v:+.2f} [{l:+.2f}, {h:+.2f}]" if np.isfinite(v) else ""
+        for v, l, h in zip(*(t1x.get(k, pd.Series(np.nan, index=t1x.index)).astype(float)
+                             for k in ("sec_pct", "sec_lo95_pct", "sec_hi95_pct")))]
     T.mkdir(parents=True, exist_ok=True)
     t1.to_csv(T / "T1_primary_family.csv", index=False)
     (T / "T1_primary_family.tex").write_text(R.to_booktabs(
         t1x[["country", "split", "C_star", "G_excess", "G_excess (%)", "CI95 (%)", "CI90 (%)",
-             "DM p", "Holm p", "TOST", "MDE (%)"]],
-        "T1. Primary family: pooled-h G_excess = WIS(L3+C*) - WIS(L4+C*), log1p WIS; % of WIS(L3); "
-        "DM/EWC+HLN; Holm over available cells (provisional while cells are pending)", "tab:T1", 4))
+             "DM p", "Holm p", "TOST", "MDE (%)", f"secondary {slab} (%)"]],
+        f"T1. Primary family: G_excess = WIS(L3+C*) - WIS(L4+C*) pooled over the primary horizons "
+        f"{hlab}, log1p WIS; % of WIS(L3); DM/EWC+HLN; Holm over the available cells, primary "
+        f"values only (provisional while cells are pending). Last column: secondary S1 pooling "
+        f"over {slab.replace('pooled_', '')} (95% CI), not in the Holm family", "tab:T1", 4))
     made["T1"] = "T1_primary_family"
 
     # ---------------- T2 ladder
     if not lad.empty:
         lw = lad.pivot_table(index=["cell", "label"], columns="horizon", values="wis_log", sort=False)
-        lw.columns = [f"WIS h{c}" if c != "pooled" else "WIS pooled" for c in lw.columns]
+        lw.columns = [f"WIS h{c}" if str(c).isdigit() else
+                      (f"WIS pooled {hlab}" if c == "pooled" else f"WIS {c} (secondary)")
+                      for c in lw.columns]
         lp = lad[lad.horizon == "pooled"].set_index(["cell", "label"])[["cov_40", "cov_80", "cov_80_nonzero", "n_rows"]]
         t2w = lw.join(lp).reset_index()
-        t2w.insert(2, "C_star", t2w.cell.map(cstars).fillna(""))
+        t2w.insert(2, "C_star", t2w.cell.map(cstar_txt).fillna(""))
         lad.to_csv(T / "T2_ladder_long.csv", index=False)
-        hcols = sorted([c for c in t2w.columns if c.startswith("WIS h")]) + ["WIS pooled"]
+        hcols = sorted([c for c in t2w.columns if c.startswith("WIS h")]) + [f"WIS pooled {hlab}"] \
+            + [c for c in t2w.columns if c.endswith("(secondary)")]
         R.write_table(t2w, T, "T2_ladder",
-                      "T2. Ladder: mean log1p WIS per horizon and pooled; 40%/80% interval coverage "
-                      "(pooled; cov_80_nonzero = rows with cases > 0); common rows of each cell",
+                      f"T2. Ladder: mean log1p WIS per horizon, pooled over the primary horizons "
+                      f"{hlab} and (S1, secondary) over {slab.replace('pooled_', '')}; 40%/80% "
+                      f"interval coverage (pooled {hlab}; cov_80_nonzero = rows with cases > 0); "
+                      "common rows of each cell",
                       4, tex_cols=["cell", "label"] + hcols + ["cov_40", "cov_80", "cov_80_nonzero"])
         made["T2"] = "T2_ladder"
 
     # ---------------- T3 estimands
-    keep = ["cell", "horizon", "test_year", "estimand", "estimate", "pct_of_ref", "lo95", "hi95",
+    keep = ["cell", "horizon", "pooled_over", "test_year", "estimand", "estimate", "pct_of_ref", "lo95", "hi95",
             "lo95_pct", "hi95_pct", "lo90_pct", "hi90_pct", "p", "tost_p", "cls", "mde_pct",
             "wis_ref", "n_seeds", "seed_sd", "boot_lo", "boot_hi", "n_rows", "n_weeks", "reason"]
     if not est.empty:
@@ -222,8 +255,11 @@ def main(argv=None) -> int:
         t3x["CI95 (%)"] = [f"[{l:+.2f}, {h:+.2f}]" for l, h in zip(t3x.lo95_pct, t3x.hi95_pct)]
         t3.to_csv(T / "T3_estimands.csv", index=False)
         (T / "T3_estimands.tex").write_text(R.to_booktabs(
-            t3x[["cell", "estimand", "horizon", "estimate", "pct_of_ref", "CI95 (%)", "p", "cls"]],
-            "T3. G_emb, G_id, G_excess per cell and horizon (pooled test years); per-year rows in the CSV",
+            t3x[["cell", "estimand", "horizon", "pooled_over", "estimate", "pct_of_ref", "CI95 (%)",
+                 "p", "cls"]],
+            f"T3. G_emb, G_id, G_excess per cell and horizon (pooled test years). 'pooled' = primary "
+            f"horizons {hlab}; '{slab}' = secondary S1 pooling; pooled_over lists the horizons. "
+            "Per-year rows (primary horizons) in the CSV",
             "tab:T3", 4))
         made["T3"] = "T3_estimands"
 
@@ -236,8 +272,9 @@ def main(argv=None) -> int:
         f = Path(s["dir"]) / "selection.csv"
         mk = s.get("marker")
         ok = f.exists() and (mk is None or not Path(mk).parent.exists() or Path(mk).exists())
-        if not ok:
-            sel_rows.append({"cell": c["id"], "candidate": "", "status": "pending"})
+        if not ok or not C.selection_ok(s["dir"]):
+            sel_rows.append({"cell": c["id"], "candidate": "",
+                             "status": "pending" if not ok else C.CSTAR_PENDING})
             continue
         x = pd.read_csv(f)
         js = json.loads((Path(s["dir"]) / "selection.json").read_text())
@@ -256,7 +293,8 @@ def main(argv=None) -> int:
         t4.to_csv(T / "T4_cstar_selection.csv", index=False)
         (T / "T4_cstar_selection.tex").write_text(R.to_booktabs(
             t4x[["cell", "candidate", "mean ± SD", "n_seeds", "delta_vs_ref", "selected"]],
-            "T4. C* selection at the 2019 origin: mean log1p WIS (pooled h) over seeds", "tab:T4", 5))
+            "T4. C* selection at the 2019 origin: mean log1p WIS (pooled h) over seeds; only "
+            "selections under rule_version 2 are shown", "tab:T4", 5))
         made["T4"] = "T4_cstar_selection"
 
     # ---------------- T5 strata
@@ -268,8 +306,8 @@ def main(argv=None) -> int:
         t5.to_csv(T / "T5_strata.csv", index=False)
         (T / "T5_strata.tex").write_text(R.to_booktabs(
             t5x[["cell", "stratum", "estimand", "estimate", "pct_of_ref", "CI95 (%)", "p", "n_rows"]],
-            "T5. Estimands by stratum (observed vs zero-filled targets; outbreak vs not), pooled h and "
-            "years; per-year strata in the CSV", "tab:T5", 4))
+            f"T5. Estimands by stratum (observed vs zero-filled targets; outbreak vs not), pooled over "
+            f"the primary horizons {hlab} and the test years; per-year strata in the CSV", "tab:T5", 4))
         made["T5"] = "T5_strata"
 
     # ---------------- T6 secondary arms
@@ -296,7 +334,8 @@ def main(argv=None) -> int:
                        "variant_horizons": ",".join(map(str, infos.get(v, {}).get("horizons", [])))})
     t6 = pd.DataFrame(t6)
     R.write_table(t6, T, "T6a_sensitivities",
-                  "T6a. Sensitivity variants vs the primary cell (estimate as % of WIS(L3), 95% CI)", 3,
+                  f"T6a. Sensitivity variants vs the primary cell (estimate as % of WIS(L3), 95% CI; "
+                  f"both pooled over the primary horizons {hlab})", 3,
                   tex_cols=["variant", "vs", "estimand", "variant_pct", "variant_lo95_pct",
                             "variant_hi95_pct", "variant_cls", "primary_pct", "primary_cls"])
     nh = [c["id"] for c in cells if c["arm"] == "no-history"]
@@ -325,12 +364,12 @@ def main(argv=None) -> int:
     figs = {}
     try:
         figs["F1"] = R.fig_forest(fr.astype({c: float for c in fr.columns[2:]}),
-                                  pd.DataFrame(secs, columns=fr.columns), F)
+                                  pd.DataFrame(secs, columns=fr.columns), F, hlab)
         br = "BR_S1" if "BR_S1" in set(lad.cell) else "BR_S1_perlevel"
         figs["F2"] = R.fig_ladder(lad, [br, "CO_S1", "PE_S1", "TW_S1"], F, "F2_ladder_S1",
                                   "F2. S1 ladder per country (mean log1p WIS; C* = selected control)",
                                   R.LADDER_ORDER, cstars)
-        figs["F3"] = R.fig_per_year(est, [br, "CO_S1", "PE_S1", "TW_S1", "TW_S1_BRparams"], F)
+        figs["F3"] = R.fig_per_year(est, [br, "CO_S1", "PE_S1", "TW_S1", "TW_S1_BRparams"], F, hlab)
         figs["F4"] = R.fig_ladder(lad, nh, F, "F4_nohist_ladder",
                                   "F4. No-history arm ladder (mean log1p WIS)",
                                   ["N2", "N3", "N4", "N3+C1", "N4+C1", "N3+C*", "N4+C*"], cstars)
@@ -339,7 +378,7 @@ def main(argv=None) -> int:
 
     # ---------------- brief
     write_brief(Path(a.brief), cells, status, est, t1, t6, lad, made, figs, infos,
-                "" if a.no_scheduler else scheduler_status(), T, F)
+                "" if a.no_scheduler else scheduler_status(), T, F, hlab, slab)
     log(f"done: {sum(s['status'] == 'available' for s in status.values())} cells available, "
         f"brief at {a.brief}")
     return 0
@@ -352,12 +391,17 @@ def _interp(r, a_name, b_name) -> str:
             f"**{r.cls}**, i.e. {CLS_TEXT.get(r.cls, r.cls)}.")
 
 
-def write_brief(path, cells, status, est, t1, t6, lad, made, figs, infos, sched, T, F):
+def write_brief(path, cells, status, est, t1, t6, lad, made, figs, infos, sched, T, F,
+                hlab="h{1,4}", slab="pooled_h1-4"):
     L = ["# RESULTS BRIEF (auto-generated)", "",
          f"Generated {dt.datetime.now():%Y-%m-%d %H:%M} by `scripts/analysis/make_results.py`. "
          "Do not edit by hand: re-run the script. All numbers are log1p-scale WIS; a gain is "
          "positive when the second model has the lower WIS. Percentages are of WIS(L3) "
-         "(WIS(N3) in the no-history arm). Inference: DM test with EWC long-run variance and "
+         "(WIS(N3) in the no-history arm). **Horizons:** every \"pooled\" estimate (T1, T3, T5, "
+         f"T6, per-year and strata rows, F1, F3) pools the primary horizons **{hlab}** "
+         "(manifest `primary_horizons`, deviation row 21), in every cell; S1 cells also show the "
+         f"secondary pooling over {slab.replace('pooled_', '')} (`horizon = {slab}`), which is "
+         "never in the Holm family. Inference: DM test with EWC long-run variance and "
          "HLN correction on the weekly cross-unit mean loss difference; TOST against a ±1% margin "
          "(90% CI); MDE at 80% power. See `docs/methods/results_kit.md`.", "",
          "Key: **G_emb** = WIS(L3) − WIS(L4) (raw AlphaEarth gain); **G_id** = WIS(L3) − WIS(L3+C*) "
@@ -370,7 +414,7 @@ def write_brief(path, cells, status, est, t1, t6, lad, made, figs, infos, sched,
         miss = "; ".join(f"{r}: {v}" for r, v in s["roles"].items() if v != "complete")
         if s.get("error"):
             miss = "ERROR " + s["error"]
-        L.append(f"| {c['id']} | {c['group']}/{c['arm']} | {c['desc']} | {c.get('cstar') or ''} | "
+        L.append(f"| {c['id']} | {c['group']}/{c['arm']} | {c['desc']} | {C.cstar_label(c)} | "
                  f"{s['status']} | {miss} |")
     n_av = int((t1.status == "available").sum())
     L += ["", f"Primary family: **{n_av} of {len(t1)} cells available**. Holm p-values are over the "
@@ -385,17 +429,26 @@ def write_brief(path, cells, status, est, t1, t6, lad, made, figs, infos, sched,
             continue
         a3 = "N3" if c.get("ref") == "N3" else "L3"
         a4 = a3.replace("3", "4")
-        L.append(f"### {cid}: {c['desc']} (C* = {c.get('cstar') or 'n/a'})")
+        L.append(f"### {cid}: {c['desc']} (C* = {C.cstar_label(c)})")
         info = infos.get(cid, {})
         L.append(f"Rows scored {info.get('rows_scored', '?'):,}; test years {info.get('test_years')}; "
-                 f"horizons {info.get('horizons')}; seeds {info.get('seeds')}; zero-filled share "
+                 f"horizons scored {info.get('horizons')}, primary pooled over "
+                 f"{K.hlabel(info.get('primary_horizons') or [])}; seeds {info.get('seeds')}; zero-filled share "
                  f"{info.get('zero_filled_share', np.nan):.2f}; outbreak share {info.get('outbreak_share', np.nan):.3f}.")
         L.append("")
         for e, (x, y) in {"G_excess": (f"{a3}+C*", f"{a4}+C*"), "G_emb": (a3, a4),
                           "G_id": (a3, f"{a3}+C*")}.items():
             r = pick(est, cid, e)
             if r is not None:
-                L.append(f"- **{e}** {ci_txt(r)}: {_interp(r, x, y)}")
+                L.append(f"- **{e}** (pooled {hlab}, primary) {ci_txt(r)}: {_interp(r, x, y)}")
+        rs = est[(est.cell == cid) & (est.estimand == "G_excess") & (est.test_year == "pooled")
+                 & (est.stratum == "all") & est.horizon.str.startswith("pooled_h")]
+        for q in rs.itertuples():
+            L.append(f"- *Secondary* G_excess pooled over {q.horizon.replace('pooled_', '')} "
+                     f"(not in the Holm family): {ci_txt(q)}; p = {q.p:.3f}; {q.cls}.")
+        if info.get("seed_set_mismatch_primary"):
+            L.append(f"- Note: role seed sets differ at a primary horizon "
+                     f"({', '.join(info['seed_set_mismatch_primary'])}); common seeds used per row.")
         ids = pick(est, cid, "ID_share")
         if ids is not None:
             v = ids.estimate
@@ -404,13 +457,13 @@ def write_brief(path, cells, status, est, t1, t6, lad, made, figs, infos, sched,
         lp = lad[(lad.cell == cid) & (lad.horizon == "pooled")]
         if not lp.empty:
             best = lp.sort_values("wis_log").iloc[0]
-            L.append(f"- Ladder (pooled h): " + ", ".join(f"{r.label} {r.wis_log:.4f}" for r in lp.itertuples())
+            L.append(f"- Ladder (pooled {hlab}): " + ", ".join(f"{r.label} {r.wis_log:.4f}" for r in lp.itertuples())
                      + f". Best = {best.label}. 80% coverage {lp.cov_80.min():.2f}–{lp.cov_80.max():.2f} "
                      f"overall, {lp.cov_80_nonzero.min():.2f}–{lp.cov_80_nonzero.max():.2f} on non-zero targets.")
         st = est[(est.cell == cid) & (est.estimand == "G_excess") & (est.test_year == "pooled")
                  & (est.stratum.isin(["observed", "zero_filled", "outbreak"]))]
         if not st.empty and not c.get("estimands"):
-            L.append("- G_excess by stratum: " + "; ".join(
+            L.append(f"- G_excess by stratum (pooled {hlab}): " + "; ".join(
                 f"{r.stratum} {r.pct_of_ref:+.2f}% [{r.lo95_pct:+.2f}, {r.hi95_pct:+.2f}]" for r in st.itertuples()))
         if info.get("ladder_skipped"):
             L.append(f"- Ladder rungs not yet available: {'; '.join(info['ladder_skipped'])}")
@@ -424,12 +477,13 @@ def write_brief(path, cells, status, est, t1, t6, lad, made, figs, infos, sched,
                  if np.isfinite(r.variant_pct) else "pending")
             p = f"{r.primary_pct:+.2f}" if np.isfinite(r.primary_pct) else "pending"
             L.append(f"| {r.variant} | {r.vs} | {r.estimand} | {v} | {r.variant_cls} | {p} | {r.primary_cls} |")
-        L += ["", "Note: the controls panel and extra-seed variants are scored on h1/h4 rows only "
-              "(spatial-split horizons), so they are not row-identical to the h1–h4 primary.", ""]
+        L += ["", f"Both columns pool the primary horizons {hlab}. Variants scored on h1/h4 only "
+              "(controls panel, extra seeds) are therefore on the same horizons as the primary.", ""]
     L += ["## 4. Where everything is", "",
           f"Tables (`{T}/`, each as .csv and a LaTeX booktabs fragment .tex):", "",
-          "- `T1_primary_family` — 14 primary cells: G_excess, % of WIS(L3), 95%/90% CI, DM p, Holm p "
-          "(available cells), p_bonf14, TOST class, MDE.",
+          f"- `T1_primary_family` — 14 primary cells: G_excess pooled over {hlab}, % of WIS(L3), 95%/90% CI, "
+          "DM p, Holm p (available cells, primary values only), p_bonf14, TOST class, MDE; `sec_*` = "
+          f"S1 secondary pooling over {slab.replace('pooled_', '')}.",
           "- `T2_ladder` (+ `T2_ladder_long.csv`) — L0–L4, L3+C*, L4+C* per cell: WIS per horizon and "
           "pooled; 40/80% coverage, overall and on non-zero targets.",
           "- `T3_estimands` — G_emb / G_id / G_excess / ID share per cell × horizon and per test year (CSV).",
@@ -439,8 +493,8 @@ def write_brief(path, cells, status, est, t1, t6, lad, made, figs, infos, sched,
           "- `T6a_sensitivities` — extra seeds, yearly_ref: origin, report delay 2, controls panel C3/C6, "
           "per-level tuning, TW with BR params; `T6b_nohist_estimands`, `T6c_nohist_ladder` — no-history arm.",
           "", f"Figures (`{F}/`, PDF + PNG):", ""]
-    fdesc = {"F1": "forest plot of G_excess (% of WIS(L3)), 95% and 90% CI, ±1% band; all cells",
-             "F2": "S1 ladder per country", "F3": "per-test-year G_emb and G_excess, S1 cells",
+    fdesc = {"F1": f"forest plot of G_excess pooled over {hlab} (% of WIS(L3)), 95% and 90% CI, ±1% band; all cells",
+             "F2": "S1 ladder per country", "F3": f"per-test-year G_emb and G_excess pooled over {hlab}, S1 cells",
              "F4": "no-history arm ladder"}
     for k, d in fdesc.items():
         L.append(f"- `{figs.get(k) or k}` — {d}" + ("" if figs.get(k) else " (**pending: no data yet**)"))
