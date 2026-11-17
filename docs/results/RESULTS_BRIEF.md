@@ -1,6 +1,6 @@
 # RESULTS BRIEF (auto-generated)
 
-Generated 2026-11-16 21:05 by `scripts/analysis/make_results.py`. Do not edit by hand: re-run the script. All numbers are log1p-scale WIS; a gain is positive when the second model has the lower WIS. Percentages are of WIS(L3) (WIS(N3) in the no-history arm). **Horizons:** every "pooled" estimate (T1, T3, T5, T6, per-year and strata rows, F1, F3) pools the primary horizons **h{1,4}** (manifest `primary_horizons`, deviation row 21), in every cell; S1 cells also show the secondary pooling over h1-4 (`horizon = pooled_h1-4`), which is never in the Holm family. Inference: DM test with EWC long-run variance and HLN correction on the weekly cross-unit mean loss difference; TOST against a ±1% margin (90% CI); MDE at 80% power. See `docs/methods/results_kit.md`.
+Generated 2026-11-16 23:21 by `scripts/analysis/make_results.py`. Do not edit by hand: re-run the script. All numbers are log1p-scale WIS; a gain is positive when the second model has the lower WIS. Percentages are of WIS(L3) (WIS(N3) in the no-history arm). **Horizons:** every "pooled" estimate (T1, T3, T5, T6, per-year and strata rows, F1, F3) pools the primary horizons **h{1,4}** (manifest `primary_horizons`, deviation row 21), in every cell; S1 cells also show the secondary pooling over h1-4 (`horizon = pooled_h1-4`), which is never in the Holm family. Inference: DM test with EWC long-run variance and HLN correction on the weekly cross-unit mean loss difference; TOST against a ±1% margin (90% CI); MDE at 80% power. See `docs/methods/results_kit.md`.
 
 Key: **G_emb** = WIS(L3) − WIS(L4) (raw AlphaEarth gain); **G_id** = WIS(L3) − WIS(L3+C*) (gain from a pure location/ID control); **G_excess** = WIS(L3+C*) − WIS(L4+C*) (primary: what AlphaEarth adds beyond the best ID control).
 
@@ -8,33 +8,54 @@ Key: **G_emb** = WIS(L3) − WIS(L4) (raw AlphaEarth gain); **G_id** = WIS(L3) �
 
 | cell | group | description | C* | status | what is missing |
 |---|---|---|---|---|---|
-| BR_S1 | primary/history | Brazil S1, history arm (primary) | C1 | pending | L3: brazil_s1_sens_seed2_L3: not started; L4: brazil_s1_sens_seed2_L4: not started; L3C: brazil_s1_sens_seed2_L3_Cstar: not started; L4C: brazil_s1_sens_seed1_L4_Cstar: not started; brazil_s1_sens_seed2_L4_Cstar: not started |
+| BR_S1 | primary/history | Brazil S1, history arm (primary) | C1 | pending | L4: brazil_s1_sens_seed2_L4: not started; L3C: brazil_s1_sens_seed2_L3_Cstar: not started; L4C: brazil_s1_sens_seed2_L4_Cstar: not started |
 | BR_S2 | primary/history | Brazil S2, history arm (primary) | selection pending (stale) | pending | L3: brazil_s2_L3: not started; L4: brazil_s2_L4: not started; L3C: brazil_s2_L3_Cstar: not started; L4C: brazil_s2_L4_Cstar: not started |
 | BR_S3 | primary/history | Brazil S3, history arm (primary) | selection pending (stale) | pending | L3: brazil_s3_L3: not started; L4: brazil_s3_L4: not started; L3C: brazil_s3_L3_Cstar: not started; L4C: brazil_s3_L4_Cstar: not started |
 | BR_S4 | primary/history | Brazil S4, history arm (primary) | selection pending (stale) | pending | L3: brazil_s4_L3: not started; L4: brazil_s4_L4: not started; L3C: brazil_s4_L3_Cstar: not started; L4C: brazil_s4_L4_Cstar: not started |
-| BR_S5 | primary/history | Brazil S5, history arm (primary) | selection pending (stale) | pending | L4: brazil_s5_L4: partial (5 chunks); L3C: brazil_s5_L3_Cstar: not started; L4C: brazil_s5_L4_Cstar: not started |
-| CO_S1 | primary/history | Colombia S1, history arm (primary) | C1 | pending | L4C: colombia_s1_shared_L4_Cstar: not started |
+| BR_S5 | primary/history | Brazil S5, history arm (primary) | C3 | available |  |
+| CO_S1 | primary/history | Colombia S1, history arm (primary) | C1 | available |  |
 | CO_S2 | primary/history | Colombia S2, history arm (primary) | selection pending (stale) | pending | L3: colombia_s2_L3: not started; L4: colombia_s2_L4: not started; L3C: colombia_s2_L3_Cstar: not started; L4C: colombia_s2_L4_Cstar: not started |
 | CO_S3 | primary/history | Colombia S3, history arm (primary) | selection pending (stale) | pending | L3: colombia_s3_L3: not started; L4: colombia_s3_L4: not started; L3C: colombia_s3_L3_Cstar: not started; L4C: colombia_s3_L4_Cstar: not started |
 | CO_S4 | primary/history | Colombia S4, history arm (primary) | selection pending (stale) | pending | L3: colombia_s4_L3: not started; L4: colombia_s4_L4: not started; L3C: colombia_s4_L3_Cstar: not started; L4C: colombia_s4_L4_Cstar: not started |
-| CO_S5 | primary/history | Colombia S5, history arm (primary) | selection pending (stale) | pending | L3: colombia_s5_L3: not started; L4: colombia_s5_L4: not started; L3C: colombia_s5_L3_Cstar: not started; L4C: colombia_s5_L4_Cstar: not started |
+| CO_S5 | primary/history | Colombia S5, history arm (primary) | C2 | pending | L4: colombia_s5_L4: not started; L3C: colombia_s5_L3_Cstar: not started; L4C: colombia_s5_L4_Cstar: not started |
 | PE_S1 | primary/history | Peru S1, history arm (primary) | C1 | available |  |
-| PE_S5 | primary/history | Peru S5, history arm (primary) | selection pending (stale) | pending | L3: peru_s5_L3: not started; L4: peru_s5_L4: not started; L3C: peru_s5_L3_Cstar: not started; L4C: peru_s5_L4_Cstar: not started |
+| PE_S5 | primary/history | Peru S5, history arm (primary) | C3 | pending | L3: peru_s5_L3: partial (5 chunks); L4: peru_s5_L4: not started; L3C: peru_s5_L3_Cstar: not started; L4C: peru_s5_L4_Cstar: not started |
 | TW_S1 | primary/history | Taiwan S1, history arm (primary) | C1 | available |  |
 | TW_S5 | primary/history | Taiwan S5, history arm (primary) | selection pending (stale) | pending | L3: taiwan_s5_L3: not started; L4: taiwan_s5_L4: not started; L3C: taiwan_s5_L3_Cstar: not started; L4C: taiwan_s5_L4_Cstar: not started |
-| BR_S1_3seeds | secondary/sensitivity | Brazil S1, primary + 2 extra seeds (seed-averaged; extra seeds h1/h4) | C1 | pending | L3: brazil_s1_sens_seed2_L3: not started; L4: brazil_s1_sens_seed2_L4: not started; L3C: brazil_s1_sens_seed2_L3_Cstar: not started; L4C: brazil_s1_sens_seed1_L4_Cstar: not started; brazil_s1_sens_seed2_L4_Cstar: not started |
+| BR_S1_3seeds | secondary/sensitivity | Brazil S1, primary + 2 extra seeds (seed-averaged; extra seeds h1/h4) | C1 | pending | L4: brazil_s1_sens_seed2_L4: not started; L3C: brazil_s1_sens_seed2_L3_Cstar: not started; L4C: brazil_s1_sens_seed2_L4_Cstar: not started |
 | BR_S1_yref | secondary/sensitivity | Brazil S1 sensitivity: yearly features aligned to the origin year (strictly causal) (G_emb only) | n/a (no C* run) | pending | L3: brazil_s1_sens_yref_L3: not started; L4: brazil_s1_sens_yref_L4: not started; L3C: brazil_s1_sens_yref_L3: not started; L4C: brazil_s1_sens_yref_L4: not started |
 | BR_S1_delay2 | secondary/sensitivity | Brazil S1 sensitivity: 2-week reporting delay (G_emb only) | n/a (no C* run) | pending | L3: brazil_s1_sens_delay2_L3: not started; L4: brazil_s1_sens_delay2_L4: not started; L3C: brazil_s1_sens_delay2_L3: not started; L4C: brazil_s1_sens_delay2_L4: not started |
-| BR_S1_ctrlC3 | secondary/sensitivity | Brazil S1 controls panel: C3 in place of C* (h1, h4) | C3 | pending | L3: brazil_s1_sens_seed2_L3: not started; L4: brazil_s1_sens_seed2_L4: not started; L3C: brazil_s1_sens_ctrl_L3_C3: not started; L4C: brazil_s1_sens_ctrl_L4_C3: not started |
-| BR_S1_ctrlC6 | secondary/sensitivity | Brazil S1 controls panel: C6 in place of C* (h1, h4) | C6 | pending | L3: brazil_s1_sens_seed2_L3: not started; L4: brazil_s1_sens_seed2_L4: not started; L3C: brazil_s1_sens_ctrl_L3_C6: not started; L4C: brazil_s1_sens_ctrl_L4_C6: not started |
+| BR_S1_ctrlC3 | secondary/sensitivity | Brazil S1 controls panel: C3 in place of C* (h1, h4) | C3 | pending | L4: brazil_s1_sens_seed2_L4: not started; L3C: brazil_s1_sens_ctrl_L3_C3: not started; L4C: brazil_s1_sens_ctrl_L4_C3: not started |
+| BR_S1_ctrlC6 | secondary/sensitivity | Brazil S1 controls panel: C6 in place of C* (h1, h4) | C6 | pending | L4: brazil_s1_sens_seed2_L4: not started; L3C: brazil_s1_sens_ctrl_L3_C6: not started; L4C: brazil_s1_sens_ctrl_L4_C6: not started |
 | BR_S1_perlevel | secondary/sensitivity | Brazil S1, per-level tuning (L3/L4 31 leaves; superseded primary) | C1 | available |  |
 | TW_S1_BRparams | secondary/sensitivity | Taiwan S1 with Brazil's tuned params and C* | C1 | available |  |
 | BR_S1_nohist | secondary/no-history | Brazil S1, no-history arm (ref = N3) | selection pending (stale) | pending | L3: brazil_s1_nohist_N3: not started; L4: brazil_s1_nohist_N4: not started; L3C: brazil_s1_nohist_N3_Cstar: not started; L4C: brazil_s1_nohist_N4_Cstar: not started |
 | BR_S2_nohist | secondary/no-history | Brazil S2, no-history arm (ref = N3) | selection pending (stale) | pending | L3: brazil_s2_nohist_N3: not started; L4: brazil_s2_nohist_N4: not started; L3C: brazil_s2_nohist_N3_Cstar: not started; L4C: brazil_s2_nohist_N4_Cstar: not started |
 
-Primary family: **2 of 14 cells available**. Holm p-values are over the available cells only and are provisional until all 14 are in; `p_bonf14` in T1 is the conservative bound.
+Primary family: **4 of 14 cells available**. Holm p-values are over the available cells only and are provisional until all 14 are in; `p_bonf14` in T1 is the conservative bound.
 
 ## 2. Headline numbers
+
+### BR_S5: Brazil S5, history arm (primary) (C* = C3)
+Rows scored 2,879,874; test years [2020, 2021, 2022, 2023, 2024]; horizons scored [1, 4], primary pooled over h{1,4}; seeds [0]; zero-filled share 0.53; outbreak share 0.080.
+
+- **G_excess** (pooled h{1,4}, primary) -0.63% [-0.88, -0.39]: L4+C* is worse than L3+C* by 0.63% of WIS(ref) (95% CI -0.88 to -0.39%; p = 0.000; MDE 0.34%): **equivalent**, i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
+- **G_emb** (pooled h{1,4}, primary) -0.36% [-1.29, +0.57]: L4 is worse than L3 by 0.36% of WIS(ref) (95% CI -1.29 to +0.57%; p = 0.423; MDE 1.30%): **inconclusive**, i.e. the CI crosses 0 and reaches past the ±1% margin: the data cannot tell.
+- **G_id** (pooled h{1,4}, primary) +0.09% [-0.79, +0.98]: L3+C* improves on L3 by 0.09% of WIS(ref) (95% CI -0.79 to +0.98%; p = 0.827; MDE 1.25%): **equivalent**, i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
+- **ID share**: not estimable: G_emb 95% CI includes 0
+- Ladder (pooled h{1,4}): L3 0.1908, L4 0.1915, L3+C* 0.1906, L4+C* 0.1918. Best = L3+C*. 80% coverage 0.87–0.88 overall, 0.59–0.63 on non-zero targets.
+- G_excess by stratum (pooled h{1,4}): observed +0.32% [-0.06, +0.70]; zero_filled -5.48% [-6.43, -4.53]; outbreak +0.80% [+0.15, +1.45]
+
+### CO_S1: Colombia S1, history arm (primary) (C* = C1)
+Rows scored 671,960; test years [2020, 2021, 2022]; horizons scored [1, 2, 3, 4], primary pooled over h{1,4}; seeds [0]; zero-filled share 0.78; outbreak share 0.023.
+
+- **G_excess** (pooled h{1,4}, primary) -0.39% [-0.58, -0.20]: L4+C* is worse than L3+C* by 0.39% of WIS(ref) (95% CI -0.58 to -0.20%; p = 0.001; MDE 0.26%): **equivalent**, i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
+- **G_emb** (pooled h{1,4}, primary) -0.35% [-0.57, -0.13]: L4 is worse than L3 by 0.35% of WIS(ref) (95% CI -0.57 to -0.13%; p = 0.005; MDE 0.31%): **equivalent**, i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
+- **G_id** (pooled h{1,4}, primary) -0.06% [-0.34, +0.23]: L3+C* is worse than L3 by 0.06% of WIS(ref) (95% CI -0.34 to +0.23%; p = 0.673; MDE 0.40%): **equivalent**, i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
+- *Secondary* G_excess pooled over h1-4 (not in the Holm family): -0.38% [-0.60, -0.17]; p = 0.002; equivalent.
+- **ID share**: not estimable: G_emb < 1% of WIS(L3)
+- Ladder (pooled h{1,4}): L0 0.3286, L1 0.1237, L2 0.1235, L3 0.1231, L4 0.1235, L3+C* 0.1232, L4+C* 0.1237. Best = L3. 80% coverage 0.81–0.93 overall, 0.53–0.72 on non-zero targets.
+- G_excess by stratum (pooled h{1,4}): observed +0.28% [-0.29, +0.85]; zero_filled -2.12% [-3.51, -0.72]; outbreak -0.64% [-2.21, +0.93]
 
 ### PE_S1: Peru S1, history arm (primary) (C* = C1)
 Rows scored 96,108; test years [2020, 2021, 2022, 2023]; horizons scored [1, 2, 3, 4], primary pooled over h{1,4}; seeds [0]; zero-filled share 0.56; outbreak share 0.228.
@@ -127,16 +148,16 @@ Per-cell intermediate results: `runs/analysis_cache/<cell>/` (est.parquet, ladde
 ## 5. Compute status (scheduler snapshot)
 
 ```
-snapshot 2026-11-16 21:04:55 (10 s old); budget 48 threads (others 1300% CPU (incl. own non-pipeline jobs)) = 12 workers; held 15; free -3
+snapshot 2026-11-16 23:21:19 (16 s old); budget 48 threads (others 1385% CPU (incl. own non-pipeline jobs)) = 12 workers; held 15; free -3
   T1 brazil_s1_shared             done                                     -                                  held  0 unclaimed   0
   T1 peru_s1_shared               done                                     -                                  held  0 unclaimed   0
   T1 taiwan_s1_shared             done                                     -                                  held  0 unclaimed   0
-  T1 colombia_s1_shared           running                                  colombia_s1_shared_L4_Cstar        held  5 unclaimed   6
+  T1 colombia_s1_shared           done                                     -                                  held  0 unclaimed   0
   T1 taiwan_s1brp                 done                                     -                                  held  0 unclaimed   0
-  T2 brazil_s1_sens_seeds         running                                  brazil_s1_sens_seed1_L4_Cstar      held 10 unclaimed   0 RESERVED
-  T2 brazil_s5                    running                                  brazil_s5_controls_2019            held  0 unclaimed   8
-  T2 colombia_s5                  running                                  colombia_s5_controls_2019          held  0 unclaimed  12
-  T2 peru_s5                      running                                  peru_s5_controls_2019              held  0 unclaimed  18
+  T2 brazil_s1_sens_seeds         running                                  brazil_s1_sens_seed2_L4            held 10 unclaimed   0
+  T2 brazil_s5                    done                                     -                                  held  0 unclaimed   0
+  T2 colombia_s5                  running                                  colombia_s5_L4                     held  2 unclaimed   4
+  T2 peru_s5                      running                                  peru_s5_L3                         held  3 unclaimed   0
   T2 taiwan_s5                    running                                  taiwan_s5_controls_2019            held  0 unclaimed  18
   T2 colombia_s2                  running                                  colombia_s2_controls_2019          held  0 unclaimed 130
   T2 colombia_s3                  running                                  colombia_s3_controls_2019          held  0 unclaimed 156

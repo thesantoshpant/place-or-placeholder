@@ -1,14 +1,80 @@
 cell,country,split,C_star,status,horizons,missing,G_excess,pct_of_WIS_ref,lo95,hi95,lo90,hi90,lo95_pct,hi95_pct,lo90_pct,hi90_pct,DM_p,TOST_p,TOST_class,MDE,MDE_pct,WIS_ref,n_seeds,seed_sd,T_weeks,n_rows,sec_horizons,sec_G_excess,sec_pct,sec_lo95_pct,sec_hi95_pct,sec_DM_p,sec_TOST_class,Holm_p_available,p_bonf14
-BR_S1,brazil,S1,C1,pending,"h{1,4}",L3: brazil_s1_sens_seed2_L3: not started; L4: brazil_s1_sens_seed2_L4: not started; L3C: brazil_s1_sens_seed2_L3_Cstar: not started; L4C: brazil_s1_sens_seed1_L4_Cstar: not started; brazil_s1_sens_seed2_L4_Cstar: not started,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+BR_S1,brazil,S1,C1,pending,"h{1,4}",L4: brazil_s1_sens_seed2_L4: not started; L3C: brazil_s1_sens_seed2_L3_Cstar: not started; L4C: brazil_s1_sens_seed2_L4_Cstar: not started,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 BR_S2,brazil,S2,selection pending (stale),pending,"h{1,4}",L3: brazil_s2_L3: not started; L4: brazil_s2_L4: not started; L3C: brazil_s2_L3_Cstar: not started; L4C: brazil_s2_L4_Cstar: not started,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 BR_S3,brazil,S3,selection pending (stale),pending,"h{1,4}",L3: brazil_s3_L3: not started; L4: brazil_s3_L4: not started; L3C: brazil_s3_L3_Cstar: not started; L4C: brazil_s3_L4_Cstar: not started,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 BR_S4,brazil,S4,selection pending (stale),pending,"h{1,4}",L3: brazil_s4_L3: not started; L4: brazil_s4_L4: not started; L3C: brazil_s4_L3_Cstar: not started; L4C: brazil_s4_L4_Cstar: not started,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-BR_S5,brazil,S5,selection pending (stale),pending,"h{1,4}",L4: brazil_s5_L4: partial (5 chunks); L3C: brazil_s5_L3_Cstar: not started; L4C: brazil_s5_L4_Cstar: not started,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-CO_S1,colombia,S1,C1,pending,"h{1,4}",L4C: colombia_s1_shared_L4_Cstar: not started,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+BR_S5,brazil,S5,C3,available,"h{1,4}",,-0.0012072348793099872,-0.6328310988785667,-0.001670877515012184,-0.0007435922436077904,-0.0015890755726633732,-0.0008253941859566012,-0.8758720212929999,-0.3897901764641335,-0.8329915396616315,-0.4326706580955019,4.6613522796529594e-05,0.00277364552553806,equivalent,0.0006527532001532339,0.3421724570992974,0.19076731239177647,1.0,,"cell                BR_S5
+horizon            pooled
+test_year          pooled
+stratum               all
+pooled_over           1,4
+estimand         G_excess
+estimate        -0.001207
+se               0.000219
+df                   16.0
+T                   261.0
+p                0.000047
+lo95            -0.001671
+hi95            -0.000744
+lo90            -0.001589
+hi90            -0.000825
+wis_ref          0.190767
+margin           0.001908
+pct_of_ref      -0.632831
+tost_p           0.002774
+cls            equivalent
+mde              0.000653
+mde_pct          0.342172
+n_seeds               1.0
+seed_sd               NaN
+boot_lo               NaN
+boot_hi               NaN
+n_rows          2879874.0
+n_weeks             261.0
+reason                NaN
+lo95_pct        -0.875872
+hi95_pct         -0.38979
+lo90_pct        -0.832992
+hi90_pct        -0.432671
+Name: 8, dtype: object",2879874.0,,,,,,,,0.00018645409118611838,0.0006525893191514144
+CO_S1,colombia,S1,C1,available,"h{1,4}",,-0.0004811134142903822,-0.3907774330619323,-0.0007099731056187962,-0.0002522537229619682,-0.000667850541247149,-0.0002943762873336154,-0.5766654171676618,-0.2048894489562029,-0.5424519716676715,-0.2391028944561933,0.0007320290363967303,8.613528520060977e-06,equivalent,0.00031989779742923796,0.2598323730090654,0.12311699028283779,1.0,,"cell                CO_S1
+horizon            pooled
+test_year          pooled
+stratum               all
+pooled_over           1,4
+estimand         G_excess
+estimate        -0.000481
+se               0.000104
+df                   11.0
+T                   157.0
+p                0.000732
+lo95             -0.00071
+hi95            -0.000252
+lo90            -0.000668
+hi90            -0.000294
+wis_ref          0.123117
+margin           0.001231
+pct_of_ref      -0.390777
+tost_p           0.000009
+cls            equivalent
+mde               0.00032
+mde_pct          0.259832
+n_seeds               1.0
+seed_sd               NaN
+boot_lo               NaN
+boot_hi               NaN
+n_rows           335980.0
+n_weeks             157.0
+reason                NaN
+lo95_pct        -0.576665
+hi95_pct        -0.204889
+lo90_pct        -0.542452
+hi90_pct        -0.239103
+Name: 110, dtype: object",335980.0,pooled_h1-4,-0.00047361543329624723,-0.38439936256663715,-0.5962269459168188,-0.17257177921645547,0.002107402812446361,equivalent,0.002196087109190191,0.010248406509554223
 CO_S2,colombia,S2,selection pending (stale),pending,"h{1,4}",L3: colombia_s2_L3: not started; L4: colombia_s2_L4: not started; L3C: colombia_s2_L3_Cstar: not started; L4C: colombia_s2_L4_Cstar: not started,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 CO_S3,colombia,S3,selection pending (stale),pending,"h{1,4}",L3: colombia_s3_L3: not started; L4: colombia_s3_L4: not started; L3C: colombia_s3_L3_Cstar: not started; L4C: colombia_s3_L4_Cstar: not started,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 CO_S4,colombia,S4,selection pending (stale),pending,"h{1,4}",L3: colombia_s4_L3: not started; L4: colombia_s4_L4: not started; L3C: colombia_s4_L3_Cstar: not started; L4C: colombia_s4_L4_Cstar: not started,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-CO_S5,colombia,S5,selection pending (stale),pending,"h{1,4}",L3: colombia_s5_L3: not started; L4: colombia_s5_L4: not started; L3C: colombia_s5_L3_Cstar: not started; L4C: colombia_s5_L4_Cstar: not started,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+CO_S5,colombia,S5,C2,pending,"h{1,4}",L4: colombia_s5_L4: not started; L3C: colombia_s5_L3_Cstar: not started; L4C: colombia_s5_L4_Cstar: not started,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 PE_S1,peru,S1,C1,available,"h{1,4}",,-0.0015084031718033217,-0.6162820457138947,-0.0033094371628587744,0.00029263081925213087,-0.002987421780595919,-2.9384563010724334e-05,-1.3521230550383159,0.11955896361052655,-1.2205585620420296,-0.012005529385759777,0.09405014294872141,0.14110200163904316,inconclusive,0.0025299625024501698,1.033656316650024,0.2447585780397031,1.0,,"cell                  PE_S1
 horizon              pooled
 test_year            pooled
@@ -42,8 +108,8 @@ lo95_pct          -1.352123
 hi95_pct           0.119559
 lo90_pct          -1.220559
 hi90_pct          -0.012006
-Name: 14, dtype: object",48054.0,pooled_h1-4,-0.0014040705348052178,-0.5706644635894443,-1.292955819217536,0.15162689203864751,0.11228079110052418,inconclusive,0.18810028589744282,1.0
-PE_S5,peru,S5,selection pending (stale),pending,"h{1,4}",L3: peru_s5_L3: not started; L4: peru_s5_L4: not started; L3C: peru_s5_L3_Cstar: not started; L4C: peru_s5_L4_Cstar: not started,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+Name: 185, dtype: object",48054.0,pooled_h1-4,-0.0014040705348052178,-0.5706644635894443,-1.292955819217536,0.15162689203864751,0.11228079110052418,inconclusive,0.18810028589744282,1.0
+PE_S5,peru,S5,C3,pending,"h{1,4}",L3: peru_s5_L3: partial (5 chunks); L4: peru_s5_L4: not started; L3C: peru_s5_L3_Cstar: not started; L4C: peru_s5_L4_Cstar: not started,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 TW_S1,taiwan,S1,C1,available,"h{1,4}",,-0.00015008556035703518,-0.39161610208549597,-0.0003848430902662251,8.467196955215476e-05,-0.0003428696815975245,4.2698560883454106e-05,-1.0041655610711204,0.22093335690012855,-0.894644947262734,0.11141274309174218,0.1918901202940992,0.025687313755361634,equivalent,0.00032977042675914057,0.860465249310252,0.038324665292815044,1.0,,"cell                TW_S1
 horizon            pooled
 test_year          pooled
@@ -77,5 +143,5 @@ lo95_pct        -1.004166
 hi95_pct         0.220933
 lo90_pct        -0.894645
 hi90_pct         0.111413
-Name: 104, dtype: object",119130.0,pooled_h1-4,-0.00013603316458507281,-0.35276474458204454,-0.9347838553772895,0.22925436621320028,0.21460888708189688,equivalent,0.1918901202940992,1.0
+Name: 275, dtype: object",119130.0,pooled_h1-4,-0.00013603316458507281,-0.35276474458204454,-0.9347838553772895,0.22925436621320028,0.21460888708189688,equivalent,0.1918901202940992,1.0
 TW_S5,taiwan,S5,selection pending (stale),pending,"h{1,4}",L3: taiwan_s5_L3: not started; L4: taiwan_s5_L4: not started; L3C: taiwan_s5_L3_Cstar: not started; L4C: taiwan_s5_L4_Cstar: not started,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
