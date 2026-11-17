@@ -314,13 +314,31 @@ def random_smooth_fields(units_df, units, range_km, seed=0, n_fields=64, method=
     parts = []
     for c, g in u.groupby("country", sort=True):
         r = range_km[c] if isinstance(range_km, dict) else range_km
-        F = gaussian_random_fields(*_latlon(g), r, n_fields, _rng(seed, "C4", c), method)
-        if standardize:
-            F = (F - F.mean(0)) / np.where(F.std(0) > 0, F.std(0), 1.0)
+        lat, lon = _latlon(g)
+        ok = np.isfinite(lat) & np.isfinite(lon)
+        # Fields are drawn on the units with coordinates only (fix 2026-11-16b): one NaN row in
+        # the distance matrix made the Cholesky factor, and so every field of the country, NaN.
+        # Units without geometry get NaN rows. With all coordinates finite (BR, PE) the draw is
+        # unchanged.
+        F = np.full((len(g), n_fields), np.nan)
+        if ok.any():
+            Fk = gaussian_random_fields(lat[ok], lon[ok], r, n_fields, _rng(seed, "C4", c), method)
+            if standardize:
+                Fk = (Fk - Fk.mean(0)) / np.where(Fk.std(0) > 0, Fk.std(0), 1.0)
+            assert np.isfinite(Fk).all(), f"C4 fields not finite for {c} (range {r} km)"
+            F[ok] = Fk
         parts.append(pd.DataFrame(F, columns=[f"{prefix}_f{i:02d}" for i in range(n_fields)]).assign(
             unit_id=g.unit_id.to_numpy()))
     out = pd.concat(parts, ignore_index=True)
     return out[["unit_id"] + [c for c in out.columns if c != "unit_id"]]
+
+
+def c4s_range_rule(D_km: float, fitted_km: float) -> tuple[float, bool]:
+    """C4s range rule (2026-11-16): range = min(D, fitted C4 range). Returns (range_km, is_c4):
+    is_c4 is True when the rule gives the fitted range, i.e. C4s is identical to C4 and is not a
+    separate C* candidate (Peru: fitted 148 < D 275; Taiwan: 27 < 170)."""
+    r = min(float(D_km), float(fitted_km))
+    return r, r == float(fitted_km)
 
 
 def c4s_range(country=None, path=None):

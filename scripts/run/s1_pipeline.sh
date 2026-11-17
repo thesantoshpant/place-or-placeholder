@@ -96,12 +96,15 @@ def c4_range():
 def controls_config():
     l3p = f"runs/{c}_s1_L3/tuning_lgbm-L3.json"
     runs = [{"model": "lgbm", "level": "L3", "name": "lgbm-L3", "seeded": False, "params_from": l3p}]
+    from pop.features.controls import c4s_range, c4s_range_rule
+    r4s, c4s_same = c4s_range_rule(c4s_range(CU), c4_range())  # C4s = min(D, fitted) (2026-11-16b)
     for k in ("C1", "C2", "C5", "C3", "C4", "C4s"):
+        if k == "C4s" and c4s_same:
+            continue  # C4s identical to C4: not a candidate
         runs.append({"model": "lgbm", "level": f"L3+{k}", "name": f"lgbm-L3+{k}",
                      "seeded": k in ("C3", "C4", "C4s"), "params_from": l3p})
-    from pop.features.controls import c4s_range
     ckw = {"C1": {"c1_period": "auto"}, "C4": {"range_km": round(c4_range(), 2)},
-           "C4s": {"range_km": c4s_range(CU)}}
+           "C4s": {"range_km": round(r4s, 2)}}
     write("controls_2019", base("controls_2019", [2019], list(range(10)), runs,
           {**FEAT, "alphaearth": AE, "control_kw": ckw}),
           "choice of C* on the 2019 origin only (L3 tuning frozen; C3/C4/C4s 10 seeds)")
@@ -133,7 +136,7 @@ else:
     for lvl in ("L3", "L4"):
         run = {"model": "lgbm", "level": f"{lvl}+{k}", "name": f"lgbm-{lvl}+{k}", "seeded": seeded,
                "params_from": f"runs/{c}_s1_{lvl}/tuning_lgbm-{lvl}.json"}
-        write(f"{lvl}_Cstar", base(f"{lvl}_Cstar", TEST, list(range(10)) if seeded else [0], [run],
+        write(f"{lvl}_Cstar", base(f"{lvl}_Cstar", TEST, [0], [run],  # 1 seed (scope cut; 2026-11-16b)
               {**FEAT, "alphaearth": AE, "control_kw": ckw}),
               f"LightGBM {lvl}+C* with C* = {k} (selection.json, 2019 origin)")
 EOF

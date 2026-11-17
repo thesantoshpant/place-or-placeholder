@@ -143,7 +143,7 @@ def test_bootstrap_coverage():
     nsim = 60
     for s in range(nsim):
         df = _panel_df(rng, C=15, T=48, mu=0.5)
-        ci = ST.bootstrap_ci_mean(df, "d", n_boot=300, seed=s)
+        ci = ST.bootstrap_ci_mean(df, "d", n_boot=300, seed=s, block_len=8)
         hits += ci["lo"] <= 0.5 <= ci["hi"]
     assert hits / nsim >= 0.8, hits / nsim
 
@@ -225,3 +225,14 @@ def test_pooled_horizon_series():
     assert s.tolist() == [2.0, 4.0, 5.0]
     with pytest.raises(ValueError):
         ST.pooled_horizon_series(pd.concat([wk, wk]), "v")
+
+
+def test_bootstrap_default_block_len_is_52_and_circular():
+    import inspect
+    assert inspect.signature(ST.block_bootstrap_means).parameters["block_len"].default == 52
+    idx = ST._block_idx(10, 4, np.random.default_rng(0))
+    assert idx.shape == (10,) and idx.max() < 10  # wraps modulo T
+    # one block covering the whole series: every replicate is a rotation -> same time mean
+    df = _panel_df(np.random.default_rng(2), C=1, T=30)
+    pt, reps = ST.block_bootstrap_means(df, ["d"], cluster_col=None, block_len=30, n_boot=20)
+    np.testing.assert_allclose(reps[:, 0], pt[0])

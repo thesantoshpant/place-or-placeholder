@@ -1,5 +1,7 @@
 # S1 pipeline for Colombia, Peru and Taiwan
 
+> **Scope note (2026-11-16).** This is the **per-level** S1 pipeline (per-level tuning), now a sensitivity analysis (deviations row 2). The 10-seed C3/C4 rule below applies only here. The primary S1 cells use `split_pipeline.sh <country> s1_shared` (one parameter set per country; 3 seeds for C3/C4 at selection; **final C\* runs use 1 seed**, except the Brazil S1 primary cell, which uses seeds 0–2 at h {1, 4}, row 22). C\* is chosen by selection rule v2 (row 19); C4/C4s were no-ops in Colombia and Taiwan before the fix of row 18.
+
 `scripts/run/s1_pipeline.sh <colombia|peru|taiwan> [--workers N] [--threads T]` runs the whole
 S1 (temporal) ladder for one country in tmux session `pop_s1_<country>`. It copies the Brazil
 protocol (configs `brazil_s1_*.yaml`), with one change: the LST outlier screen is on.

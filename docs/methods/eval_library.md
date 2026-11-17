@@ -24,9 +24,9 @@
   - Returns a `DMResult(stat, p_value, mean_d, se, T, lag, hln_factor, method, df)`; `se` is uncorrected, `lag` is None for EWC.
   - Zero variance: stat=0 and p=1 if d̄=0; otherwise stat=±inf and p=0.
 - `loss_diff_series(scores, A, B, metric="wis")`: per-week mean over units of `A−B` on common rows; filter to one horizon/split first.
-- `block_bootstrap_means(df, cols, cluster_col="state", time_col="target_week", block_len=8, n_boot, seed, shared_time_blocks=True)`:
-  - Draws clusters with replacement, then circular blocks of 8 weeks (Künsch 1989; Politis & Romano 1992).
-  - The statistic is the row-level mean.
+- `block_bootstrap_means(df, cols, cluster_col="state", time_col="target_week", block_len=52, n_boot, seed, shared_time_blocks=True)`:
+  - Draws clusters with replacement, then **circular** blocks of **52 weeks** (wrapping modulo T; Politis & Romano 1992; moving blocks: Künsch 1989). The default was 8 until 2026-11-16 (deviations row 11). With T = 209–261 weeks there are only 4–5 blocks, so percentile CIs are coarse. It is a sensitivity analysis only; the primary CI is the DM/EWC t-interval.
+  - The statistic is the row-level mean; it equals the primary week-pooled mean only for a balanced panel with one horizon.
 - `bootstrap_ci_mean` and `bootstrap_ci_ratio` (mean(num)/mean(den), using the same resamples) return percentile CIs.
 - `holm(pvals)` gives Holm (1979) adjusted p-values and ignores NaN.
 
@@ -42,5 +42,8 @@
   - G_emb ≥ 1% of mean WIS(L3).
   
   Otherwise it is NaN with `reason="not estimable: …"` (logic in `id_share_gate`).
+- **v2 (primary):** `seed_gain_frame(scores, models, seed_policy="common", on_mismatch="warn")` builds the row frame; `infer_estimand` / `compute_estimands_v2` give DM/EWC + HLN t-CIs, TOST (1% margin), MDE and the 52-week bootstrap sensitivity.
+  - **Seeds (deviations row 22):** each estimand uses, per row, only the seeds present for both of its roles; a mismatch warns (or errors with `on_mismatch="error"`). `seed_spread` computes per-seed estimates and the seed SD only on rows where all those seeds exist (so h2/h3 rows with seed 0 only do not shrink it). The legacy rule (`seed_policy="fill"`) is kept for old reports.
+  - **Strata (audit 4 M3):** stratum estimates (observed, zero-filled, outbreak, …) use the same week-pooled estimator on the stratum's rows, so every week has equal weight whatever its number of stratum rows. They are not row-weighted and are not shares of the overall gain.
 
 Note: null size at nominal 5% (1000 seeded AR(1) reps, h=1): φ=0.5, T=104 — EWC 6.9%, `"nw"` 10.8%, `"h-1"` 27.5%; φ=0, T=104 — EWC 5.8%; φ=0.5, T=260 — EWC 5.7%. Power for a 0.3-SD shift (φ=0.5, T=104): EWC 35% (size-adjusted 31% vs 36% for NW). Weekly WIS differences are autocorrelated, so keep the EWC default.

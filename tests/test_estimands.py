@@ -119,7 +119,7 @@ def test_seed_gain_frame_mixed_seeds_and_fill_rule():
     sb = {"l3": {1: [0, 1, 2], 4: [0, 1, 2]}, "l4": {1: [0, 1, 2], 4: [0]},
           "l3c": {1: [0], 4: [0]}, "l4c": {1: [0, 2], 4: [0, 2]}}
     sc = _seed_scores(rng, {"l3": .5, "l4": .4, "l3c": .45, "l4c": .41}, sb, T=8)
-    g = E.seed_gain_frame(sc, MODELS)
+    g = E.seed_gain_frame(sc, MODELS, seed_policy="fill")  # legacy rule
     assert g.attrs["seeds"] == [0, 1, 2]
     r = g.iloc[0]
     k = sc[(sc.unit_id == r.unit_id) & (sc.origin_week == r.origin_week) & (sc.horizon == r.horizon)]
@@ -186,3 +186,64 @@ def test_compute_estimands_v2_classes():
     sc2 = _seed_scores(rng, {"l3": .5, "l4": .5, "l3c": .45, "l4c": .45}, one, T=80, seed_sd=0.0)
     r2 = E.compute_estimands_v2(E.seed_gain_frame(sc2, MODELS), bootstrap=False, cluster_col=None)
     assert np.isnan(r2["ID_share"]["estimate"])
+
+
+def _mixed_sb():
+    return {"l3": {1: [0, 1, 2], 4: [0, 1, 2]}, "l4": {1: [0, 1, 2], 4: [0]},
+            "l3c": {1: [0], 4: [0]}, "l4c": {1: [0, 2], 4: [0, 2]}}
+
+
+def test_common_seed_policy_uses_only_shared_seeds():
+    rng = np.random.default_rng(16)
+    sc = _seed_scores(rng, {"l3": .5, "l4": .4, "l3c": .45, "l4c": .41}, _mixed_sb(), T=8)
+    with pytest.warns(RuntimeWarning, match="different seed sets"):
+        g = E.seed_gain_frame(sc, MODELS)
+    assert g.attrs["seed_policy"] == "common"
+    assert g.attrs["seed_mismatch"]["G_excess"] == len(g)
+    r = g[g.horizon == 1].iloc[0]
+    k = sc[(sc.unit_id == r.unit_id) & (sc.origin_week == r.origin_week) & (sc.horizon == 1)]
+    L = {m: k[k.model == m].set_index("seed").wis for m in MODELS.values()}
+    # G_excess: l3c {0} vs l4c {0,2} -> only seed 0
+    assert r.G_excess == pytest.approx(L["l3c"].loc[0] - L["l4c"].loc[0])
+    assert np.isnan(r["G_excess@2"]) and not r["has_G_excess@2"]
+    # G_emb at h1: l3 {0,1,2} vs l4 {0,1,2} -> mean over 3 seeds
+    assert r.G_emb == pytest.approx((L["l3"] - L["l4"]).mean())
+    # G_id: l3 {0,1,2} vs l3c {0} -> seed 0 only
+    assert r.G_id == pytest.approx(L["l3"].loc[0] - L["l3c"].loc[0])
+    # wis_<role> stays the role's own seed average
+    assert r.wis_L3 == pytest.approx(L["l3"].mean())
+    with pytest.raises(ValueError, match="different seed sets"):
+        E.seed_gain_frame(sc, MODELS, on_mismatch="error")
+
+
+def test_seed_sd_only_on_rows_with_all_seeds():
+    # extra seeds only at h1/h4, all roles equal: h2/h3 rows must not enter the seed SD
+    rng = np.random.default_rng(17)
+    sb = {m: {1: [0, 1, 2], 2: [0], 3: [0], 4: [0, 1, 2]} for m in MODELS.values()}
+    sc = _seed_scores(rng, {"l3": .5, "l4": .4, "l3c": .45, "l4c": .41}, sb, T=20,
+                      H=(1, 2, 3, 4))
+    import warnings as _w
+    with _w.catch_warnings():
+        _w.simplefilter("error")  # equal seed sets per row -> no warning
+        g = E.seed_gain_frame(sc, MODELS)
+    r = E.infer_estimand(g, "G_excess")
+    assert r["n_seeds"] == 3 and r["seed_horizons"] == [1, 4]
+    sub = g[g.horizon.isin([1, 4])]
+    sub.attrs = dict(g.attrs)
+    manual = [E.weekly_pooled(sub, f"G_excess@{s}").mean() for s in (0, 1, 2)]
+    assert r["seed_sd"] == pytest.approx(np.std(manual, ddof=1))
+    # the legacy fill rule shrinks the SD (h2/h3 rows identical across seeds)
+    gl = E.seed_gain_frame(sc, MODELS, seed_policy="fill")
+    rl = E.infer_estimand(gl, "G_excess")
+    assert rl["seed_sd"] < r["seed_sd"]
+    # point estimate on equal seed sets equals the seed-averaged-loss difference
+    np.testing.assert_allclose(g.G_excess, g.wis_L3C - g.wis_L4C)
+
+
+def test_no_common_seed_is_error():
+    rng = np.random.default_rng(18)
+    sb = {"l3": {1: [0], 4: [0]}, "l4": {1: [1], 4: [1]},
+          "l3c": {1: [0], 4: [0]}, "l4c": {1: [0], 4: [0]}}
+    sc = _seed_scores(rng, {"l3": .5, "l4": .4, "l3c": .45, "l4c": .41}, sb, T=6)
+    with pytest.raises(ValueError, match="no seed common"):
+        E.seed_gain_frame(sc, MODELS)

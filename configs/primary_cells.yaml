@@ -1,22 +1,36 @@
-# Primary hypothesis family (deviations_from_protocol.md row 12, fixed 2026-11-16).
+# Primary hypothesis family (deviations_from_protocol.md rows 12, 21, 22; fixed 2026-11-16).
 # Pooled-over-horizons G_excess = WIS(L3+C*) - WIS(L4+C*), history arm, one cell per
 # country x split; Holm across the 14 cells (scripts/run/primary_family.py).
-# runs: role -> run dir (or a list of dirs, e.g. extra-seed runs). For S1 the cells use the
-# shared-params rule (runs/<c>_s1_shared); when `plan` is given, a stage marked
-# "reuse:<dir>" in that plan.json replaces the listed dir. A cell is available only when all
-# four roles have scores.parquet; otherwise it is reported as pending.
+# Horizons: the primary estimate pools h in `primary_horizons` = {1, 4} in EVERY cell (row 21,
+# so S1 matches S2-S5). S1 pooled over h1-h4 is a secondary result (`secondary_horizons`,
+# computed for cells with `secondary: true` when primary_family.py is run with --secondary;
+# it is never part of the Holm family).
+# runs: role -> run dir, or a list of dirs (extra-seed runs are concatenated; rows are told
+# apart by the `seed` column). Row 22: Brazil S1 uses seeds 0, 1, 2 at h{1,4}; the seed-1/2
+# runs are brazil_s1_sens_seed{1,2}_<stage>. primary_family.py FAILS if the roles of an
+# estimand have different seed sets at a primary horizon, and every estimand uses only the
+# seeds common to both of its roles. For S1 the cells use the shared-params rule
+# (runs/<c>_s1_shared); when `plan` is given, a stage marked "reuse:<dir>" in that plan.json
+# replaces the FIRST listed dir. A cell is available only when every listed dir has
+# scores.parquet; otherwise it is reported as pending.
 # Spatial splits are named as split_pipeline.sh writes them: runs/<country>_<split>_<stage>
 # (S5: country = held-out country).
+primary_horizons: [1, 4]
+secondary_horizons: [1, 2, 3, 4]
 cells:
   - country: brazil
     split: S1
     arm: history
     plan: runs/brazil_s1_shared/plan.json
+    secondary: true
     runs:
-      L3: runs/brazil_s1_shared_L3
-      L4: runs/brazil_s1_shared_L4
-      L3C: runs/brazil_s1_shared_L3_Cstar
-      L4C: runs/brazil_s1_shared_L4_Cstar
+      L3: [runs/brazil_s1_shared_L3, runs/brazil_s1_sens_seed1_L3, runs/brazil_s1_sens_seed2_L3]
+      L4: [runs/brazil_s1_shared_L4, runs/brazil_s1_sens_seed1_L4, runs/brazil_s1_sens_seed2_L4]
+      L3C: [runs/brazil_s1_shared_L3_Cstar, runs/brazil_s1_sens_seed1_L3_Cstar,
+            runs/brazil_s1_sens_seed2_L3_Cstar]
+      L4C: [runs/brazil_s1_shared_L4_Cstar, runs/brazil_s1_sens_seed1_L4_Cstar,
+            runs/brazil_s1_sens_seed2_L4_Cstar]
+    note: "seeds 0,1,2 at h1/h4 (row 22); seed 0 only at h2/h3 (secondary pooling)"
   - country: brazil
     split: S2
     arm: history
@@ -57,6 +71,7 @@ cells:
     split: S1
     arm: history
     plan: runs/colombia_s1_shared/plan.json
+    secondary: true
     runs:
       L3: runs/colombia_s1_shared_L3
       L4: runs/colombia_s1_shared_L4
@@ -102,6 +117,7 @@ cells:
     split: S1
     arm: history
     plan: runs/peru_s1_shared/plan.json
+    secondary: true
     runs:
       L3: runs/peru_s1_shared_L3
       L4: runs/peru_s1_shared_L4
@@ -120,12 +136,13 @@ cells:
     split: S1
     arm: history
     plan: runs/taiwan_s1_shared/plan.json
+    secondary: true
     runs:
       L3: runs/taiwan_s1_shared_L3
       L4: runs/taiwan_s1_shared_L4
       L3C: runs/taiwan_s1_shared_L3_Cstar
       L4C: runs/taiwan_s1_shared_L4_Cstar
-    note: "C* = C3 (per-year permutation; audit H2) - rerun pending the C3 fix"
+    note: "thin-data stress test; C* from rule v2 (row 19)"
   - country: taiwan
     split: S5
     arm: history

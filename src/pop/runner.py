@@ -17,6 +17,7 @@ import contextlib
 import copy
 import fcntl
 import itertools
+import hashlib
 import json
 import logging
 import multiprocessing as mp
@@ -232,6 +233,54 @@ def chunk_name(run, seed, year, h, fold=None):
     return f"{run['model']}__{run['level']}{f}__s{seed}__{year}__h{h}"
 
 
+FP_LOG = Path("runs/queue/fingerprint_mismatch.log")
+
+
+def chunk_fingerprint(cfg, run, params) -> str:
+    """sha1 of what determines a chunk's numbers besides its name (audit 3 M-3, 2026-11-16b):
+    frozen params, model/level, feature options (lst_screen, yearly_ref, report_delay, ...) and the
+    control kwargs of this run's control only, quantiles, split spec and the flag-gap rule.
+    Threads are left out (predictions are bit-identical across thread counts, compute_plan.md)."""
+    feats = {k: v for k, v in (cfg.get("features") or {}).items() if k != "control_kw"}
+    ctrl = run["level"].partition("+")[2]
+    ck = ((cfg.get("features") or {}).get("control_kw") or {}).get(ctrl) if ctrl else None
+    spec = {"model": run["model"], "level": run["level"], "params": params, "features": feats,
+            "control_kw": ck, "quantiles": [float(q) for q in cfg["quantiles"]],
+            "split": cfg.get("split"), "exclude_flag_gap": bool(cfg.get("exclude_flag_gap", True))}
+    return hashlib.sha1(json.dumps(spec, sort_keys=True, default=str).encode()).hexdigest()
+
+
+def done_info(done: Path, fp: str | None):
+    """The chunk's .done.json info if it may be reused, else None. A chunk whose stored fingerprint
+    differs from ``fp`` is not reused; legacy chunks without a fingerprint are accepted."""
+    if not done.exists():
+        return None
+    info = json.loads(done.read_text())
+    if fp is None or info.get("fingerprint") in (None, fp):
+        return info
+    return None
+
+
+def move_mismatched(cdir: Path, name: str, fp: str):
+    """Move a fingerprint-mismatched chunk's files aside (never delete) and log it."""
+    tgt = cdir.parent / "chunks_fpmismatch"
+    tgt.mkdir(exist_ok=True)
+    old = json.loads((cdir / f"{name}.done.json").read_text()).get("fingerprint")
+    stamp = time.strftime("%Y%m%dT%H%M%S")
+    for f in cdir.glob(f"{name}.*"):
+        if f.name.endswith(".lock"):
+            continue
+        os.replace(f, tgt / f"{f.name}.{stamp}")
+    try:
+        with open(FP_LOG, "a") as fh:
+            fh.write(f"{time.strftime('%F %T')} {cdir.parent.name} {name} stored={old} now={fp} "
+                     f"-> moved to {tgt.name}/ and recomputed\n")
+    except OSError:
+        pass
+    log.warning("chunk %s: fingerprint mismatch (stored %s, now %s); moved aside, recomputing",
+                name, old, fp)
+
+
 def to_long(grid, idx, Q, quantiles, meta) -> pd.DataFrame:
     n, k = Q.shape
     u, t, o = (idx[c].to_numpy() for c in ("u", "t", "o"))
@@ -273,8 +322,12 @@ def _atomic(path: Path, write):
 def run_chunk(cfg, datas, truth, run, params, seed, year, h, cdir: Path, fold=None):
     name = chunk_name(run, seed, year, h, fold)
     done = cdir / f"{name}.done.json"
+    fp = chunk_fingerprint(cfg, run, params)
+    info = done_info(done, fp)
+    if info is not None:
+        return info
     if done.exists():
-        return json.loads(done.read_text())
+        move_mismatched(cdir, name, fp)
     t0 = time.time()
     sp = get_split(cfg, fold, year)
     for d in datas.values():
@@ -296,7 +349,7 @@ def run_chunk(cfg, datas, truth, run, params, seed, year, h, cdir: Path, fold=No
     info = dict(chunk=name, run=run["name"], split=sp.name, fold=meta["fold"], test_year=year,
                 horizon=h, seed=seed, n_train=int(len(ytr)), n_test=int(len(Xte)),
                 n_features=int(Xtr.shape[1]), seconds=round(time.time() - t0, 1),
-                threads=int(cfg["threads"]), pid=os.getpid(),
+                threads=int(cfg["threads"]), pid=os.getpid(), fingerprint=fp,
                 maxrss_gb=round(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1e6, 2))
     if hasattr(m, "alpha_"):
         info.update(nb_alpha=m.alpha_, nb_converged=m.converged_)
@@ -339,13 +392,16 @@ def claim_and_run(cfg, datas, truth, run, params, seed, year, h, cdir: Path, fol
     finished by the previous holder is not recomputed."""
     name = chunk_name(run, seed, year, h, fold)
     done = cdir / f"{name}.done.json"
-    if done.exists():
-        return json.loads(done.read_text())
+    fp = chunk_fingerprint(cfg, run, params)
+    info = done_info(done, fp)
+    if info is not None:
+        return info
     with chunk_lock(cdir, name) as got:
         if not got:
             return None
-        if done.exists():
-            return json.loads(done.read_text())
+        info = done_info(done, fp)
+        if info is not None:
+            return info
         info = run_chunk(cfg, datas, truth, run, params, seed, year, h, cdir, fold)
         (cdir / f"{name}.lock").unlink(missing_ok=True)  # safe: done exists before unlock
         return info

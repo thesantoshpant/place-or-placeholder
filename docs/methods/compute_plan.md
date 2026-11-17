@@ -1,5 +1,7 @@
 # Compute plan (Paper 1 runner)
 
+> **SUPERSEDED (2026-11-16).** The scope below (S0, S2 with 27/33 leave-one-state-out folds, 10 seeds for C3/C4 everywhere, controls on every test year) was cut: S0 dropped, S2 = 5 grouped folds, BR S3 = 5 folds, spatial splits at h {1, 4}, controls only at the 2019 origin with 3 seeds, final C\* runs with 1 seed. See `docs/plans/deviations_from_protocol.md` rows 3–4 and `docs/methods/split_pipeline.md` (global scheduler). The timing measurements and the determinism checks remain valid.
+
 Measured 2026-11-16 on epyc2 (64 threads, shared; load ~40–50 from three live 16-thread runs, so
 all timings are pessimistic). Scratch: `tmp/bench_parallel/` (scripts `build_design.py`, `fit.py`,
 `compare.py`, `compute_model.py`; raw results `results.jsonl`, `compute_model.csv`).

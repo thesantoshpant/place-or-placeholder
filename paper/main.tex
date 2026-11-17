@@ -112,8 +112,9 @@ units at city scale.
 We provide a multi-country test of whether satellite embeddings add forecast skill beyond
 location. Specifically:
 \begin{enumerate}
-  \item A pre-specified evaluation protocol for weekly district dengue forecasts across four
-  countries and 6{,}990 units, with a dated log of every later deviation. It uses a feature ladder
+  \item An evaluation protocol for weekly district dengue forecasts across four
+  countries and 6{,}990 units, with a dated log of every later deviation (the temporal split is
+  partly unblinded; Section~\ref{sec:prespec}). It uses a feature ladder
   (L0--L4) with every level trained on the same rows and one hyperparameter set per country, so
   the embedding comparison is confounded neither by training-window length nor by model capacity.
   \item Location-only controls (C1--C6) that replace the embedding block. They separate
@@ -451,9 +452,12 @@ located by a polygon representative point, which avoids offshore centroids.
   is fitted to the within-country semivariogram of the renormalised AlphaEarth district means:
   Brazil 8{,}483\,km, Colombia 705\,km, Peru 148\,km, Taiwan 27\,km.
   \item[C4s: short-range fields.] C4 with the same white noise and $r=\min(D,\ \text{fitted range})$, where
-  $D$ is the country's S3 buffer distance (D15): Brazil 225\,km and Colombia 130\,km. For Peru and Taiwan
+  $D$ is the country's S3 buffer distance (D15, D20): Brazil 225\,km and Colombia 130\,km. For Peru and Taiwan
   the rule gives the fitted range, so C4s equals C4 and is not a separate candidate; under S5 the
-  per-country minimum is used. At Brazil's fitted range C4 is close to a planar trend rather than an
+  per-country minimum is used. The min rule was implemented on 16 November 2026 (D20); earlier Peru and
+  Taiwan selections ran C4s at $D$ (275 and 170\,km), and it was never selected. Until the same date C4
+  and C4s were all-missing in Colombia and Taiwan, because units without geometry entered the field
+  construction; those runs were discarded and rerun (D18). At Brazil's fitted range C4 is close to a planar trend rather than an
   identifier, which is why the short-range version was added.
   \item[C5: static snapshot.] The AlphaEarth 2023 embedding for every target year. This mirrors the
   static-snapshot design of earlier work and addresses RQ4. It uses 2023 imagery for 2020--2023 targets
@@ -466,12 +470,18 @@ located by a polygon representative point, which avoids offshore centroids.
 
 \paragraph{Choice of $\Cstar$.}
 $\Cstar$ is chosen separately for each country $\times$ split at the 2019 origin (train 2018, test 2019),
-before any test-year comparison under that split's selection: it is the candidate with the lowest
-seed-averaged mean log-WIS, pooled over the split's horizons ($h=1$--4 in S1, $h\in\{1,4\}$ in S2--S5).
-Candidates are C1 (not in S5), C2, C3, C4, C4s (where it differs from C4) and C5. C3, C4 and C4s are
-scored with 3 seeds (the seed sets both the random control and the LightGBM seed); the others with seed 0.
+using selection rule v2 (D19), adopted after the Brazil, Peru and Taiwan S1 test results had been seen
+and before any spatial-split result was read. Candidates are C1 (not in S5), C2, C3, C4, C4s (where it
+differs from C4) and C5, scored by mean log-WIS pooled over the split's horizons ($h=1$--4 in S1,
+$h\in\{1,4\}$ in S2--S5). C3, C4 and C4s are scored with 3 seeds (the seed sets both the random control
+and the LightGBM seed); the others with seed 0, so seed-averaged and single-seed scores are compared.
+Rule v2: (i) degenerate candidates are excluded (control features all missing or constant, or seed-0
+forecasts identical to L3); (ii) the tie set is every candidate within $2\,\mathrm{SE}$ of the best, with SE
+from the pooled seed SD; (iii) $\Cstar$ is the first tie-set member in the fixed order
+C1 $>$ C3 $>$ C2 $>$ C4s $>$ C4 $>$ C5; (iv) a cell with zero seed SD is marked uninformative. Before D19,
+$\Cstar$ was simply the lowest score, with no near-tie rule.
 The final test-year runs of L3+$\Cstar$ and L4+$\Cstar$ use one seed (seed 0), also when $\Cstar$ is
-C3, C4 or C4s (D4). There is no near-tie rule.
+C3, C4 or C4s (D4), except the Brazil S1 primary cell (seeds 0--2 at $h\in\{1,4\}$, D22).
 
 \subsection{Splits}
 \label{sec:splits}
@@ -482,7 +492,7 @@ C3, C4 or C4s (D4). There is no near-tie rule.
   departments). Held-out units are always in states never seen in training.
   \item[S3 (spatial blocks with buffer).] $k$-means blocks on unit locations: Brazil 10 blocks grouped
   into 5 folds of two (largest with smallest), Colombia 6 blocks = 6 folds. Training units within
-  distance $D$ of any held-out unit of the fold are dropped. $D$ is estimated on 2014--2019 from the
+  polygon-centroid distance $D$ of any held-out unit of the fold are dropped. $D$ is estimated on 2014--2019 from the
   correlogram of de-seasonalised $\log(1+\text{cases})$: 225\,km for Brazil and 130\,km for Colombia
   (Appendix~\ref{app:refinements}).
   \item[S4 (held-out units).] Five folds of units, stratified by Admin1 (Brazil, Colombia).
@@ -556,8 +566,9 @@ differences ($\phi=0.5$, $T=104$), Newey--West had 10.8\% size at nominal 5\% an
 \paragraph{Sensitivity interval.}
 A bootstrap that resamples Admin1 clusters crossed with circular \textbf{52-week} blocks (the same blocks
 for all states; 2{,}000 replicates; percentile interval of the row-level mean) is reported as a
-sensitivity analysis \citep{kunsch1989jackknife} \citeneeded{circular block bootstrap, Politis and Romano
-1992, in Exploring the Limits of Bootstrap; chapter pages not verified}. The protocol's 8-week blocks were
+sensitivity analysis \citep{kunsch1989jackknife,politis1992circular}. With $T=209$--261 weeks this gives only
+4--5 blocks, so these intervals are coarse, and their point estimate is the row-level mean rather than the
+week-pooled mean. The protocol's 8-week blocks were
 abandoned because weekly loss differences remain autocorrelated at lags 8 and 52 (about 0.4 at both), and
 8-week intervals excluded zero where the DM $p$ was 0.3--0.5 (D11).
 
@@ -571,15 +582,16 @@ $\mathrm{MDE}=(t_{B,0.975}+t_{B,0.80})\,\mathrm{SE}$, the effect detectable with
 level, as an absolute value and as a percentage of $\WIS(\text{reference})$.
 
 \paragraph{Multiplicity.}
-The primary hypothesis family (D12) is the pooled-horizon $\Gex$ of the history arm in 14 country
-$\times$ split cells: Brazil and Colombia S1--S5, Peru S1 and S5, Taiwan S1 and S5. Holm's method
+The primary hypothesis family (D12, D21) is the $\Gex$ of the history arm pooled over $h\in\{1,4\}$
+in each of 14 country $\times$ split cells (S1 included; S1 pooled over $h=1$--4 is secondary): Brazil and Colombia S1--S5, Peru S1 and S5, Taiwan S1 and S5. Holm's method
 \citep{holm1979simple} is applied across these 14 cells. Per-horizon, per-year and per-stratum results,
 $\Gemb$, $\Gid$ and the no-history arm are secondary and are reported with unadjusted $p$-values.
 
 \paragraph{Seed noise.}
 LightGBM uses bagging and feature subsampling, so the seed changes the fit. Brazil S1's four primary runs
-(L3, L4, L3+$\Cstar$, L4+$\Cstar$) are repeated with two extra seeds at $h\in\{1,4\}$ (D16); per-row WIS is
-averaged over seeds before the estimands, and the seed standard deviation of each estimand is reported
+(L3, L4, L3+$\Cstar$, L4+$\Cstar$) are repeated with two extra seeds at $h\in\{1,4\}$ (D16, D22); for each
+estimand the per-row WIS difference is averaged over the seeds common to both of its runs, the seed SD is
+computed only where all those seeds exist, and the seed standard deviation of each estimand is reported
 and used as a noise floor for the single-seed cells. At the 2019 origin the per-horizon seed SD of a
 single run was 0.0001--0.0003 log-WIS, the same order as the S1 estimates.
 
@@ -636,12 +648,19 @@ The LST outlier screen (Section~\ref{sec:covariates}) is applied to Colombia, Pe
 run, and is off for Brazil S1--S4 (D7).
 
 \subsection{Pre-specification}
-The splits, estimands, control-selection rule, quantile set and scale were fixed in a design document
-before the primary test-year comparisons \todo{freeze date (planned 15 January 2027) and archive link}.
-Test-year scores of the baselines (L0--L2, TimesFM) were inspected during pipeline development. Brazil S1
-and Peru S1 L3/L4 results were seen before the shared-parameter rule (D2), the equivalence margin (D9) and
-the inference policy and primary family (D11, D12) were fixed, and before the no-history arm (D8) was
-added. All of these were fixed before any spatial-split result existed.
+\label{sec:prespec}
+The original protocol (evaluation plan and design review, 15 November 2026) fixed the ladder, the
+splits, the estimands, the quantile set and the log scale. Every later change is in the dated deviation
+log (Appendix~\ref{app:deviations}): D1--D10 were committed in \texttt{d8c7944}, D11--D17 in
+\texttt{fcc3c38} before any spatial-split result was read, the no-history arm was pre-registered in
+\texttt{bd3ba50} before it ran, and D18--D23 were adopted on 16 November 2026, also before any
+spatial-split result was read \todo{commit hash for D18--D23}. The temporal split S1 is therefore
+\emph{partly unblinded}: test-year scores of the baselines (L0--L2, TimesFM) were inspected during
+pipeline development, and Brazil, Peru and Taiwan S1 L3/L4 results were seen before the shared-parameter
+rule (D2), the no-history arm (D8), the equivalence margin (D9), the inference policy and primary family
+(D11, D12), the C4 fix (D18), the $\Cstar$ rule (D19), the common horizon set (D21) and the seed rule
+(D22). The S1 cells should be read with this in mind. A formal design freeze is planned for
+15 January 2027 and has not yet taken place \todo{archive link once frozen}.
 
 % ===========================================================================
 \section{Results}
@@ -702,8 +721,10 @@ identified, because the semivariogram rises almost linearly with no sill.
 \centering\small
 \caption{Selection of $\Cstar$ on the 2019 origin (Brazil, LightGBM with the per-level L3 parameters,
 31 leaves; train 2018, validate 2019; 1{,}147{,}536 rows per run). Mean log-WIS pooled over $h=1$--4.
-C3 and C4: mean over 10 seeds. C3 here is the superseded per-year permutation (D13), C4 uses the fitted
-range, and C4s and C6 were not yet candidates.}
+C3 and C4: mean over 10 seeds. Superseded: C3 here is the per-year permutation (D13), C4 uses the fitted
+range, C4s and C6 were not yet candidates, and $\Cstar$ was the lowest score rather than rule v2 (D19).
+Kept as part of the per-level tuning sensitivity only. \todo{replace with the shared-parameter selection
+under rule v2 for all cells}}
 \label{tab:cstar}
 \begin{tabular}{lrrrrrr}
 \toprule
@@ -757,8 +778,8 @@ bootstrap is wider than the EWC interval but agrees on sign and non-significance
 \begin{table}[t]
 \centering\small
 \setlength{\tabcolsep}{3.5pt}
-\caption{Primary family: excess gain $\Gex$ by country and split, LightGBM, pooled over the split's
-horizons (S1: $h=1$--4; S2--S5: $h\in\{1,4\}$), in log-WIS units (positive = embedding helps beyond
+\caption{Primary family: excess gain $\Gex$ by country and split, LightGBM, pooled over
+$h\in\{1,4\}$ in every cell (D21; S1 over $h=1$--4 is secondary), in log-WIS units (positive = embedding helps beyond
 $\Cstar$). Interval: 95\% DM/EWC+HLN. $p$: raw DM; $p_{\text{Holm}}$: Holm over the 14 cells. Class: TOST
 at a margin of 1\% of $\WIS(L3)$. MDE as \% of $\WIS(L3)$. \textcolor{red}{Red} cells are pending.}
 \label{tab:estimands}
@@ -779,7 +800,7 @@ Colombia & S1 & \tc & \tc & \tc & \tc & \tc & \tc & \tc & \tc \\
          & S4 & \tc & \tc & \tc & \tc & \tc & \tc & \tc & \tc \\
          & S5 & \tc & \tc & \tc & \tc & \tc & \tc & \tc & \tc \\
 \midrule
-Peru     & S1 & C1 & 0.2460 & $-0.00140$ & $[-0.00318,+0.00037]$ & 0.112 & \tc & inconclusive & 1.01\% \\
+Peru     & S1 & C1 & 0.2447 & $-0.00151$ & $[-0.00331,+0.00029]$ & 0.094 & \tc & inconclusive & 1.03\% \\
          & S5 & \tc & \tc & \tc & \tc & \tc & \tc & \tc & \tc \\
 \midrule
 Taiwan   & S1 & \tc & \tc & \tc & \tc & \tc & \tc & \tc & \tc \\
@@ -788,10 +809,11 @@ Taiwan   & S1 & \tc & \tc & \tc & \tc & \tc & \tc & \tc & \tc \\
 \end{tabular}}
 
 \smallskip
-\footnotesize $^{a}$Provisional: per-level 31-leaf runs, one seed; shared-parameter runs pending
+\footnotesize $^{a}$Provisional: per-level 31-leaf runs, one seed, pooled over $h=1$--4 (not the primary
+$h\in\{1,4\}$ definition of D21); shared-parameter 3-seed runs pending
 \todo{replace Brazil S1 with the shared-parameter result, seed-averaged where extra seeds exist}. S5 rows are scored on the held-out
-country; C1 is undefined under S5. Peru S1 uses the shared parameters (31 leaves), one seed, 96{,}108
-scored rows.
+country; C1 is undefined under S5. Peru S1 uses the shared parameters (31 leaves), one seed, $h\in\{1,4\}$ (48{,}054 scored rows; over
+$h=1$--4: $-0.00140$, $[-0.00318,+0.00037]$, $p=0.112$).
 \end{table}
 
 \begin{table}[t]
@@ -967,8 +989,9 @@ no-history arm. Third, a correctly causal target encoding was the only location 
 L3 at the Brazil selection origin, while a naive in-sample target encoding made forecasts much worse
 (+0.088 log-WIS) through target leakage. Location controls must therefore be built with the same care as
 the features they are compared against. Fourth, annual embeddings vary only between units and slowly
-across years, never within a season. Any gain they provide must come from differences in level or in
-seasonal amplitude between units, which is the information a location identifier can also supply.
+across years, never within a season. Their main contribution is therefore likely to be differences in
+level or seasonal amplitude between units, which a location identifier can also supply, although tree
+models can also use static features to modulate the response to lags and climate (interactions).
 
 Relative to the PDFM studies, our design differs in embedding source (satellite imagery only),
 temporal resolution (weekly, 1--4 weeks) and the year-lagged embedding. Our S1 results are therefore not a
@@ -1026,10 +1049,23 @@ need the monthly arm and the Brazil-only PDFM level, both deferred to a later ve
   runs, uses one seed, so its intervals condition on one realisation of the fit.
   \item \textbf{Control selection.} $\Cstar$ is chosen on one origin with one training year, and margins
   between controls are small; with C3 or C4 selected on 3 seeds and run with 1, the choice can depend on
-  hyperparameters and noise. The controls panel reports $\Gex$ under alternative controls for Brazil S1.
+  hyperparameters and noise. Rule v2 (D19) settles near-ties by a fixed priority order rather than by the
+  noisy ranking. The controls panel reports $\Gex$ under alternative controls for Brazil S1.
   \item \textbf{Post-hoc changes.} The shared-parameter rule, equivalence margin, inference policy,
-  primary family and no-history arm were fixed after Brazil and Peru S1 results had been seen
-  (Appendix~\ref{app:deviations}). All were fixed before any spatial-split result.
+  primary family, no-history arm, C4 fix, $\Cstar$ rule, common horizon set and seed rule were fixed after
+  Brazil, Peru and/or Taiwan S1 results had been seen (Appendix~\ref{app:deviations}). All were fixed
+  before any spatial-split result was read.
+  \item \textbf{Static snapshot control.} C5 uses the 2023 embedding for 2020--2022 targets, i.e.\ later
+  imagery. This favours the control and is conservative for the embedding claim.
+  \item \textbf{LST definition across splits.} Brazilian test rows use the LST outlier screen in S5 but
+  not in S1--S4, so comparisons of Brazilian rows across splits mix two LST definitions (the screen flags
+  0.02--0.08\% of Brazilian unit-months).
+  \item \textbf{Buffer geometry.} The S3 buffer uses polygon-centroid distances, whereas the C1 encodings
+  and C4 use representative points. Measured between representative points, a few training units lie
+  closer than $D$ to held-out units (minimum 161\,km in one Brazilian fold, $D=225$\,km; 122\,km in
+  Colombia, $D=130$\,km).
+  \item \textbf{Stratum weighting.} Stratum estimates (e.g.\ outbreak weeks) give each target week equal
+  weight regardless of how many stratum rows it contains, so they are not shares of the overall gain.
   \item \textbf{Scope deferred to a later version.} The TimesFM + LightGBM residual hybrid, the monthly
   replication arm, the PDFM level (L5), a vintage-based reporting-lag evaluation, the leaky random split S0,
   the leave-one-state-out S2 and the no-history S3 are not part of this version.
@@ -1217,7 +1253,7 @@ had been seen.
 {\footnotesize
 \setlength{\tabcolsep}{3pt}
 \begin{longtable}{>{\raggedright\arraybackslash}p{0.4cm}>{\raggedright\arraybackslash}p{6.4cm}>{\raggedright\arraybackslash}p{5.3cm}>{\raggedright\arraybackslash}p{2.6cm}}
-\caption{Deviations from the protocol (D1--D17).}\label{tab:deviations}\\
+\caption{Deviations from the protocol (D1--D23).}\label{tab:deviations}\\
 \toprule
 D & Change & Reason & After test results? \\
 \midrule
@@ -1272,6 +1308,19 @@ candidates. & At 8{,}483\,km C4 is a near-planar trend, not an identifier. & No.
 single-seed cells. & Seed SD $\approx 0.0001$--0.0003, the same order as $\Gex$. & Yes. \\
 17 & Documented, not changed: yearly inputs keyed to target year $y-1$; annual refits train up to 3 weeks past the earliest
 January origins. A \texttt{yearly\_ref: origin} sensitivity is run for Brazil S1. & Audit; small and symmetric across levels. & -- \\
+18 & C4/C4s fields fitted on units with finite coordinates; all Colombia, Taiwan and S5 C4/C4s runs and the Colombia S1 and
+Brazil S5 $\Cstar$ final runs discarded and rerun. & Units without geometry made C4/C4s all-missing in Colombia and Taiwan
+(no-op controls; Colombia S1 $\Cstar$ was effectively plain L3). & Yes (Colombia S1 selection, Taiwan S1 results). \\
+19 & $\Cstar$ rule v2: drop degenerate candidates; tie set within $2\,$SE (pooled seed SD) of the best; fixed priority
+C1 $>$ C3 $>$ C2 $>$ C4s $>$ C4 $>$ C5 (no-history: C3 $>$ C2 $>$ C6 $>$ C4); zero seed SD = uninformative. &
+$\Cstar$ was decided inside seed noise, with ties broken by sort order. & Yes (Brazil, Peru, Taiwan S1); before any spatial result. \\
+20 & C4s range $=\min(D,\text{fitted})$ implemented; in Peru and Taiwan C4s equals C4 and is not a candidate. &
+C4s had run at $D$ there (a longer range than C4); it was never selected. & Yes; no $\Cstar$ changed. \\
+21 & Primary family pools $h\in\{1,4\}$ in every cell; S1 pooled over $h=1$--4 becomes secondary. &
+Otherwise the S1 cells estimate a different quantity from S2--S5. & Yes (S1); before any spatial result. \\
+22 & Brazil S1 primary cell uses seeds 0--2 at $h\in\{1,4\}$; each estimand uses only seeds common to both runs; seed SD
+only where all seeds exist. & The manifest listed one seed; the old fill rule understated the seed SD. & Yes (Brazil S1). \\
+23 & Scheduler thread budget counts other users' jobs. & Operations. & No effect on results. \\
 \end{longtable}
 }
 \noindent{\footnotesize $^{a}$The deferred item is an evaluation on data vintages. A simpler two-week delay sensitivity

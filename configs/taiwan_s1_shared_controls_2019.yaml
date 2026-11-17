@@ -50,7 +50,7 @@ features:
     C4:
       range_km: 27.12
     C4s:
-      range_km: 170.0
+      range_km: 27.12
 runs:
 - model: lgbm
   level: L3
@@ -80,10 +80,5 @@ runs:
 - model: lgbm
   level: L3+C4
   name: lgbm-L3+C4
-  seeded: true
-  params_from: runs/taiwan_s1_baselines/tuning_lgbm-L1.json
-- model: lgbm
-  level: L3+C4s
-  name: lgbm-L3+C4s
   seeded: true
   params_from: runs/taiwan_s1_baselines/tuning_lgbm-L1.json

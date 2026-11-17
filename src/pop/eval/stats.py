@@ -1,4 +1,4 @@
-"""Inference helpers: Diebold-Mariano (EWC/HAC + HLN), cluster moving-block bootstrap, Holm.
+"""Inference helpers: Diebold-Mariano (EWC/HAC + HLN), cluster circular block bootstrap, Holm.
 
 References
 - Diebold FX, Mariano RS (1995). Comparing predictive accuracy. JBES 13:253-263.
@@ -7,7 +7,7 @@ References
 - Newey WK, West KD (1987). Econometrica 55:703-708; (1994) RES 61:631-653.
 - Lazarus E, Lewis DJ, Stock JH, Watson MW (2018). HAR inference:
   recommendations for practice. JBES 36:541-559 (EWC estimator).
-- Kunsch HR (1989); Politis DN, Romano JP (1992) (circular block bootstrap).
+- Kunsch HR (1989) (moving blocks); Politis DN, Romano JP (1992) (circular blocks; used here).
 - Holm S (1979). Scand J Stat 6:65-70.
 """
 from __future__ import annotations
@@ -183,15 +183,21 @@ def block_bootstrap_means(
     *,
     cluster_col: str | None = "state",
     time_col: str = "target_week",
-    block_len: int = 8,
+    block_len: int = 52,
     n_boot: int = 2000,
     seed: int = 0,
     shared_time_blocks: bool = True,
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Bootstrap the row-level means of ``value_cols``.
+    """Bootstrap the row-level means of ``value_cols`` (sensitivity analysis only).
 
-    Each replicate draws clusters with replacement, then circular blocks of
-    ``block_len`` time points (wrapping), truncated to T. With
+    This is a CIRCULAR block bootstrap (Politis & Romano 1992): blocks wrap around the end
+    of the series (index modulo T). Each replicate draws clusters with replacement, then
+    circular blocks of ``block_len`` time points, truncated to T. Default ``block_len`` = 52
+    weeks (deviations row 11; was 8 until 2026-11-16, which audit 2 found anti-conservative).
+    With T = 200-260 weeks that is only 4-5 blocks, so percentile CIs are coarse.
+    The point estimate (and each replicate) is the ROW-LEVEL mean (sum over rows / number of
+    rows). It equals the primary week-pooled mean (``estimands.weekly_pooled``) only for a
+    balanced panel with one horizon. With
     ``shared_time_blocks`` one set of week indices is used for all clusters in
     a replicate (preserves common-week shocks); else drawn per cluster.
     Returns (point estimate (V,), replicates (n_boot, V)).

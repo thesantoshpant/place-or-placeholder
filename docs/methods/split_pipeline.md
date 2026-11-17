@@ -1,5 +1,7 @@
 # Split pipeline and queue (S0, S2–S5, S1 shared-params)
 
+> **Current rules (2026-11-16; see `docs/plans/deviations_from_protocol.md` rows 5, 6, 14, 18–21).** C1 in S2–S4 is the **matched** kNN encoding built from the neighbours' **pre-training-years** mean (2014–17 for Brazil), not plain LOO over in-period targets; S4 matched = LOO. **S5 params = Brazil's L1 (127/100), or Colombia's L1 (31/100) when Brazil is held out.** C\* is chosen by selection rule v2 (row 19). C4s range = min(D, fitted). C4/C4s fields are fitted on units with finite coordinates (row 18). S0 is dropped. Older statements below that conflict with these are superseded.
+
 `scripts/run/split_pipeline.sh <country> <split>` runs one (country, split) end to end. Since 2026-11-16 14:36 every job runs under ONE global priority scheduler (`scripts/run/scheduler.py`, section "Global scheduler" at the end); the lane sections below are history.
 
 ## Pipeline (`split_pipeline.sh`)
@@ -13,14 +15,14 @@
   5. `L3`, `L4`, `L3_Cstar`, `L4_Cstar`: all test years, h1–h4
 
   A stage is skipped once its `.done` file exists, and chunks resume through flock claims, so you can kill and relaunch at any point.
-- **Params (shared-params rule, no re-tuning).** Each country uses ONE set for every level and control: its S1 **L1** tuning (`runs/<c>_s1_baselines/tuning_lgbm-L1.json`). TW S0, all S5 jobs and `s1brp` use Brazil's L1 (127 leaves / min_data 100). CO and PE L1 = 31/100. TW L1 = 31/100.
+- **Params (shared-params rule, no re-tuning).** Each country uses ONE set for every level and control: its S1 **L1** tuning (`runs/<c>_s1_baselines/tuning_lgbm-L1.json`). TW S0 (dropped), `s1brp` and every S5 job with Brazil in training use Brazil's L1 (127 leaves / min_data 100); S5 with Brazil held out uses Colombia's L1 (31/100). CO and PE L1 = 31/100. TW L1 = 31/100.
 - **`s1_shared` reuse.** A stage whose per-level S1 params already equal L1 reuses the existing S1 run; see `runs/<c>_s1_shared/plan.json` and `stage_*.reuse`.
   - BR: L3 reuses `runs/brazil_s1_L3_leaves127`.
   - CO: every stage is reused.
   - PE: L4 is reused. L4+C\* is reused if C\* is unchanged.
   - TW: everything reruns.
 - **LST screen:** on for CO/PE/TW and for every S5 job (mixed countries). Off for Brazil S0–S4, as in Brazil S1.
-- **C4 `range_km`:** each country's S1 value (BR 8483, CO 705, PE 148, TW 27 km). S5 uses a per-country dict. C1 uses `c1_period: auto`: pre-training years in S0/S1, and LOO-kNN over training rows in S2–S4.
+- **C4 `range_km`:** each country's S1 value (BR 8483, CO 705, PE 148, TW 27 km). S5 uses a per-country dict. C1 uses `c1_period: auto`, which now means pre-training years in every split; in S2–S4 training units get the matched leave-out kNN encoding (superseded: LOO-kNN over in-period training rows).
 - **Threads** are always 4 per worker.
 
 ## Queue (`queue.sh launch | status | budget | workers <L> | lane <L> | reap`)

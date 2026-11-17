@@ -83,8 +83,3 @@ runs:
   name: lgbm-L3+C4
   seeded: true
   params_from: runs/brazil_s1_baselines/tuning_lgbm-L1.json
-- model: lgbm
-  level: L3+C4s
-  name: lgbm-L3+C4s
-  seeded: true
-  params_from: runs/brazil_s1_baselines/tuning_lgbm-L1.json

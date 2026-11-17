@@ -1,0 +1,1 @@
+cell,horizon,test_year,estimand,estimate,pct_of_ref,lo95,hi95,lo95_pct,hi95_pct,lo90_pct,hi90_pct,p,tost_p,cls,mde_pct,wis_ref,n_seeds,seed_sd,boot_lo,boot_hi,n_rows,n_weeks,reason

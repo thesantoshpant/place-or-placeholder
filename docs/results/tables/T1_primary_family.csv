@@ -1,0 +1,79 @@
+cell,country,split,C_star,status,missing,G_excess,pct_of_WIS_ref,lo95,hi95,lo90,hi90,lo95_pct,hi95_pct,lo90_pct,hi90_pct,DM_p,TOST_p,TOST_class,MDE,MDE_pct,WIS_ref,n_seeds,seed_sd,T_weeks,n_rows,Holm_p_available,p_bonf14
+BR_S1,brazil,S1,C1,pending,L4C: brazil_s1_shared_L4_Cstar: partial (14 chunks),,,,,,,,,,,,,,,,,,,,,,
+BR_S2,brazil,S2,,pending,L3: brazil_s2_L3: not started; L4: brazil_s2_L4: not started; L3C: brazil_s2_L3_Cstar: not started; L4C: brazil_s2_L4_Cstar: not started,,,,,,,,,,,,,,,,,,,,,,
+BR_S3,brazil,S3,,pending,L3: brazil_s3_L3: not started; L4: brazil_s3_L4: not started; L3C: brazil_s3_L3_Cstar: not started; L4C: brazil_s3_L4_Cstar: not started,,,,,,,,,,,,,,,,,,,,,,
+BR_S4,brazil,S4,,pending,L3: brazil_s4_L3: not started; L4: brazil_s4_L4: not started; L3C: brazil_s4_L3_Cstar: not started; L4C: brazil_s4_L4_Cstar: not started,,,,,,,,,,,,,,,,,,,,,,
+BR_S5,brazil,S5,C4,pending,L4: brazil_s5_L4: partial (5 chunks); L3C: brazil_s5_L3_Cstar: not started; L4C: brazil_s5_L4_Cstar: not started,,,,,,,,,,,,,,,,,,,,,,
+CO_S1,colombia,S1,,pending,L3: colombia_s1_shared_L3: not started; L4: colombia_s1_shared_L4: not started; L3C: colombia_s1_shared_L3_Cstar: not started; L4C: colombia_s1_shared_L4_Cstar: not started,,,,,,,,,,,,,,,,,,,,,,
+CO_S2,colombia,S2,,pending,L3: colombia_s2_L3: not started; L4: colombia_s2_L4: not started; L3C: colombia_s2_L3_Cstar: not started; L4C: colombia_s2_L4_Cstar: not started,,,,,,,,,,,,,,,,,,,,,,
+CO_S3,colombia,S3,,pending,L3: colombia_s3_L3: not started; L4: colombia_s3_L4: not started; L3C: colombia_s3_L3_Cstar: not started; L4C: colombia_s3_L4_Cstar: not started,,,,,,,,,,,,,,,,,,,,,,
+CO_S4,colombia,S4,,pending,L3: colombia_s4_L3: not started; L4: colombia_s4_L4: not started; L3C: colombia_s4_L3_Cstar: not started; L4C: colombia_s4_L4_Cstar: not started,,,,,,,,,,,,,,,,,,,,,,
+CO_S5,colombia,S5,C2,pending,L3: colombia_s5_L3: not started; L4: colombia_s5_L4: not started; L3C: colombia_s5_L3_Cstar: not started; L4C: colombia_s5_L4_Cstar: not started,,,,,,,,,,,,,,,,,,,,,,
+PE_S1,peru,S1,C1,available,,-0.0014040705348052178,-0.5706644635894443,-0.003181205917658729,0.00037306484804829326,-0.0028634634805451147,5.532241093467909e-05,-1.292955819217536,0.15162689203864751,-1.1638139328662227,0.022485005687334025,0.11228079110052418,0.11155254518843227,inconclusive,0.0024963914633071346,1.0146227415242102,0.24604134730480687,1.0,,"cell                 PE_S1
+horizon             pooled
+test_year           pooled
+stratum                all
+estimand          G_excess
+estimate         -0.001404
+se                0.000829
+df                    14.0
+T                    209.0
+p                 0.112281
+lo95             -0.003181
+hi95              0.000373
+lo90             -0.002863
+hi90              0.000055
+wis_ref           0.246041
+margin             0.00246
+pct_of_ref       -0.570664
+tost_p            0.111553
+cls           inconclusive
+mde               0.002496
+mde_pct           1.014623
+n_seeds                1.0
+seed_sd                NaN
+boot_lo                NaN
+boot_hi                NaN
+n_rows             96108.0
+n_weeks              209.0
+reason                 NaN
+lo95_pct         -1.292956
+hi95_pct          0.151627
+lo90_pct         -1.163814
+hi90_pct          0.022485
+Name: 14, dtype: object",96108.0,0.22456158220104835,1.0
+PE_S5,peru,S5,,pending,L3: peru_s5_L3: not started; L4: peru_s5_L4: not started; L3C: peru_s5_L3_Cstar: not started; L4C: peru_s5_L4_Cstar: not started,,,,,,,,,,,,,,,,,,,,,,
+TW_S1,taiwan,S1,C3,available,,-0.00013747200212632491,-0.35649597556004203,-0.00039107182246398526,0.00011612781821133543,-0.0003457295116062282,7.078550735357841e-05,-1.0141376331686152,0.30114568204853115,-0.8965547719796938,0.18356282085960973,0.2644070743720629,0.027233031003266434,equivalent,0.00035623871579813305,0.9238075139402719,0.03856200674085071,1.0,,"cell               TW_S1
+horizon           pooled
+test_year         pooled
+stratum              all
+estimand        G_excess
+estimate       -0.000137
+se              0.000118
+df                  14.0
+T                  209.0
+p               0.264407
+lo95           -0.000391
+hi95            0.000116
+lo90           -0.000346
+hi90            0.000071
+wis_ref         0.038562
+margin          0.000386
+pct_of_ref     -0.356496
+tost_p          0.027233
+cls           equivalent
+mde             0.000356
+mde_pct         0.923808
+n_seeds              1.0
+seed_sd              NaN
+boot_lo              NaN
+boot_hi              NaN
+n_rows          238260.0
+n_weeks            209.0
+reason               NaN
+lo95_pct       -1.014138
+hi95_pct        0.301146
+lo90_pct       -0.896555
+hi90_pct        0.183563
+Name: 101, dtype: object",238260.0,0.2644070743720629,1.0
+TW_S5,taiwan,S5,,pending,L3: taiwan_s5_L3: not started; L4: taiwan_s5_L4: not started; L3C: taiwan_s5_L3_Cstar: not started; L4C: taiwan_s5_L4_Cstar: not started,,,,,,,,,,,,,,,,,,,,,,

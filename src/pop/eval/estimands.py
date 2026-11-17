@@ -10,11 +10,13 @@ Two layers:
 - ``gain_frame`` / ``compute_estimands``: the original row-level frame and the 8-week
   cluster-block bootstrap CI (superseded; kept to reproduce the first Brazil S1 report).
 - ``seed_gain_frame`` / ``infer_estimand`` / ``compute_estimands_v2``: the fixed inference
-  policy (deviations rows 9, 11, 12, 16): DM/EWC primary CIs, TOST against a 1% margin, MDE,
-  52-week bootstrap sensitivity and multi-seed handling.
+  policy (deviations rows 9, 11, 12, 16, 22): DM/EWC primary CIs, TOST against a 1% margin,
+  MDE, 52-week circular bootstrap sensitivity and multi-seed handling (seeds common to both
+  roles of each estimand; seed SD only where all of them exist).
 """
 from __future__ import annotations
 
+import warnings
 from typing import Sequence
 
 import numpy as np
@@ -131,20 +133,39 @@ def seed_wide(scores: pd.DataFrame, model: str, *, metric: str = "wis",
 
 def seed_gain_frame(scores: pd.DataFrame, models: dict, *, metric: str = "wis",
                     model_col: str = "model", seed_col: str = "seed",
-                    keys: Sequence[str] = KEYS, extra: pd.DataFrame | None = None) -> pd.DataFrame:
-    """Row-level gain frame with seed handling (policy row 16; audit H3, M7).
+                    keys: Sequence[str] = KEYS, extra: pd.DataFrame | None = None,
+                    seed_policy: str = "common", on_mismatch: str = "warn") -> pd.DataFrame:
+    """Row-level gain frame with seed handling (policy rows 16 and 22; audit4 M2).
 
-    For each role (L3, L4, L3C, L4C -> model name in ``models``):
-    - ``wis_<role>`` = the per-row loss averaged over the seeds present for that row
-      (seed-averaged per-row loss); all primary inference uses these;
-    - the per-seed loss for seed s is the role's own seed-s loss where it exists, otherwise
-      that row's seed-averaged loss. This handles runs whose seed sets differ from their
-      comparison run's (e.g. extra seeds only at h1/h4, or a single-seed reused run).
-    Rows are the keys scored (with a non-NaN seed-averaged loss) by all four roles.
-    Columns ``G_<e>`` (seed-averaged) and ``G_<e>@s`` / ``wis_L3@s`` for every seed s in the
-    union of seeds, plus ``has@s`` = some role actually has seed s on the row.
+    Rows are the keys scored (with a non-NaN loss for at least one seed) by all four roles
+    (L3, L4, L3C, L4C -> model name in ``models``).
+
+    Always present:
+    - ``wis_<role>`` = the role's per-row loss averaged over the seeds it has on that row
+      (used for WIS(ref) margins and ladders);
+    - ``wis_L3@s`` = L3's seed-s loss; ``has@s`` = some role has seed s on the row.
+
+    ``seed_policy="common"`` (default; deviations row 22): for estimand e = (a, b) and each
+    row, only the seeds present for BOTH roles a and b are used:
+    - ``G_<e>`` = mean over those common seeds of (loss_a,s - loss_b,s);
+    - ``G_<e>@s`` = loss_a,s - loss_b,s where both roles have seed s, else NaN;
+    - ``has_<e>@s`` = both roles have seed s on the row.
+    ``wis_L3@s`` is NaN where L3 lacks seed s. When the two roles of an estimand have different
+    seed sets on some rows, ``on_mismatch`` decides: "warn" (default; RuntimeWarning),
+    "error" (ValueError) or "ignore". A row with no common seed is always an error. With equal
+    seed sets on every row this gives the same G_<e> as ``wis_a - wis_b``.
+
+    ``seed_policy="fill"`` (legacy, superseded): a role lacking seed s on a row contributes its
+    seed-averaged loss; ``G_<e> = wis_a - wis_b``. Kept to reproduce earlier reports.
+
     ``extra`` (indexed by ``keys``) is joined on (e.g. state, test_year, strata flags).
+    ``g.attrs["seeds"]`` = the union of seeds; ``g.attrs["seed_policy"]``;
+    ``g.attrs["seed_mismatch"]`` = {estimand: number of rows whose role seed sets differ}.
     """
+    if seed_policy not in ("common", "fill"):
+        raise ValueError(f"seed_policy must be 'common' or 'fill', got {seed_policy!r}")
+    if on_mismatch not in ("warn", "error", "ignore"):
+        raise ValueError(f"on_mismatch must be 'warn', 'error' or 'ignore', got {on_mismatch!r}")
     keys = [k for k in keys if k in scores.columns]
     wides = {r: seed_wide(scores, models[r], metric=metric, model_col=model_col,
                           seed_col=seed_col, keys=keys) for r in ROLES}
@@ -153,31 +174,85 @@ def seed_gain_frame(scores: pd.DataFrame, models: dict, *, metric: str = "wis",
         ok = w.index[w.notna().any(axis=1)]
         idx = ok if idx is None else idx.intersection(ok)
     seeds = sorted(set().union(*[set(w.columns) for w in wides.values()]))
+    W = {r: w.reindex(index=idx, columns=seeds) for r, w in wides.items()}
     g = pd.DataFrame(index=idx)
-    per_seed = {}
     has = {s: np.zeros(len(idx), bool) for s in seeds}
-    for r, w in wides.items():
-        w = w.reindex(idx)
-        mean = w.mean(axis=1)
-        g[f"wis_{r}"] = mean.to_numpy()
+    for r in ROLES:
+        g[f"wis_{r}"] = W[r].mean(axis=1).to_numpy()
         for s in seeds:
-            if s in w.columns:
-                has[s] |= w[s].notna().to_numpy()
-                per_seed[(r, s)] = w[s].fillna(mean).to_numpy()
-            else:
-                per_seed[(r, s)] = mean.to_numpy()
-    for e, (a, b) in ESTIMANDS.items():
-        g[e] = g[f"wis_{a}"] - g[f"wis_{b}"]
-    for s in seeds:
+            has[s] |= W[r][s].notna().to_numpy()
+    mismatch = {}
+    if seed_policy == "fill":
+        per_seed = {(r, s): W[r][s].fillna(W[r].mean(axis=1)).to_numpy()
+                    for r in ROLES for s in seeds}
         for e, (a, b) in ESTIMANDS.items():
-            g[f"{e}@{s}"] = per_seed[(a, s)] - per_seed[(b, s)]
-        g[f"wis_L3@{s}"] = per_seed[("L3", s)]
-        g[f"has@{s}"] = has[s]
+            g[e] = g[f"wis_{a}"] - g[f"wis_{b}"]
+        for s in seeds:
+            for e, (a, b) in ESTIMANDS.items():
+                g[f"{e}@{s}"] = per_seed[(a, s)] - per_seed[(b, s)]
+            g[f"wis_L3@{s}"] = per_seed[("L3", s)]
+            g[f"has@{s}"] = has[s]
+    else:
+        for e, (a, b) in ESTIMANDS.items():
+            pa, pb = W[a].notna().to_numpy(), W[b].notna().to_numpy()
+            both = pa & pb
+            if (both.sum(axis=1) == 0).any():
+                n0 = int((both.sum(axis=1) == 0).sum())
+                raise ValueError(f"{e}: {n0} rows have no seed common to {a} and {b}")
+            n_mis = int((pa != pb).any(axis=1).sum())
+            mismatch[e] = n_mis
+            if n_mis and on_mismatch != "ignore":
+                msg = (f"{e}: roles {a}/{b} have different seed sets on {n_mis} of {len(idx)} "
+                       f"rows; using only the seeds common to both on each row")
+                if on_mismatch == "error":
+                    raise ValueError(msg)
+                warnings.warn(msg, RuntimeWarning, stacklevel=2)
+            diff = np.where(both, W[a].to_numpy() - W[b].to_numpy(), np.nan)
+            g[e] = np.nanmean(diff, axis=1)
+            for j, s in enumerate(seeds):
+                g[f"{e}@{s}"] = diff[:, j]
+                g[f"has_{e}@{s}"] = both[:, j]
+        for s in seeds:
+            g[f"wis_L3@{s}"] = W["L3"][s].to_numpy()
+            g[f"has@{s}"] = has[s]
     g = g.reset_index()
     if extra is not None:
         g = g.merge(extra, left_on=keys, right_index=True, how="left", validate="one_to_one")
     g.attrs["seeds"] = seeds
+    g.attrs["seed_policy"] = seed_policy
+    g.attrs["seed_mismatch"] = mismatch
     return g
+
+
+def seed_spread(g: pd.DataFrame, estimand: str, *, time_col: str = "target_week",
+                horizon_col: str = "horizon") -> dict:
+    """Per-seed estimates and seed SD of ``estimand`` (audit4 M2).
+
+    Common-seed frames (``has_<e>@s`` columns): the seeds used are those present for both
+    roles somewhere; per-seed estimates are computed only on the rows where ALL of them are
+    present (so horizons with fewer seeds, e.g. h2/h3 when extra seeds exist only at h1/h4,
+    do not enter the seed SD). Legacy frames: seeds with ``has@s`` on any row, all rows.
+    Returns {n_seeds, seed_estimates, seed_mean, seed_sd, seed_rows, seed_horizons}.
+    """
+    seeds = list(g.attrs.get("seeds", []))
+    if seeds and f"has_{estimand}@{seeds[0]}" in g:
+        seeds = [s for s in seeds if g[f"has_{estimand}@{s}"].any()]
+        full = (np.logical_and.reduce([g[f"has_{estimand}@{s}"].to_numpy() for s in seeds])
+                if seeds else np.zeros(len(g), bool))
+        sub = g[full]
+    else:
+        seeds = [s for s in seeds if f"has@{s}" in g and g[f"has@{s}"].any()]
+        sub = g
+    ests = {}
+    if len(sub):
+        ests = {s: float(weekly_pooled(sub, f"{estimand}@{s}", time_col=time_col,
+                                       horizon_col=horizon_col).mean()) for s in seeds}
+    vals = list(ests.values())
+    return {"n_seeds": len(ests), "seed_estimates": ests,
+            "seed_mean": float(np.mean(vals)) if vals else np.nan,
+            "seed_sd": float(np.std(vals, ddof=1)) if len(vals) > 1 else np.nan,
+            "seed_rows": int(len(sub)),
+            "seed_horizons": sorted(int(h) for h in sub[horizon_col].unique()) if len(sub) else []}
 
 
 def weekly_pooled(g: pd.DataFrame, col: str, *, time_col: str = "target_week",
@@ -202,8 +277,13 @@ def infer_estimand(g: pd.DataFrame, estimand: str, *, ref_col: str = "wis_L3",
     Margin = margin_rel * WIS(ref), WIS(ref) = mean over weeks of the same pooled weekly mean
     of ``ref_col`` (the L3 / N3 loss). TOST p and class from ``stats.tost_p`` and
     ``stats.classify_effect``; MDE = (t_{B,.975} + t_{B,.80}) * se.
-    Seeds: estimate_seed_<s> uses ``<estimand>@s``; seed_mean / seed_sd over the seeds that
-    are actually present (``has@s``) on these rows; seed_sd is NaN with one seed.
+    Seeds: see ``seed_spread`` (per-seed estimates on the rows where all seeds common to the
+    two roles exist; seed_sd NaN with one seed). With the common-seed policy the point estimate
+    uses each row's common seeds, so seed_mean can differ from it when seed sets vary by row.
+
+    Strata: when ``g`` is a subset (e.g. outbreak rows), every target week still gets equal
+    weight in the mean, however many stratum rows it has (equal-week weighting; audit4 M3);
+    this is the same estimator as the primary, applied to the stratum's rows.
     """
     hmax = int(g[horizon_col].max())
     d = weekly_pooled(g, estimand, time_col=time_col, horizon_col=horizon_col)
@@ -215,13 +295,7 @@ def infer_estimand(g: pd.DataFrame, estimand: str, *, ref_col: str = "wis_L3",
                cls=classify_effect(inf.lo95, inf.hi95, inf.lo90, inf.hi90, inf.p, margin, alpha),
                pct_of_ref=100 * inf.estimate / wis_ref, mde_pct=100 * inf.mde / wis_ref,
                n_rows=len(g), n_weeks=int(d.size))
-    seeds = [s for s in g.attrs.get("seeds", []) if f"has@{s}" in g and g[f"has@{s}"].any()]
-    ests = {s: float(weekly_pooled(g, f"{estimand}@{s}", time_col=time_col,
-                                   horizon_col=horizon_col).mean()) for s in seeds}
-    out["n_seeds"] = len(ests)
-    out["seed_estimates"] = ests
-    out["seed_mean"] = float(np.mean(list(ests.values()))) if ests else np.nan
-    out["seed_sd"] = float(np.std(list(ests.values()), ddof=1)) if len(ests) > 1 else np.nan
+    out.update(seed_spread(g, estimand, time_col=time_col, horizon_col=horizon_col))
     return out
 
 
@@ -233,9 +307,10 @@ def compute_estimands_v2(g: pd.DataFrame, *, cluster_col: str | None = "state",
     """All estimands under the v2 policy on the rows of ``g`` (from ``seed_gain_frame``).
 
     Returns {estimand: infer_estimand(...) + boot_lo/boot_hi} for G_emb, G_id, G_excess and
-    'ID_share'. Bootstrap (sensitivity only): ``block_bootstrap_means`` on the seed-averaged
-    row gains, states x ``block_len``-week circular blocks shared across states, percentile
-    95% CI of the row-level mean. ID share = G_id / G_emb only if the primary (EWC) 95% CI of
+    'ID_share'. Bootstrap (sensitivity only): ``block_bootstrap_means`` on the row gains
+    ``G_<e>`` (common-seed averaged), states x ``block_len``-week circular blocks shared
+    across states, percentile 95% CI of the ROW-LEVEL mean (``boot_point``; this differs from
+    the primary week-pooled estimate unless the panel is balanced with one horizon). ID share = G_id / G_emb only if the primary (EWC) 95% CI of
     G_emb excludes 0 and G_emb >= min_rel * WIS(L3); its CI is the bootstrap ratio CI.
     """
     gc = g

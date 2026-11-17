@@ -25,14 +25,17 @@ Design (docs/methods/split_pipeline.md, "Global scheduler"):
   their in-flight chunks and then cannot claim new ones. Process trees with no in-flight chunk are
   then stopped (nothing is lost: no chunk is running) and the reservation is released. Completed
   chunks are never touched; results do not depend on which process computes a chunk.
-* External items: pop_s1_colombia (CO S1 per-level pipeline, T1) keeps its own processes; its
-  runs/colombia_s1/override.env WORKERS (read at each of its stage starts) follows its share.
+* (2026-11-16b) The external CO S1 per-level item is retired (its C4/C4s were NaN; CO S1 runs once,
+  via colombia_s1_shared). Budget: threads = 64 - 2 - (CPU of every process that is not one of our
+  run_experiment.py workers, other users AND this user's other jobs) rounded down to a multiple
+  of 4, capped at 60, floor 16; pin with BUDGET=<threads> in runs/queue/override.env.
 """
 from __future__ import annotations
 
 import argparse
 import fcntl
 import json
+import math
 import os
 import re
 import signal
@@ -47,6 +50,7 @@ QD = ROOT / "runs/queue"
 SD = QD / "state"
 THREADS = 4
 FULL, FALLBACK, OTHERS_HI, OTHERS_LO = 60, 52, 400, 300  # threads; other users' %CPU thresholds
+HW_THREADS, HEADROOM, FLOOR = 64, 2, 16  # budget = HW - HEADROOM - others (2026-11-16b)
 TICK = 20
 YOUNG = 300          # s: a process this young holds its full --workers (data loading)
 MIN_MEM_GIB = 12
@@ -103,16 +107,12 @@ def _need(path, why):
 
 
 def items() -> list[Item]:
-    co_s1_live = lambda: "waits for pop_s1_colombia" if _sess("pop_s1_colombia") else None  # noqa: E731
-    co_ext = Item("colombia_s1", 1, "external", "runs/colombia_s1", "colombia_s1_",
-                  ["controls_2019", "L3_Cstar", "L4_Cstar"], session="pop_s1_colombia")
     L = [
         # T1
         split_item("brazil", "s1_shared", 1),
         split_item("peru", "s1_shared", 1),
         split_item("taiwan", "s1_shared", 1),
-        co_ext,
-        split_item("colombia", "s1_shared", 1, co_s1_live),
+        split_item("colombia", "s1_shared", 1),
         split_item("taiwan", "s1brp", 1),
         # T2
         sens_item("sens_seeds", 2, _need("runs/brazil_s1_shared/stage_gen_cstar.done",
@@ -126,6 +126,10 @@ def items() -> list[Item]:
         nohist_item("s1", 3), nohist_item("s2", 3),
         # T4
         sens_item("sens_yref", 4), sens_item("sens_delay", 4), sens_item("sens_ctrl", 4),
+        # S1 ladder L2 rung with the shared params (2026-11-16b; only Taiwan's per-level L2 params
+        # differ from its L1 params; CO/PE per-level L2 already equal L1, BR L2 = 127/100)
+        Item("taiwan_s1_l2shared", 4, "sens", "runs/taiwan_s1_l2shared", "taiwan_s1_shared_", ["L2"],
+             f"bash {ROOT}/scripts/run/split_pipeline.sh taiwan l2_shared --inside"),
         # T5
         split_item("brazil", "s4", 5),
     ]
@@ -242,7 +246,9 @@ def others_cpu():
             return int(f.read_text().split()[0])
     except (OSError, ValueError, IndexError):
         pass
-    out = subprocess.run(["top", "-b", "-n", "2", "-d", "2", "-w", "200"], capture_output=True,
+    # -c: full command lines. Everything except our own run_experiment.py workers counts as
+    # "others": other users and this user's other jobs (audit 3 H-2, 2026-11-16b).
+    out = subprocess.run(["top", "-b", "-c", "-n", "2", "-d", "2", "-w", "512"], capture_output=True,
                          text=True).stdout
     n, s = 0, 0.0
     for line in out.splitlines():
@@ -250,7 +256,9 @@ def others_cpu():
             n += 1
             continue
         p = line.split()
-        if n == 2 and p and p[0].isdigit() and len(p) > 8 and p[1] != "spant":
+        if n == 2 and p and p[0].isdigit() and len(p) > 11:
+            if p[1] == "spant" and "run_experiment.py" in line:
+                continue
             try:
                 s += float(p[8])
             except ValueError:
@@ -267,19 +275,9 @@ def budget():
         if m:
             return int(m.group(1)), "pinned in override.env"
     o = others_cpu()
-    fb = QD / "fallback"
-    if fb.exists():
-        if o < OTHERS_LO:
-            fb.unlink()
-            b = FULL
-        else:
-            b = FALLBACK
-    elif o > OTHERS_HI:
-        fb.write_text(time.strftime("%F %T\n"))
-        b = FALLBACK
-    else:
-        b = FULL
-    return b, f"others {o}% CPU"
+    b = HW_THREADS - HEADROOM - int(math.ceil(o / 100.0))
+    b = max(FLOOR, min(FULL, (b // THREADS) * THREADS))
+    return b, f"others {o}% CPU (incl. own non-pipeline jobs)"
 
 
 # ------------------------------------------------------------------ item state
@@ -670,7 +668,7 @@ def _stage_chunks(it, stage, ref):
     lvl = {"L3_Cstar": "L3+C1", "L4_Cstar": "L4+C1", "N3_Cstar": "N3+C2", "N4_Cstar": "N4+C2",
            "N3_C1": "N3+C1", "N4_C1": "N4+C1"}.get(stage)
     if lvl is None:
-        st = stage.split("_", 1)[1] if it.kind == "sens" else stage
+        st = stage.split("_", 1)[-1] if it.kind == "sens" else stage
         lvl = {"L3_Cstar": "L3+C1", "L4_Cstar": "L4+C1"}.get(st, st.replace("_", "+"))
     return [base * _mult(lvl)] * (folds * years * hz)
 
@@ -697,7 +695,7 @@ def eta(L, W):
     pos = {p[0].id: 0 for p in plan}            # current stage index
     left = {p[0].id: [list(c) for _, c in p[1]] for p in plan}
     running = {p[0].id: 0 for p in plan}
-    deps = {"brazil_s1_sens_seeds": ("brazil_s1_shared", "controls_2019"), "colombia_s1_shared": ("colombia_s1", None)}
+    deps = {"brazil_s1_sens_seeds": ("brazil_s1_shared", "controls_2019")}
 
     def ready(it):
         d = deps.get(it.id)
@@ -756,6 +754,8 @@ def main():
     elif a.cmd == "status":
         status()
     elif a.cmd == "remaining":
+        if not a.arg:
+            ap.error("remaining needs a config path (configs/<name>.yaml)")
         print(remaining(a.arg))
     elif a.cmd == "dry":  # what the loop sees right now (no action)
         L = items()

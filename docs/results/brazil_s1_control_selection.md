@@ -1,3 +1,5 @@
+> **SUPERSEDED (2026-11-16).** These runs use per-level tuned params (31 leaves), the old per-year C3 permutation and C4 at 8,483 km only, and the old "lowest mean WIS" rule. The primary Brazil S1 cell uses shared L1 params (`runs/brazil_s1_shared_controls_2019`), fixed-permutation C3, C4s, and selection rule v2 (deviations rows 2, 13, 15, 19). This selection is kept only as part of the per-level-tuning sensitivity (audit 3 M-5); it is not rerun.
+
 # Brazil S1: choice of the ID control C* (2019 origin)
 
 Runs: `runs/brazil_s1_controls_2019` (config `configs/brazil_s1_controls_2019.yaml`), 96 chunks, and
