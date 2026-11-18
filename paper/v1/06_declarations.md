@@ -26,14 +26,14 @@ All input data are public.
 
 - **Dengue cases:** OpenDengue V1.3.1, Temporal extract (release commit 99b6a3e; figshare version 5), licensed CC BY-SA [@opendengue131; @clarke2024opendengue]. [[VERIFY: CC BY-SA version number]]
 - **Embeddings:** AlphaEarth Foundations Satellite Embedding dataset, V1 annual (`GOOGLE/SATELLITE_EMBEDDING/V1/ANNUAL`), Google Earth Engine Data Catalog, CC-BY 4.0 [@aef_dataset; @brown2025alphaearth]. The AlphaEarth Foundations Satellite Embedding dataset is produced by Google and Google DeepMind.
-- **Covariates (all through Google Earth Engine [@gorelick2017gee]):** ERA5-Land daily aggregates (Copernicus licence) [@era5land_ee]; MODIS Terra vegetation indices (MOD13Q1) and land surface temperature (MOD11A2), Collection 6.1 [@mod13q1_ee; @mod11a2_ee]; VIIRS annual night-time lights [@viirs_ee]; GHSL P2023A population and built-up surface grids [@ghsl_pop; @ghsl_built].
+- **Covariates (all through Google Earth Engine [@gorelick2017gee]):** ERA5-Land daily aggregates (Copernicus licence; contains modified Copernicus Climate Change Service information) [@era5land_ee]; MODIS Terra vegetation indices (MOD13Q1) and land surface temperature (MOD11A2), Collection 6.1 [@mod13q1_ee; @mod11a2_ee]; VIIRS annual night-time lights [@viirs_ee]; GHSL P2023A population and built-up surface grids [@ghsl_pop; @ghsl_built]. [[AUTHORS: confirm and state the MODIS, VIIRS and GHSL licence terms from the cited catalogue pages]]
 - **Boundaries:** IBGE municipal mesh 2022 for Brazil [@ibge2022malha]; geoBoundaries gbOpen for Colombia (DANE MGN 2020, CC BY 4.0), Peru (IGN/OCHA, CC BY 3.0 IGO) and Taiwan (OpenStreetMap 2017, CC BY-SA 2.0) [@geoboundaries_gbopen].
 - **Validation sources:** InfoDengue API (accessed November 2026) [@infodengue_api]; Taiwan CDC `Dengue_Daily.csv` (Open Government Data License v1.0) [@taiwancdc_dengue_daily].
 - **Derived data:** the zero-filled district-week panel, district features, embeddings by district and year, forecasts, scores and all result tables will be deposited with the code under CC BY-SA 4.0, as required by the share-alike terms of OpenDengue and the Taiwan boundaries: [[AUTHORS: repo public + Zenodo DOI]] [[AUTHORS: confirm licence for derived data]]
 
 ### Code availability
 
-The code for the data pipeline, feature extraction, location controls, splits, model runs, scoring, statistical inference and the script that regenerates every table and figure, with unit tests, a locked software environment and data manifests with checksums, will be released under an open licence at [[AUTHORS: repo public + Zenodo DOI]]. The archived snapshot carries a versioned DOI minted on the day of posting. The public history includes the dated commits cited for pre-specification in the Methods and Supplement S1 (`d8c7944`, `fcc3c38`, `bd3ba50`, `e9df1f1`).
+The code for the data pipeline, feature extraction, location controls, splits, model runs, scoring, statistical inference and the script that regenerates every table and figure, with unit tests, a locked software environment and data manifests with checksums, will be released under an open licence at [[AUTHORS: repo public + Zenodo DOI]]. The archived snapshot carries a versioned DOI minted on the day of posting. The public history includes the dated commits cited for pre-specification in the Methods and Supplement S1 (`d8c7944`, `fcc3c38`, `bd3ba50`, `e9df1f1`). The protocol, deviation log and analysis code were deposited at [[AUTHORS: deposit DOI]] on 18 November 2026, before the Brazil S4 and no-history Brazil S2 results were read.
 
 <!-- EPIFORGE items 9 (code) and 16 (versioned identifier) depend on the repo and DOI above (R6 section E). The pre-specification claims rest on the git history being public (RESOLUTION_LOG.md, Needs the authors, item 3). -->
 
@@ -57,9 +57,9 @@ The code for the data pipeline, feature extraction, location controls, splits, m
 
 ### Use of AI tools
 
-[[AUTHORS: TBD]]
+[[AI-USE: full statement in the shared doc]]
 
-<!-- medRxiv FAQ: tool use "should be detailed in manuscripts", tools cannot be authors, and authors are accountable for all content. The factual list the authors need is in audits/review_round/RESOLUTION_LOG.md, "Needs the authors" (AI-use statement). The statement must also say which checks people carried out. -->
+<!-- Authors' decision 2026-11-18 (STYLE.md): the full AI-use statement, naming the tool, is added only in the shared doc and the submitted PDF. medRxiv FAQ: tool use "should be detailed in manuscripts", tools cannot be authors, and authors are accountable for all content. Factual list: audits/review_round/RESOLUTION_LOG.md, "Needs the authors" (code, downloads and download-verification scripts, Earth Engine extractions, model runs, scoring, statistics, internal audits, the earlier protocol review, drafting and reference checks were done by AI agents). The statement must also say which checks people carried out. The Methods (2.1) and Supplement S1 point to this section wherever agent work is described. -->
 
 ### Acknowledgements
 
