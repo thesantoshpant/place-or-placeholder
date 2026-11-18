@@ -637,10 +637,12 @@ def supporting_tables(extras, est, pids, byid, T, control_panel, hlab) -> dict:
     cp = Path(control_panel)
     if cp.exists():
         x = pd.read_csv(cp)
-        x.insert(0, "source", str(cp))
+        if "panel_file" not in x.columns:
+            x.insert(0, "panel_file", str(cp))
+        scoring = (", ".join(sorted(map(str, x["scoring"].dropna().unique())))
+                   if "scoring" in x.columns else "see panel file")
         w(x, "S2_control_panel", "S2. Fixed control panel (S1): each control k in place of C*; "
-          f"read from {cp} (computed by scripts/analysis/control_panel.py on all rows, NOT the "
-          "origin-year filter)")
+          f"read from {cp} (computed by scripts/analysis/control_panel.py; scoring: {scoring})")
     else:
         out["made"]["S2"] = "S2_control_panel (pending: control panel file not found)"
     o = cat_extra(extras, "outbreak", pids)

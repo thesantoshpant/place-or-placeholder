@@ -1,6 +1,6 @@
 # RESULTS BRIEF (auto-generated, results kit v3)
 
-Generated 2026-11-18 02:14 by `scripts/analysis/make_results.py`. Do not edit by hand: re-run the script. All numbers are log1p-scale WIS unless marked 'case scale'; a gain is positive when the second model has the lower WIS. Percentages are of WIS(L3) (WIS(N3) in the no-history arm).
+Generated 2026-11-18 04:13 by `scripts/analysis/make_results.py`. Do not edit by hand: re-run the script. All numbers are log1p-scale WIS unless marked 'case scale'; a gain is positive when the second model has the lower WIS. Percentages are of WIS(L3) (WIS(N3) in the no-history arm).
 
 **Scored rows (deviation row 24).** Every estimate keeps only rows whose forecast origin (target week − h) lies in the same epi-year as the target, which removes the yearly-feature and training-label look-ahead (review R1): at h1 the first epi-week of each test year is dropped (1.9% of rows), at h4 the first four (7.7%). T1 also shows G_excess on all rows ('all rows %').
 
@@ -27,15 +27,15 @@ Family: **13 of 14 cells available** — Holm p values are over the available ce
 | BR_S3 | C1 | -0.16 [-0.34, +0.03] | 0.090 | 0.395 | no significant difference; within ±1% (TOST, Holm-adjusted) | 0.259 | 0.214 | -0.10 | -0.19 | -1.30 |
 | BR_S4 | selection pending (stale) | pending | | | | | | | | |
 | BR_S5 | C3 | -0.60 [-0.84, -0.36] | 7.5e-05 | 0.00097 | small negative difference, significant after Holm correction; within ±1% (TOST, Holm-adjusted) | 0.002 | 0.0005 | -0.62 | -0.61 | -0.86 |
-| CO_S1 | C1 | -0.39 [-0.58, -0.19] | 0.001 | 0.011 | small negative difference, significant after Holm correction; within ±1% (TOST, Holm-adjusted) | 0.007 | 0.001 | -0.39 | n/a | -0.81 |
-| CO_S2 | C1 | -0.47 [-0.69, -0.25] | 0.00056 | 0.006 | small negative difference, significant after Holm correction; within ±1% (TOST, Holm-adjusted) | 0.002 | 0.0005 | -0.48 | n/a | -0.64 |
+| CO_S1 | C1 | -0.39 [-0.58, -0.19] | 0.001 | 0.012 | small negative difference, significant after Holm correction; within ±1% (TOST, Holm-adjusted) | 0.007 | 0.001 | -0.39 | n/a | -0.81 |
+| CO_S2 | C1 | -0.47 [-0.69, -0.25] | 0.00056 | 0.007 | small negative difference, significant after Holm correction; within ±1% (TOST, Holm-adjusted) | 0.002 | 0.0005 | -0.48 | n/a | -0.64 |
 | CO_S3 | C1 | -0.65 [-1.04, -0.27] | 0.003 | 0.026 | small negative difference, significant after Holm correction; within ±1% (unadjusted TOST only) | 0.008 | 0.0005 | -0.68 | n/a | -0.70 |
 | CO_S4 | C1 | -0.43 [-0.68, -0.18] | 0.003 | 0.025 | small negative difference, significant after Holm correction; within ±1% (TOST, Holm-adjusted) | 0.016 | 0.006 | -0.44 | n/a | -0.88 |
 | CO_S5 | C2 | +0.22 [-0.19, +0.63] | 0.267 | 0.802 | no significant difference; within ±1% (TOST, Holm-adjusted) | 0.490 | 0.461 | +0.18 | n/a | +0.51 |
 | PE_S1 | C1 | -0.70 [-1.41, +0.02] | 0.056 | 0.342 | no significant difference; not shown to be within ±1% | 0.159 | 0.083 | -0.62 | n/a | -1.14 |
 | PE_S5 | C3 | +0.96 [-0.13, +2.05] | 0.079 | 0.395 | no significant difference; not shown to be within ±1% | 0.023 | 0.006 | +1.01 | n/a | -0.59 |
 | TW_S1 | C1 | -0.60 [-1.20, -0.00] | 0.049 | 0.342 | nominal small negative difference, not significant after Holm correction; not shown to be within ±1% | 0.104 | 0.078 | -0.55 | n/a | -0.00 |
-| TW_S5 (2021 pending (base test years only)) | C3 | -11.16 [-15.66, -6.65] | 0.00013 | 0.002 | negative difference, significant after Holm correction; not shown to be within ±1% | 0.004 | 0.001 | -11.53 | n/a | -2.93 |
+| TW_S5 | C3 | -17.30 [-27.03, -7.57] | 0.002 | 0.017 | negative difference, significant after Holm correction; not shown to be within ±1% | 0.016 | 0.020 | -17.62 | n/a | -4.02 |
 
 Counts under the loss-counting rule: loss: 1, nominal only: 1, none: 6, pending: 1, small loss: 5.
 
@@ -56,7 +56,7 @@ Counts under the loss-counting rule: loss: 1, nominal only: 1, none: 6, pending:
 | PE_S1 | primary/history | Peru S1, history arm (primary) | C1 | available |  |
 | PE_S5 | primary/history | Peru S5, history arm (primary) | C3 | available |  |
 | TW_S1 | primary/history | Taiwan S1, history arm (primary); test years incl. 2021 | C1 | available |  |
-| TW_S5 | primary/history | Taiwan S5, history arm (primary) | C3 | available | 2021 pending (base test years only) |
+| TW_S5 | primary/history | Taiwan S5, history arm (primary); test years incl. 2021 | C3 | available |  |
 | TW_S1_no2021 | secondary/sensitivity | Taiwan S1 without test year(s) 2021 (the pre-review test-year set) | C1 | available |  |
 | TW_S5_no2021 | secondary/sensitivity | Taiwan S5 without test year(s) 2021 (the pre-review test-year set) | C3 | available |  |
 | BR_S1_3seeds | secondary/sensitivity | Brazil S1, primary + 2 extra seeds (seed-averaged; extra seeds h1/h4) | C1 | available |  |
@@ -66,8 +66,8 @@ Counts under the loss-counting rule: loss: 1, nominal only: 1, none: 6, pending:
 | BR_S1_ctrlC6 | secondary/sensitivity | Brazil S1 controls panel: C6 in place of C* (h1, h4) | C6 | pending | L3C: brazil_s1_sens_ctrl_L3_C6: not started; L4C: brazil_s1_sens_ctrl_L4_C6: not started |
 | BR_S1_perlevel | secondary/sensitivity | Brazil S1, per-level tuning (L3/L4 31 leaves; superseded primary) | C1 | available |  |
 | TW_S1_BRparams | secondary/sensitivity | Taiwan S1 with Brazil's tuned params and C* | C1 | available |  |
-| BR_S1_nohist | secondary/no-history | Brazil S1, no-history arm (ref = N3) | C2 | pending | L3: brazil_s1_nohist_N3: partial (2 chunks); L4: brazil_s1_nohist_N4: not started; L3C: brazil_s1_nohist_N3_Cstar: not started; L4C: brazil_s1_nohist_N4_Cstar: not started |
-| BR_S2_nohist | secondary/no-history | Brazil S2, no-history arm (ref = N3) | selection pending (stale) | pending | L3: brazil_s2_nohist_N3: not started; L4: brazil_s2_nohist_N4: not started; L3C: brazil_s2_nohist_N3_Cstar: not started; L4C: brazil_s2_nohist_N4_Cstar: not started |
+| BR_S1_nohist | secondary/no-history | Brazil S1, no-history arm (ref = N3) | C2 | pending | L4: brazil_s1_nohist_N4: partial (6 chunks); L3C: brazil_s1_nohist_N3_Cstar: not started; L4C: brazil_s1_nohist_N4_Cstar: not started |
+| BR_S2_nohist | secondary/no-history | Brazil S2, no-history arm (ref = N3) | C2 | pending | L3: brazil_s2_nohist_N3: stage not done; L4: brazil_s2_nohist_N4: not started; L3C: brazil_s2_nohist_N3_Cstar: not started; L4C: brazil_s2_nohist_N4_Cstar: not started |
 
 ## 3. Per-cell detail
 
@@ -195,15 +195,15 @@ Rows scored (primary horizons) 141,645; row filter origin_year dropped 12,825 ro
 - **ID share**: not estimable: G_emb significantly negative (embeddings hurt)
 - Ladder (pooled h{1,4}, 113,430 common rows): L0 0.0922, L1 0.0394, L2 0.0477, L3 0.0398, L4 0.0402, L3+C* 0.0400, L4+C* 0.0402. Best = L1. 80% coverage 0.94–0.98 overall, 0.00–0.25 on non-zero targets.
 
-### TW_S5: Taiwan S5, history arm (primary) (C* = C3)
-Rows scored (primary horizons) 113,430; row filter origin_year dropped 5,700 rows of 119130 (all horizons); test years [2020, 2022, 2023, 2024]; seeds [0]; zero-filled share 0.97; outbreak share 0.009. Flags: 2021 pending (base test years only).
+### TW_S5: Taiwan S5, history arm (primary); test years incl. 2021 (C* = C3)
+Rows scored (primary horizons) 141,645; row filter origin_year dropped 7,125 rows of 148770 (all horizons); test years [2020, 2021, 2022, 2023, 2024]; seeds [0]; zero-filled share 0.98; outbreak share 0.007.
 
-- **G_excess** (pooled h{1,4}) -11.16% [-15.66, -6.65]: L4+C* is worse than L3+C* by 11.16% of WIS(ref) (95% CI -15.66 to -6.65%; p = 0.000; MDE 6.32%): **inferior** (unadjusted rule), i.e. the 95% CI excludes 0 on the harm side: the second model is worse.
-- **G_emb** (pooled h{1,4}) -14.68% [-20.24, -9.11]: L4 is worse than L3 by 14.68% of WIS(ref) (95% CI -20.24 to -9.11%; p = 0.000; MDE 7.81%): **inferior** (unadjusted rule), i.e. the 95% CI excludes 0 on the harm side: the second model is worse.
-- **G_id** (pooled h{1,4}) -2.31% [-5.52, +0.90]: L3+C* is worse than L3 by 2.31% of WIS(ref) (95% CI -5.52 to +0.90%; p = 0.145; MDE 4.51%): **inconclusive** (unadjusted rule), i.e. the CI crosses 0 and reaches past the ±1% margin: the data cannot tell.
-- G_excess by target type (stratum estimate, % of the stratum's WIS(L3) | additive contribution, % of the cell's WIS(L3)): positive (3% rows) +2.16 | +1.33; recorded_zero (0% rows) n/a | +0.00; zero_filled (97% rows) -35.22 | -12.48; identity residual 0.0e+00.
+- **G_excess** (pooled h{1,4}) -17.30% [-27.03, -7.57]: L4+C* is worse than L3+C* by 17.30% of WIS(ref) (95% CI -27.03 to -7.57%; p = 0.002; MDE 13.70%): **inferior** (unadjusted rule), i.e. the 95% CI excludes 0 on the harm side: the second model is worse.
+- **G_emb** (pooled h{1,4}) -21.60% [-31.82, -11.39]: L4 is worse than L3 by 21.60% of WIS(ref) (95% CI -31.82 to -11.39%; p = 0.000; MDE 14.38%): **inferior** (unadjusted rule), i.e. the 95% CI excludes 0 on the harm side: the second model is worse.
+- **G_id** (pooled h{1,4}) -3.36% [-6.52, -0.20]: L3+C* is worse than L3 by 3.36% of WIS(ref) (95% CI -6.52 to -0.20%; p = 0.039; MDE 4.45%): **inferior** (unadjusted rule), i.e. the 95% CI excludes 0 on the harm side: the second model is worse.
+- G_excess by target type (stratum estimate, % of the stratum's WIS(L3) | additive contribution, % of the cell's WIS(L3)): positive (2% rows) +2.16 | +1.28; recorded_zero (0% rows) n/a | +0.00; zero_filled (98% rows) -48.47 | -18.57; identity residual 0.0e+00.
 - **ID share**: not estimable: G_emb significantly negative (embeddings hurt)
-- Ladder (pooled h{1,4}, 113,430 common rows): L3 0.0246, L4 0.0283, L3+C* 0.0252, L4+C* 0.0280. Best = L3. 80% coverage 0.99–0.99 overall, 0.56–0.63 on non-zero targets.
+- Ladder (pooled h{1,4}, 141,645 common rows): L3 0.0205, L4 0.0250, L3+C* 0.0212, L4+C* 0.0248. Best = L3. 80% coverage 0.99–0.99 overall, 0.56–0.63 on non-zero targets.
 
 ### TW_S1_no2021: Taiwan S1 without test year(s) 2021 (the pre-review test-year set) (C* = C1)
 Rows scored (primary horizons) 113,430; row filter origin_year dropped 11,400 rows of 238260 (all horizons); test years [2020, 2022, 2023, 2024]; seeds [0]; zero-filled share 0.97; outbreak share 0.009.
@@ -283,9 +283,9 @@ Rows scored (primary horizons) 113,430; row filter origin_year dropped 11,400 ro
 | TW_S1_no2021 | TW_S1 | G_emb | -0.94 [-1.85, -0.03] | inferior | -1.06 | inferior |
 | TW_S1_no2021 | TW_S1 | G_id | -0.63 [-1.69, +0.44] | inconclusive | -0.63 | inconclusive |
 | TW_S1_no2021 | TW_S1 | G_excess | -0.44 [-1.01, +0.14] | equivalent | -0.60 | inferior |
-| TW_S5_no2021 | TW_S5 | G_emb | -14.68 [-20.24, -9.11] | inferior | -14.68 | inferior |
-| TW_S5_no2021 | TW_S5 | G_id | -2.31 [-5.52, +0.90] | inconclusive | -2.31 | inconclusive |
-| TW_S5_no2021 | TW_S5 | G_excess | -11.16 [-15.66, -6.65] | inferior | -11.16 | inferior |
+| TW_S5_no2021 | TW_S5 | G_emb | -14.68 [-20.24, -9.11] | inferior | -21.60 | inferior |
+| TW_S5_no2021 | TW_S5 | G_id | -2.31 [-5.52, +0.90] | inconclusive | -3.36 | inferior |
+| TW_S5_no2021 | TW_S5 | G_excess | -11.16 [-15.66, -6.65] | inferior | -17.30 | inferior |
 | BR_S1_nohist | BR_S1 | G_emb | pending | pending | +0.26 | equivalent |
 | BR_S1_nohist | BR_S1 | G_id | pending | pending | +0.03 | equivalent |
 | BR_S1_nohist | BR_S1 | G_excess | pending | pending | +0.23 | equivalent |
@@ -308,7 +308,7 @@ Tables (`docs/results/tables/`, each as .csv and a LaTeX booktabs fragment .tex)
 - `T6a_sensitivities` (incl. TW without 2021), `T6b_nohist_estimands`, `T6c_nohist_ladder`.
 - Supporting: `S1_baselines`, `S2_control_panel`, `S3_outbreak`, `S4_weighted`, `S5_recalibration`, `S6_q90_mechanism`, `S7_embedding_distance` (+ `S7b_..._bins.csv`), `S8_per_year` (with context flags).
 
-Made: T1: T1_primary_family, T1b_margin_sensitivity; T2: T2_ladder; T3: T3_estimands; T4: T4_cstar_selection; T5: T5_strata; T6: T6a_sensitivities, T6b_nohist_estimands, T6c_nohist_ladder; S1: S1_baselines; S2: S2_control_panel (pending: control panel file not found); S3: S3_outbreak; S4: S4_weighted; S5: S5_recalibration; S6: S6_q90_mechanism; S7: S7_embedding_distance; S8: S8_per_year
+Made: T1: T1_primary_family, T1b_margin_sensitivity; T2: T2_ladder; T3: T3_estimands; T4: T4_cstar_selection; T5: T5_strata; T6: T6a_sensitivities, T6b_nohist_estimands, T6c_nohist_ladder; S1: S1_baselines; S2: S2_control_panel; S3: S3_outbreak; S4: S4_weighted; S5: S5_recalibration; S6: S6_q90_mechanism; S7: S7_embedding_distance; S8: S8_per_year
 
 Figures (`docs/results/figures/`, PDF + PNG):
 
@@ -324,7 +324,7 @@ Per-cell intermediate results: `runs/analysis_cache/<cell>/` (est.parquet, ladde
 ## 6. Compute status (scheduler snapshot)
 
 ```
-snapshot 2026-11-18 02:13:58 (7 s old); budget 44 threads (others 1587% CPU (incl. own non-pipeline jobs)) = 11 workers; held 12; free -1
+snapshot 2026-11-18 04:13:31 (3 s old); budget 48 threads (others 1321% CPU (incl. own non-pipeline jobs)) = 12 workers; held 14; free -2
   T1 brazil_s1_shared             done                                     -                                  held  0 unclaimed   0
   T1 peru_s1_shared               done                                     -                                  held  0 unclaimed   0
   T1 taiwan_s1_shared             done                                     -                                  held  0 unclaimed   0
@@ -340,12 +340,12 @@ snapshot 2026-11-18 02:13:58 (7 s old); budget 44 threads (others 1587% CPU (inc
   T2 colombia_s4                  done                                     -                                  held  0 unclaimed   0
   T2 brazil_s2                    done                                     -                                  held  0 unclaimed   0
   T2 brazil_s3                    done                                     -                                  held  0 unclaimed   0
-  T3 brazil_s1_nohist             running                                  brazil_s1_nohist_N3                held  5 unclaimed   0
-  T3 brazil_s2_nohist             running                                  brazil_s2_nohist_N3                held  3 unclaimed  47
-  T4 brazil_s1_sens_yref          running                                  brazil_s1_sens_yref_L3             held  0 unclaimed  10
+  T3 brazil_s1_nohist             running                                  brazil_s1_nohist_N4                held  4 unclaimed   0
+  T3 brazil_s2_nohist             running                                  brazil_s2_nohist_N4                held  0 unclaimed  50
+  T4 brazil_s1_sens_yref          running                                  brazil_s1_sens_yref_L3             held  8 unclaimed   2 RESERVED
   T4 brazil_s1_sens_delay         running                                  brazil_s1_sens_delay2_L3           held  0 unclaimed  10
   T4 brazil_s1_sens_ctrl          running                                  brazil_s1_sens_ctrl_L3_C3          held  0 unclaimed  10
   T4 taiwan_s1_l2shared           running                                  taiwan_s1_shared_L2                held  0 unclaimed  16
   T5 brazil_s4                    running                                  brazil_s4_controls_2019            held  0 unclaimed 130
-  other run_experiment configs (counted in the budget): {'configs/colombia_s1_panel_L4_C2.yaml': 2, 'configs/taiwan_s5_tw2021_L4_Cstar.yaml': 2}
+  other run_experiment configs (counted in the budget): {'configs/brazil_s1_panel_L3_C2.yaml': 2}
 ```
