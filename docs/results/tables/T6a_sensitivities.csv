@@ -22,9 +22,9 @@ TW_S1_no2021,TW_S1,G_excess,Taiwan S1 without test year(s) 2021 (the pre-review 
 TW_S5_no2021,TW_S5,G_emb,Taiwan S5 without test year(s) 2021 (the pre-review test-year set),available,available,-14.676132179468928,-20.243328663055838,-9.108935695882016,7.352691989136213e-05,inferior,-21.60200403960435,inferior,"2020,2022,2023,2024","1,4"
 TW_S5_no2021,TW_S5,G_id,Taiwan S5 without test year(s) 2021 (the pre-review test-year set),available,available,-2.309451469920291,-5.5235538120012935,0.9046508721607116,0.14458669902937524,inconclusive,-3.357850217042394,inferior,"2020,2022,2023,2024","1,4"
 TW_S5_no2021,TW_S5,G_excess,Taiwan S5 without test year(s) 2021 (the pre-review test-year set),available,available,-11.155673487092185,-15.662962046191053,-6.648384927993319,0.00013268162288410212,inferior,-17.29818871273382,inferior,"2020,2022,2023,2024","1,4"
-BR_S1_nohist,BR_S1,G_emb,"Brazil S1, no-history arm (ref = N3)",pending,available,,,,,pending,0.2581092982045773,equivalent,,
-BR_S1_nohist,BR_S1,G_id,"Brazil S1, no-history arm (ref = N3)",pending,available,,,,,pending,0.03191236579344077,equivalent,,
-BR_S1_nohist,BR_S1,G_excess,"Brazil S1, no-history arm (ref = N3)",pending,available,,,,,pending,0.23210654612277962,equivalent,,
+BR_S1_nohist,BR_S1,G_emb,"Brazil S1, no-history arm (ref = N3)",available,available,2.5358069332621085,-0.8198495339636933,5.89146340048791,0.12871773619738333,inconclusive,0.2581092982045773,equivalent,"2020,2021,2022,2023,2024","1,4"
+BR_S1_nohist,BR_S1,G_id,"Brazil S1, no-history arm (ref = N3)",available,available,3.3015525181918055,1.675119484757316,4.927985551626295,0.0005469223894460934,superior,0.03191236579344077,equivalent,"2020,2021,2022,2023,2024","1,4"
+BR_S1_nohist,BR_S1,G_excess,"Brazil S1, no-history arm (ref = N3)",available,available,-0.4333923062946472,-2.0609955830993103,1.1942109705100161,0.5802551294127533,inconclusive,0.23210654612277962,equivalent,"2020,2021,2022,2023,2024","1,4"
 BR_S2_nohist,BR_S2,G_emb,"Brazil S2, no-history arm (ref = N3)",pending,available,,,,,pending,-0.023062939396460178,equivalent,,
 BR_S2_nohist,BR_S2,G_id,"Brazil S2, no-history arm (ref = N3)",pending,available,,,,,pending,-0.054460250299588744,equivalent,,
 BR_S2_nohist,BR_S2,G_excess,"Brazil S2, no-history arm (ref = N3)",pending,available,,,,,pending,-0.0007516890847668246,equivalent,,

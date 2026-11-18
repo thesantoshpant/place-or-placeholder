@@ -1,6 +1,6 @@
 # RESULTS BRIEF (auto-generated, results kit v3)
 
-Generated 2026-11-18 04:13 by `scripts/analysis/make_results.py`. Do not edit by hand: re-run the script. All numbers are log1p-scale WIS unless marked 'case scale'; a gain is positive when the second model has the lower WIS. Percentages are of WIS(L3) (WIS(N3) in the no-history arm).
+Generated 2026-11-18 11:53 by `scripts/analysis/make_results.py`. Do not edit by hand: re-run the script. All numbers are log1p-scale WIS unless marked 'case scale'; a gain is positive when the second model has the lower WIS. Percentages are of WIS(L3) (WIS(N3) in the no-history arm).
 
 **Scored rows (deviation row 24).** Every estimate keeps only rows whose forecast origin (target week − h) lies in the same epi-year as the target, which removes the yearly-feature and training-label look-ahead (review R1): at h1 the first epi-week of each test year is dropped (1.9% of rows), at h4 the first four (7.7%). T1 also shows G_excess on all rows ('all rows %').
 
@@ -60,14 +60,14 @@ Counts under the loss-counting rule: loss: 1, nominal only: 1, none: 6, pending:
 | TW_S1_no2021 | secondary/sensitivity | Taiwan S1 without test year(s) 2021 (the pre-review test-year set) | C1 | available |  |
 | TW_S5_no2021 | secondary/sensitivity | Taiwan S5 without test year(s) 2021 (the pre-review test-year set) | C3 | available |  |
 | BR_S1_3seeds | secondary/sensitivity | Brazil S1, primary + 2 extra seeds (seed-averaged; extra seeds h1/h4) | C1 | available |  |
-| BR_S1_yref | secondary/sensitivity | Brazil S1 sensitivity: yearly features aligned to the origin year (strictly causal) (G_emb only) | n/a (no C* run) | pending | L3: brazil_s1_sens_yref_L3: not started; L4: brazil_s1_sens_yref_L4: not started; L3C: brazil_s1_sens_yref_L3: not started; L4C: brazil_s1_sens_yref_L4: not started |
-| BR_S1_delay2 | secondary/sensitivity | Brazil S1 sensitivity: 2-week reporting delay (G_emb only) | n/a (no C* run) | pending | L3: brazil_s1_sens_delay2_L3: not started; L4: brazil_s1_sens_delay2_L4: not started; L3C: brazil_s1_sens_delay2_L3: not started; L4C: brazil_s1_sens_delay2_L4: not started |
+| BR_S1_yref | secondary/sensitivity | Brazil S1 sensitivity: yearly features aligned to the origin year (strictly causal) (G_emb only) | n/a (no C* run) | pending | L4: brazil_s1_sens_yref_L4: partial (7 chunks); L4C: brazil_s1_sens_yref_L4: partial (7 chunks) |
+| BR_S1_delay2 | secondary/sensitivity | Brazil S1 sensitivity: 2-week reporting delay (G_emb only) | n/a (no C* run) | pending | L3: brazil_s1_sens_delay2_L3: partial (4 chunks); L4: brazil_s1_sens_delay2_L4: not started; L3C: brazil_s1_sens_delay2_L3: partial (4 chunks); L4C: brazil_s1_sens_delay2_L4: not started |
 | BR_S1_ctrlC3 | secondary/sensitivity | Brazil S1 controls panel: C3 in place of C* (h1, h4) | C3 | pending | L3C: brazil_s1_sens_ctrl_L3_C3: not started; L4C: brazil_s1_sens_ctrl_L4_C3: not started |
 | BR_S1_ctrlC6 | secondary/sensitivity | Brazil S1 controls panel: C6 in place of C* (h1, h4) | C6 | pending | L3C: brazil_s1_sens_ctrl_L3_C6: not started; L4C: brazil_s1_sens_ctrl_L4_C6: not started |
 | BR_S1_perlevel | secondary/sensitivity | Brazil S1, per-level tuning (L3/L4 31 leaves; superseded primary) | C1 | available |  |
 | TW_S1_BRparams | secondary/sensitivity | Taiwan S1 with Brazil's tuned params and C* | C1 | available |  |
-| BR_S1_nohist | secondary/no-history | Brazil S1, no-history arm (ref = N3) | C2 | pending | L4: brazil_s1_nohist_N4: partial (6 chunks); L3C: brazil_s1_nohist_N3_Cstar: not started; L4C: brazil_s1_nohist_N4_Cstar: not started |
-| BR_S2_nohist | secondary/no-history | Brazil S2, no-history arm (ref = N3) | C2 | pending | L3: brazil_s2_nohist_N3: stage not done; L4: brazil_s2_nohist_N4: not started; L3C: brazil_s2_nohist_N3_Cstar: not started; L4C: brazil_s2_nohist_N4_Cstar: not started |
+| BR_S1_nohist | secondary/no-history | Brazil S1, no-history arm (ref = N3) | C2 | available |  |
+| BR_S2_nohist | secondary/no-history | Brazil S2, no-history arm (ref = N3) | C2 | pending | L4C: brazil_s2_nohist_N4_Cstar: partial (6 chunks) |
 
 ## 3. Per-cell detail
 
@@ -259,6 +259,17 @@ Rows scored (primary horizons) 113,430; row filter origin_year dropped 11,400 ro
 - **ID share**: not estimable: G_emb 95% CI includes 0
 - Ladder (pooled h{1,4}, 113,430 common rows): L3 0.0398, L4 0.0402, L3+C* 0.0401, L4+C* 0.0403. Best = L3. 80% coverage 0.98–0.98 overall, 0.24–0.25 on non-zero targets.
 
+### BR_S1_nohist: Brazil S1, no-history arm (ref = N3) (C* = C2)
+Rows scored (primary horizons) 2,703,183; row filter origin_year dropped 135,975 rows of 2839158 (all horizons); test years [2020, 2021, 2022, 2023, 2024]; seeds [0]; zero-filled share 0.52; outbreak share 0.082.
+
+- **G_excess** (pooled h{1,4}) -0.43% [-2.06, +1.19]: N4+C* is worse than N3+C* by 0.43% of WIS(ref) (95% CI -2.06 to +1.19%; p = 0.580; MDE 2.29%): **inconclusive** (unadjusted rule), i.e. the CI crosses 0 and reaches past the ±1% margin: the data cannot tell.
+- **G_emb** (pooled h{1,4}) +2.54% [-0.82, +5.89]: N4 improves on N3 by 2.54% of WIS(ref) (95% CI -0.82 to +5.89%; p = 0.129; MDE 4.72%): **inconclusive** (unadjusted rule), i.e. the CI crosses 0 and reaches past the ±1% margin: the data cannot tell.
+- **G_id** (pooled h{1,4}) +3.30% [+1.68, +4.93]: N3+C* improves on N3 by 3.30% of WIS(ref) (95% CI +1.68 to +4.93%; p = 0.001; MDE 2.29%): **superior** (unadjusted rule), i.e. the 95% CI excludes 0 on the improvement side: the second model is better.
+- G_excess by target type (stratum estimate, % of the stratum's WIS(L3) | additive contribution, % of the cell's WIS(L3)): positive (27% rows) +0.58 | +0.77; recorded_zero (21% rows) -6.09 | -0.29; zero_filled (52% rows) -15.77 | -0.91; identity residual 0.0e+00.
+- **ID share**: not estimable: G_emb 95% CI includes 0
+- Ladder (pooled h{1,4}, 2,703,183 common rows): N3+C1 0.3478, N3 0.3526, N4 0.3437, N3+C* 0.3411, N4+C* 0.3426. Best = N3+C*. 80% coverage 0.83–0.85 overall, 0.41–0.43 on non-zero targets.
+- Ladder rungs not yet available: N4+C1 (brazil_s1_nohist_N4_C1): not started
+
 ## 4. Sensitivity cells (T6a)
 
 | variant | vs | estimand | variant % [95% CI] | class | primary % | primary class |
@@ -286,9 +297,9 @@ Rows scored (primary horizons) 113,430; row filter origin_year dropped 11,400 ro
 | TW_S5_no2021 | TW_S5 | G_emb | -14.68 [-20.24, -9.11] | inferior | -21.60 | inferior |
 | TW_S5_no2021 | TW_S5 | G_id | -2.31 [-5.52, +0.90] | inconclusive | -3.36 | inferior |
 | TW_S5_no2021 | TW_S5 | G_excess | -11.16 [-15.66, -6.65] | inferior | -17.30 | inferior |
-| BR_S1_nohist | BR_S1 | G_emb | pending | pending | +0.26 | equivalent |
-| BR_S1_nohist | BR_S1 | G_id | pending | pending | +0.03 | equivalent |
-| BR_S1_nohist | BR_S1 | G_excess | pending | pending | +0.23 | equivalent |
+| BR_S1_nohist | BR_S1 | G_emb | +2.54 [-0.82, +5.89] | inconclusive | +0.26 | equivalent |
+| BR_S1_nohist | BR_S1 | G_id | +3.30 [+1.68, +4.93] | superior | +0.03 | equivalent |
+| BR_S1_nohist | BR_S1 | G_excess | -0.43 [-2.06, +1.19] | inconclusive | +0.23 | equivalent |
 | BR_S2_nohist | BR_S2 | G_emb | pending | pending | -0.02 | equivalent |
 | BR_S2_nohist | BR_S2 | G_id | pending | pending | -0.05 | equivalent |
 | BR_S2_nohist | BR_S2 | G_excess | pending | pending | -0.00 | equivalent |
@@ -317,14 +328,14 @@ Figures (`docs/results/figures/`, PDF + PNG):
 - `F3_s5_embedding_distance` — held-out country (S5): AlphaEarth similarity to the training districts vs district gain
 - `F4_per_year_gains` — G_excess per test year and cell
 - `FS1_ladder_S1` — ladder per country, S1
-- `FS2` — no-history arm ladder (**pending: no data yet**)
+- `FS2_nohist_ladder` — no-history arm ladder
 
 Per-cell intermediate results: `runs/analysis_cache/<cell>/` (est.parquet, ladder.parquet, extras/*.parquet, info.json with row counts, filter, exclusions and seeds).
 
 ## 6. Compute status (scheduler snapshot)
 
 ```
-snapshot 2026-11-18 04:13:31 (3 s old); budget 48 threads (others 1321% CPU (incl. own non-pipeline jobs)) = 12 workers; held 14; free -2
+snapshot 2026-11-18 11:53:25 (15 s old); budget 60 threads (others 122% CPU (incl. own non-pipeline jobs)) = 15 workers; held 15; free 0
   T1 brazil_s1_shared             done                                     -                                  held  0 unclaimed   0
   T1 peru_s1_shared               done                                     -                                  held  0 unclaimed   0
   T1 taiwan_s1_shared             done                                     -                                  held  0 unclaimed   0
@@ -340,12 +351,11 @@ snapshot 2026-11-18 04:13:31 (3 s old); budget 48 threads (others 1321% CPU (inc
   T2 colombia_s4                  done                                     -                                  held  0 unclaimed   0
   T2 brazil_s2                    done                                     -                                  held  0 unclaimed   0
   T2 brazil_s3                    done                                     -                                  held  0 unclaimed   0
-  T3 brazil_s1_nohist             running                                  brazil_s1_nohist_N4                held  4 unclaimed   0
-  T3 brazil_s2_nohist             running                                  brazil_s2_nohist_N4                held  0 unclaimed  50
-  T4 brazil_s1_sens_yref          running                                  brazil_s1_sens_yref_L3             held  8 unclaimed   2 RESERVED
-  T4 brazil_s1_sens_delay         running                                  brazil_s1_sens_delay2_L3           held  0 unclaimed  10
+  T3 brazil_s1_nohist             running                                  brazil_s1_nohist_N4_C1             held  2 unclaimed   8
+  T3 brazil_s2_nohist             running                                  brazil_s2_nohist_N4_Cstar          held 13 unclaimed  30
+  T4 brazil_s1_sens_yref          running                                  brazil_s1_sens_yref_L4             held  0 unclaimed   3
+  T4 brazil_s1_sens_delay         running                                  brazil_s1_sens_delay2_L3           held  0 unclaimed   6
   T4 brazil_s1_sens_ctrl          running                                  brazil_s1_sens_ctrl_L3_C3          held  0 unclaimed  10
   T4 taiwan_s1_l2shared           running                                  taiwan_s1_shared_L2                held  0 unclaimed  16
   T5 brazil_s4                    running                                  brazil_s4_controls_2019            held  0 unclaimed 130
-  other run_experiment configs (counted in the budget): {'configs/brazil_s1_panel_L3_C2.yaml': 2}
 ```
