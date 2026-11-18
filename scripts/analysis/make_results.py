@@ -597,10 +597,10 @@ def main(argv=None) -> int:
                   ("F3", lambda: R.fig_distance(sup.get("dist_units"), sup.get("dist_bins"), F)),
                   ("F4", lambda: R.fig_per_year_v3(sup.get("peryear"), F, hlab)),
                   ("FS1", lambda: R.fig_ladder(lad, ["BR_S1", "CO_S1", "PE_S1", "TW_S1"], F, "FS1_ladder_S1",
-                                               "Ladder by country, new-years split (S1): mean log1p WIS "
+                                               "Ladder by country, new-years split (S1): mean WIS on log(1 + cases) "
                                                "(C* = the selected control)", R.LADDER_ORDER, cstars)),
                   ("FS2", lambda: R.fig_ladder(lad, nh, F, "FS2_nohist_ladder",
-                                               "No-history arm ladder (mean log1p WIS)",
+                                               "No-history arm ladder (mean WIS on log(1 + cases))",
                                                ["N2", "N3", "N4", "N3+C1", "N4+C1", "N3+C*", "N4+C*"], cstars))):
         try:
             figs[k] = fn()

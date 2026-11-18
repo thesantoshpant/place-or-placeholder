@@ -1,0 +1,674 @@
+% refs_v1.bib -- Place or Placeholder? (medRxiv draft v1)
+% Merged 2026-11-18 from paper/refs.bib and audits/review_round/R8_refs_additions.bib.
+% Rules:
+%  - One entry per work. Where R8 replaced an entry, the R8 version is kept under the same key.
+%  - araujo2025sprint (medRxiv) is REPLACED by araujo2026sprint (PNAS 2026). Do not cite araujo2025sprint.
+%  - Added in this merge: pollett2021epiforge (EPIFORGE 2020) and schreiber1996iaaft (IAAFT surrogates),
+%    both checked against Crossref.
+%  - Fixed in this merge (checked against Crossref / PMLR / arXiv API): diebold1995comparing
+%    (issue, page range, DOI), bracher2021wis (issue, DOI), das2024timesfm (authors, PMLR volume,
+%    pages), brown2025alphaearth and agarwal2024pdfm (first author's full name), ploton2020spatial
+%    and meyer2022global (DOI).
+%  - Entries carrying note = {VERIFY ...} need a person to check one detail before posting.
+%  - Every entry still needs the human reference check required before posting (resolution log L).
+
+% ===========================================================================
+% Studies this paper responds to
+% ===========================================================================
+
+@misc{muslim2026planetary,
+  author        = {Muslim, Arbaaz and Slobodkin, Aviv and Wheeler-Martin, Katherine and Zhou, Eric and Brittain, John and Frasch, Martin and Subramaniam, Hamsa and Bien, Jacob and Sadeghi, Hamed and Conderino, Sarah and Jiang, Stone and Spoer, Ben and Neill, Daniel and Sun, Mimi and Paul, Joydeep and Liu, Yun and Shekel, Tomer and Chou, Amy Chung-Yu and Carter, Anna and Elliott, Charles and Bell, Aaron and Sayag, Reuven and Hassidim, Avinatan and Efron, Niv and Matias, Yossi and Widner, Kasumi and Lopez Ortiz, Eduardo and D{\'i}az-Qui{\~n}onez, Jos{\'e} Alberto and Kraemer, Moritz U. G. and Brownstein, John and Co, Isaias Fernandes and Koua, Etien Luc and Bharel, Monica and Rader, Benjamin and Thorpe, Lorna and Gourevitch, Marc and Shetty, Shravya and Prasad, Gautam},
+  title         = {Planetary Geospatial Foundation Models: A New Paradigm for Global Public Health},
+  year          = {2026},
+  eprint        = {2610.05699},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.LG},
+  note          = {Version 2, 17 October 2026 (v1 5 October 2026)},
+  url           = {https://arxiv.org/abs/2610.05699}
+}
+
+@misc{brittain2026foundation,
+  author       = {Brittain, J.-S. and others},
+  title        = {Foundation models capture human and environmental context to improve dengue forecasting},
+  year         = {2026},
+  howpublished = {medRxiv preprint},
+  doi          = {10.64898/2026.11.05.26367335},
+  note         = {Posted 6 November 2026. Code: \url{https://github.com/kraemer-lab/pdfm-dengue-brazil}, Zenodo doi:10.5281/zenodo.23984558},
+  url          = {https://www.medrxiv.org/content/10.64898/2026.11.05.26367335v1.full}
+}
+
+@misc{nazir2026alphaearth,
+  author        = {Nazir, Usman and Cheng, I-Han and Khalid, Sara},
+  title         = {{AlphaEarth} Satellite Embeddings for Modelling Climate Sensitive Diseases Towards Global Health Resilience},
+  year          = {2026},
+  eprint        = {2605.10949},
+  archivePrefix = {arXiv},
+  note          = {Version 1, 29 April 2026},
+  url           = {https://arxiv.org/abs/2605.10949}
+}
+
+% Workshop paper, NOT the same work as arXiv:2605.10949 (different author list and scope).
+@inproceedings{nazir2026malaria,
+  author    = {Nazir, Usman and Azevedo Soares, La{\'i}s and Yaseen, Faisal and Wuppalapati, Arundhati S. and Scanlan, Dylan and Mendes, Jessica and Khalid, Sara},
+  title     = {{AlphaEarth} Embeddings Improve Malaria Forecasting in Low-Resource Settings},
+  booktitle = {NeurIPS 2026 Workshop on Tackling Climate Change with Machine Learning},
+  year      = {2026},
+  note      = {Poster},
+  url       = {https://openreview.net/forum?id=vQ7KBJ7EcW}
+}
+
+@inproceedings{pradhan2026benchmarks,
+  author    = {Pradhan, Raunaq},
+  title     = {Benchmarks Are Not Deployments: Geospatial Foundation Models in a City-Scale Dengue Early-Warning System},
+  booktitle = {NeurIPS 2026 GlobalSouthAI Affinity Event (poster)},
+  year      = {2026},
+  note      = {OpenReview id 2M8rnwfdj7},
+  url       = {https://neurips.cc/virtual/2026/162773}
+}
+
+@misc{zhang2026population,
+  author        = {Zhang, Wenbin and Cleary, Eimear and Rowe, Francisco and Chaudhuri, Somnath and Bondarenko, Maksym and Lai, Shengjie and Tatem, Andrew J.},
+  title         = {Geospatial foundation-model embeddings improve population estimation unevenly across space and scale},
+  year          = {2026},
+  eprint        = {2605.01650},
+  archivePrefix = {arXiv},
+  note          = {Version 1, 3 May 2026},
+  url           = {https://arxiv.org/abs/2605.01650}
+}
+
+@article{metzler2026satellite,
+  author  = {Metzler, Barbara and Fleischmann, Martin and Arribas-Bel, Daniel},
+  title   = {Is a (satellite) image worth a thousand data points? {C}omparing machine learning approaches to predict environmental and social inequalities in {England}},
+  journal = {PLOS ONE},
+  volume  = {21},
+  number  = {8},
+  pages   = {e0356472},
+  year    = {2026},
+  doi     = {10.1371/journal.pone.0356472}
+}
+
+% ===========================================================================
+% Dengue burden, forecasting and context
+% ===========================================================================
+
+@article{araujo2026sprint,
+  author  = {Araujo, Eduardo Correa and Carvalho, Luiz Max and Ganem, Fabiana and Vacaro, Lu{\~a} Bida and Bastos, Leonardo S. and Freitas, La{\'i}s Picinini and de Almeida, Iasmim Ferreira and Bastos, Marcio and Alencar, Ramila and Bianchi, Lucas and Capell{\'a}n, Ra{\'u}l and Chen, Xiang and Cruz, Oswaldo and Cunha, Americo and Das, Haridas K. and Fletcher, Chloe and Lana, Raquel Martins and Lowe, Rachel and L{\"u}hrsen, Daniela and Moirano, Giovenale and Moraga, Paula and Stolerman, Lucas M. and Valente, Fernanda and Code{\c{c}}o, Cl{\'a}udia Torres and Coelho, Fl{\'a}vio C.},
+  title   = {Leveraging probabilistic forecasts for dengue preparedness and control: The 2024 {Dengue Forecasting Sprint} in {Brazil}},
+  journal = {Proceedings of the National Academy of Sciences},
+  volume  = {123},
+  number  = {7},
+  pages   = {e2508989123},
+  year    = {2026},
+  doi     = {10.1073/pnas.2508989123},
+  note    = {PMID 41678308; PMCID PMC12912988}
+}
+
+@article{johansson2019challenge,
+  author  = {Johansson, Michael A. and Apfeldorf, Karyn M. and Dobson, Scott and Devita, Jason and Buczak, Anna L. and Baugher, Benjamin and Moniz, Linda J. and Bagley, Thomas and Babin, Steven M. and Guven, Erhan and others},
+  title   = {An open challenge to advance probabilistic forecasting for dengue epidemics},
+  journal = {Proceedings of the National Academy of Sciences},
+  volume  = {116},
+  number  = {48},
+  pages   = {24268--24274},
+  year    = {2019},
+  doi     = {10.1073/pnas.1909865116},
+  note    = {PMID 31712420}
+}
+
+@article{lowe2016elife,
+  author  = {Lowe, Rachel and Coelho, Caio A. S. and Barcellos, Christovam and Carvalho, Marilia S{\'a} and Cat{\~a}o, Rafael De Castro and Coelho, Giovanini E. and Ramalho, Walter Massa and Bailey, Trevor C. and Stephenson, David B. and Rod{\'o}, Xavier},
+  title   = {Evaluating probabilistic dengue risk forecasts from a prototype early warning system for {Brazil}},
+  journal = {eLife},
+  volume  = {5},
+  pages   = {e11285},
+  year    = {2016},
+  doi     = {10.7554/eLife.11285},
+  note    = {PMID 26910315}
+}
+
+% Covers Vietnam, not Brazil.
+@article{colongonzalez2021vietnam,
+  author  = {Col{\'o}n-Gonz{\'a}lez, Felipe J. and Soares Bastos, Leonardo and Hofmann, Barbara and Hopkin, Alison and Harpham, Quillon and Crocker, Tom and Amato, Rosanna and Ferrario, Iacopo and Moschini, Francesca and James, Samuel and Malde, Sajni and Ainscoe, Eleanor and Sinh Nam, Vu and Quang Tan, Dang and Duc Khoa, Nguyen and Harrison, Mark and Tsarouchi, Gina and Lumbroso, Darren and Brady, Oliver J. and Lowe, Rachel},
+  title   = {Probabilistic seasonal dengue forecasting in {Vietnam}: A modelling study using superensembles},
+  journal = {PLOS Medicine},
+  volume  = {18},
+  number  = {3},
+  pages   = {e1003542},
+  year    = {2021},
+  doi     = {10.1371/journal.pmed.1003542},
+  note    = {PMID 33661904}
+}
+
+% GBD 2013 dengue burden: history only, not 2023 numbers.
+@article{stanaway2016burden,
+  author  = {Stanaway, Jeffrey D. and Shepard, Donald S. and Undurraga, Eduardo A. and Halasa, Yara A. and Coffeng, Luc E. and Brady, Oliver J. and Hay, Simon I. and Bedi, Neeraj and Bensenor, Isabela M. and Casta{\~n}eda-Orjuela, Carlos A. and Chuang, Ting-Wu and Gibney, Katherine B. and Memish, Ziad A. and Rafay, Anwar and Ukwaja, Kingsley N. and Yonemoto, Naohiro and Murray, Christopher J. L.},
+  title   = {The global burden of dengue: an analysis from the {Global Burden of Disease Study} 2013},
+  journal = {The Lancet Infectious Diseases},
+  volume  = {16},
+  number  = {6},
+  pages   = {712--723},
+  year    = {2016},
+  doi     = {10.1016/S1473-3099(16)00026-8},
+  note    = {PMID 26874619}
+}
+
+@article{gbd2023diseases,
+  author  = {{GBD 2023 Diseases and Injuries Collaborators}},
+  title   = {Burden of 375 diseases and injuries, risk-attributable burden of 88 risk factors, and healthy life expectancy in 204 countries and territories, including 660 subnational locations, 1990--2023: a systematic analysis for the {Global Burden of Disease Study} 2023},
+  journal = {The Lancet},
+  volume  = {406},
+  number  = {10513},
+  pages   = {1873--1922},
+  year    = {2025},
+  doi     = {10.1016/S0140-6736(25)01637-X},
+  note    = {VERIFY: Crossref lists S. I. Hay as first named author; check the byline/group name on the publisher page}
+}
+
+@misc{ihme2023gbdresults,
+  author       = {{Institute for Health Metrics and Evaluation (IHME)}},
+  title        = {{GBD Results}: {Global Burden of Disease Study} 2023},
+  howpublished = {\url{https://vizhub.healthdata.org/gbd-results/}},
+  year         = {2025},
+  note         = {VERIFY: dengue DALYs, 2023; fill in the access date when the numbers are pulled}
+}
+
+@article{harish2024movement,
+  author  = {Harish, Vinyas and Col{\'o}n-Gonz{\'a}lez, Felipe J. and Moreira, Filipe R. R. and Gibb, Rory and Kraemer, Moritz U. G. and Davis, Megan and Reiner, Robert C. and Pigott, David M. and Perkins, T. Alex and Weiss, Daniel J. and Bogoch, Isaac I. and Vazquez-Prokopec, Gonzalo and Saide, Pablo Manrique and Barbosa, Gerson L. and Sabino, Ester C. and Khan, Kamran and Faria, Nuno R. and Hay, Simon I. and Correa-Morales, Fabi{\'a}n and Chiaravalloti-Neto, Francisco and Brady, Oliver J.},
+  title   = {Human movement and environmental barriers shape the emergence of dengue},
+  journal = {Nature Communications},
+  volume  = {15},
+  pages   = {4205},
+  year    = {2024},
+  doi     = {10.1038/s41467-024-48465-0}
+}
+
+@article{chen2022covid,
+  author  = {Chen, Yuyang and Li, Naizhe and Louren{\c{c}}o, Jos{\'e} and Wang, Lin and Cazelles, Bernard and Dong, Lu and Li, Bingying and Liu, Yang and Jit, Mark and Bosse, Nikos I. and others},
+  title   = {Measuring the effects of {COVID-19}-related disruption on dengue transmission in southeast {Asia} and {Latin America}: a statistical modelling study},
+  journal = {The Lancet Infectious Diseases},
+  volume  = {22},
+  number  = {5},
+  pages   = {657--667},
+  year    = {2022},
+  doi     = {10.1016/S1473-3099(22)00025-1},
+  note    = {PMID 35247320}
+}
+
+@article{roster2024covidbrazil,
+  author  = {Oliveira Roster, Kirstin and Martinelli, Tiago and Connaughton, Colm and Santillana, Mauricio and Rodrigues, Francisco A.},
+  title   = {Impact of the {COVID-19} pandemic on dengue in {Brazil}: Interrupted time series analysis of changes in surveillance and transmission},
+  journal = {PLOS Neglected Tropical Diseases},
+  volume  = {18},
+  number  = {12},
+  pages   = {e0012726},
+  year    = {2024},
+  doi     = {10.1371/journal.pntd.0012726},
+  note    = {PMID 39724056}
+}
+
+@article{munayco2024peru,
+  author  = {Munayco, C{\'e}sar V. and Valderrama Rosales, Betsabet Yadira and Mateo Lizarbe, Susan Yanett and Yon Fabian, Carmen Rosa and Pe{\~n}a S{\'a}nchez, Ricardo and V{\'a}squez S{\'a}nchez, C{\'e}sar Henry and Garc{\'i}a, Maria Paquita and Padilla-Rojas, Carlos and Su{\'a}rez, Victor and S{\'a}nchez-Gonz{\'a}lez, Liliana and Jones, Forrest K. and Kohatsu, Luciana and Adams, Laura E. and Morgan, Juliette and Paz-Bailey, Gabriela},
+  title   = {Notes from the Field: Dengue Outbreak --- {Peru}, 2023},
+  journal = {MMWR. Morbidity and Mortality Weekly Report},
+  volume  = {73},
+  number  = {4},
+  pages   = {86--88},
+  year    = {2024},
+  doi     = {10.15585/mmwr.mm7304a4}
+}
+
+@article{gurgelgoncalves2024brazil,
+  author  = {Gurgel-Gon{\c{c}}alves, Rodrigo and Oliveira, Wanderson Kleber de and Croda, Julio},
+  title   = {The greatest Dengue epidemic in {Brazil}: Surveillance, Prevention, and Control},
+  journal = {Revista da Sociedade Brasileira de Medicina Tropical},
+  volume  = {57},
+  pages   = {e00203-2024},
+  year    = {2024},
+  doi     = {10.1590/0037-8682-0113-2024},
+  note    = {PMID 39319953}
+}
+
+@misc{paho2023sitrep1,
+  author       = {{Pan American Health Organization}},
+  title        = {Situation Report No. 1: Dengue Epidemiological Situation in the Region of the {Americas}, 14 December 2023},
+  howpublished = {\url{https://www.paho.org/en/documents/situation-report-n1-dengue-epidemiological-situation-americas-14-december-2023}},
+  year         = {2023}
+}
+
+@misc{paho2024sitrep48,
+  author       = {{Pan American Health Organization}},
+  title        = {Dengue Situation Report, Region of the {Americas}: Epidemiological Week 48, 19 December 2024},
+  howpublished = {\url{https://paho.org/sites/default/files/2024-12/2024-cde-dengue-sitrep-americas-epi-week-48-19-dec.pdf}},
+  year         = {2024}
+}
+
+% ===========================================================================
+% Foundation models
+% ===========================================================================
+
+@misc{brown2025alphaearth,
+  author        = {Brown, Christopher F. and others},
+  title         = {{AlphaEarth} Foundations: An embedding field model for accurate and efficient global mapping from sparse label data},
+  year          = {2025},
+  eprint        = {2507.22291},
+  archivePrefix = {arXiv},
+  note          = {Version 2; 19 authors},
+  url           = {https://arxiv.org/abs/2507.22291}
+}
+
+@misc{agarwal2024pdfm,
+  author        = {Agarwal, Mohit and others},
+  title         = {General Geospatial Inference with a Population Dynamics Foundation Model},
+  year          = {2024},
+  eprint        = {2411.07207},
+  archivePrefix = {arXiv},
+  note          = {34 authors},
+  url           = {https://arxiv.org/abs/2411.07207}
+}
+
+@inproceedings{das2024timesfm,
+  author    = {Das, Abhimanyu and Kong, Weihao and Sen, Rajat and Zhou, Yichen},
+  title     = {A decoder-only foundation model for time-series forecasting},
+  booktitle = {Proceedings of the 41st International Conference on Machine Learning},
+  series    = {Proceedings of Machine Learning Research},
+  volume    = {235},
+  pages     = {10148--10167},
+  year      = {2024},
+  url       = {https://proceedings.mlr.press/v235/das24c.html}
+}
+
+@misc{timesfm25,
+  author       = {{Google Research}},
+  title        = {{TimesFM} 2.5 (200M, PyTorch) checkpoint \texttt{google/timesfm-2.5-200m-pytorch}},
+  year         = {2025},
+  howpublished = {Hugging Face model card and \url{https://github.com/google-research/timesfm}},
+  note         = {Apache-2.0 weights; outputs the mean and the 0.1--0.9 deciles}
+}
+
+@inproceedings{klemmer2025satclip,
+  author        = {Klemmer, Konstantin and Rolf, Esther and Robinson, Caleb and Mackey, Lester and Ru{\ss}wurm, Marc},
+  title         = {{SatCLIP}: Global, General-Purpose Location Embeddings with Satellite Imagery},
+  booktitle     = {Proceedings of the AAAI Conference on Artificial Intelligence},
+  volume        = {39},
+  number        = {4},
+  pages         = {4347--4355},
+  year          = {2025},
+  doi           = {10.1609/aaai.v39i4.32457},
+  eprint        = {2311.17179},
+  archivePrefix = {arXiv}
+}
+
+@inproceedings{russwurm2024location,
+  author        = {Ru{\ss}wurm, Marc and Klemmer, Konstantin and Rolf, Esther and Zbinden, Robin and Tuia, Devis},
+  title         = {Geographic Location Encoding with Spherical Harmonics and Sinusoidal Representation Networks},
+  booktitle     = {International Conference on Learning Representations (ICLR)},
+  year          = {2024},
+  eprint        = {2310.06743},
+  archivePrefix = {arXiv},
+  url           = {https://arxiv.org/abs/2310.06743}
+}
+
+% ===========================================================================
+% Spatial validation and spatial proxies
+% ===========================================================================
+
+@article{roberts2017cv,
+  author  = {Roberts, D. R. and others},
+  title   = {Cross-validation strategies for data with temporal, spatial, hierarchical, or phylogenetic structure},
+  journal = {Ecography},
+  volume  = {40},
+  pages   = {913--929},
+  year    = {2017}
+}
+
+@article{ploton2020spatial,
+  author  = {Ploton, Pierre and Mortier, Fr{\'e}d{\'e}ric and R{\'e}jou-M{\'e}chain, Maxime and others},
+  title   = {Spatial validation reveals poor predictive performance of large-scale ecological mapping models},
+  journal = {Nature Communications},
+  volume  = {11},
+  pages   = {4540},
+  year    = {2020},
+  doi     = {10.1038/s41467-020-18321-y}
+}
+
+@article{meyer2021aoa,
+  author  = {Meyer, Hanna and Pebesma, Edzer},
+  title   = {Predicting into unknown space? {E}stimating the area of applicability of spatial prediction models},
+  journal = {Methods in Ecology and Evolution},
+  volume  = {12},
+  number  = {9},
+  pages   = {1620--1633},
+  year    = {2021},
+  doi     = {10.1111/2041-210X.13650}
+}
+
+@article{meyer2022global,
+  author  = {Meyer, Hanna and Pebesma, Edzer},
+  title   = {Machine learning-based global maps of ecological variables and the challenge of assessing them},
+  journal = {Nature Communications},
+  volume  = {13},
+  pages   = {2208},
+  year    = {2022},
+  doi     = {10.1038/s41467-022-29838-9}
+}
+
+@article{meyer2019spatial,
+  author  = {Meyer, Hanna and Reudenbach, Christoph and W{\"o}llauer, Stephan and Nauss, Thomas},
+  title   = {Importance of spatial predictor variable selection in machine learning applications -- Moving from data reproduction to spatial prediction},
+  journal = {Ecological Modelling},
+  volume  = {411},
+  pages   = {108815},
+  year    = {2019},
+  doi     = {10.1016/j.ecolmodel.2019.108815}
+}
+
+@article{mila2024proxies,
+  author  = {Mil{\`a}, Carles and Ludwig, Marvin and Pebesma, Edzer and Tonne, Cathryn and Meyer, Hanna},
+  title   = {Random forests with spatial proxies for environmental modelling: opportunities and pitfalls},
+  journal = {Geoscientific Model Development},
+  volume  = {17},
+  number  = {15},
+  pages   = {6007--6033},
+  year    = {2024},
+  doi     = {10.5194/gmd-17-6007-2024}
+}
+
+% ===========================================================================
+% Scoring, inference, equivalence, reporting guideline
+% ===========================================================================
+
+@article{bracher2021wis,
+  author  = {Bracher, Johannes and Ray, Evan L. and Gneiting, Tilmann and Reich, Nicholas G.},
+  title   = {Evaluating epidemic forecasts in an interval format},
+  journal = {PLOS Computational Biology},
+  volume  = {17},
+  number  = {2},
+  pages   = {e1008618},
+  year    = {2021},
+  doi     = {10.1371/journal.pcbi.1008618}
+}
+
+@article{bosse2023transformed,
+  author  = {Bosse, N. I. and Abbott, S. and Cori, A. and van Leeuwen, E. and Bracher, J. and Funk, S.},
+  title   = {Scoring epidemiological forecasts on transformed scales},
+  journal = {PLOS Computational Biology},
+  volume  = {19},
+  number  = {8},
+  pages   = {e1011393},
+  year    = {2023}
+}
+
+@article{cramer2022covidhub,
+  author  = {Cramer, Estee Y. and Ray, Evan L. and Lopez, Velma K. and Bracher, Johannes and Brennen, Andrea and Castro Rivadeneira, Alvaro J. and Gerding, Aaron and Gneiting, Tilmann and House, Katie H. and Huang, Yuxin and others},
+  title   = {Evaluation of individual and ensemble probabilistic forecasts of {COVID-19} mortality in the {United States}},
+  journal = {Proceedings of the National Academy of Sciences},
+  volume  = {119},
+  number  = {15},
+  pages   = {e2113561119},
+  year    = {2022},
+  doi     = {10.1073/pnas.2113561119},
+  note    = {PMID 35394862}
+}
+
+@article{diebold1995comparing,
+  author  = {Diebold, Francis X. and Mariano, Roberto S.},
+  title   = {Comparing Predictive Accuracy},
+  journal = {Journal of Business \& Economic Statistics},
+  volume  = {13},
+  number  = {3},
+  pages   = {253--263},
+  year    = {1995},
+  doi     = {10.1080/07350015.1995.10524599}
+}
+
+@article{harvey1997testing,
+  author  = {Harvey, D. and Leybourne, S. and Newbold, P.},
+  title   = {Testing the equality of prediction mean squared errors},
+  journal = {International Journal of Forecasting},
+  volume  = {13},
+  pages   = {281--291},
+  year    = {1997}
+}
+
+@article{lazarus2018har,
+  author  = {Lazarus, Eben and Lewis, Daniel J. and Stock, James H. and Watson, Mark W.},
+  title   = {{HAR} Inference: Recommendations for Practice},
+  journal = {Journal of Business \& Economic Statistics},
+  volume  = {36},
+  number  = {4},
+  pages   = {541--559},
+  year    = {2018},
+  doi     = {10.1080/07350015.2018.1506926}
+}
+
+@article{holm1979simple,
+  author  = {Holm, Sture},
+  title   = {A Simple Sequentially Rejective Multiple Test Procedure},
+  journal = {Scandinavian Journal of Statistics},
+  volume  = {6},
+  number  = {2},
+  pages   = {65--70},
+  year    = {1979},
+  url     = {https://www.jstor.org/stable/4615733}
+}
+
+@article{kunsch1989jackknife,
+  author  = {K{\"u}nsch, Hans R.},
+  title   = {The Jackknife and the Bootstrap for General Stationary Observations},
+  journal = {The Annals of Statistics},
+  volume  = {17},
+  number  = {3},
+  pages   = {1217--1241},
+  year    = {1989},
+  doi     = {10.1214/aos/1176347265}
+}
+
+@incollection{politis1992circular,
+  author    = {Politis, Dimitris N. and Romano, Joseph P.},
+  title     = {A Circular Block-Resampling Procedure for Stationary Data},
+  booktitle = {Exploring the Limits of Bootstrap},
+  editor    = {LePage, Raoul and Billard, Lynne},
+  publisher = {John Wiley},
+  pages     = {263--270},
+  year      = {1992}
+}
+
+@article{lakens2017equivalence,
+  author  = {Lakens, Dani{\"e}l},
+  title   = {Equivalence Tests: A Practical Primer for $t$ Tests, Correlations, and Meta-Analyses},
+  journal = {Social Psychological and Personality Science},
+  volume  = {8},
+  number  = {4},
+  pages   = {355--362},
+  year    = {2017},
+  doi     = {10.1177/1948550617697177}
+}
+
+@article{isager2026tst,
+  author  = {Isager, Peder Mortvedt and Fitzgerald, Jack},
+  title   = {Three-Sided Testing to Establish Practical Significance: A Tutorial},
+  journal = {Advances in Methods and Practices in Psychological Science},
+  volume  = {9},
+  number  = {2},
+  pages   = {25152459251412435},
+  year    = {2026},
+  doi     = {10.1177/25152459251412435}
+}
+
+@article{goeman2010threesided,
+  author  = {Goeman, Jelle J. and Solari, Aldo and Stijnen, Theo},
+  title   = {Three-sided hypothesis testing: Simultaneous testing of superiority, equivalence and inferiority},
+  journal = {Statistics in Medicine},
+  volume  = {29},
+  number  = {20},
+  pages   = {2117--2125},
+  year    = {2010},
+  doi     = {10.1002/sim.4002}
+}
+
+@article{pollett2021epiforge,
+  author  = {Pollett, Simon and Johansson, Michael A. and Reich, Nicholas G. and Brett-Major, David and Del Valle, Sara Y. and Venkatramanan, Srinivasan and Lowe, Rachel and Porco, Travis and others},
+  title   = {Recommended reporting items for epidemic forecasting and prediction research: The {EPIFORGE} 2020 guidelines},
+  journal = {PLOS Medicine},
+  volume  = {18},
+  number  = {10},
+  pages   = {e1003793},
+  year    = {2021},
+  doi     = {10.1371/journal.pmed.1003793}
+}
+
+@article{schreiber1996iaaft,
+  author  = {Schreiber, Thomas and Schmitz, Andreas},
+  title   = {Improved Surrogate Data for Nonlinearity Tests},
+  journal = {Physical Review Letters},
+  volume  = {77},
+  number  = {4},
+  pages   = {635--638},
+  year    = {1996},
+  doi     = {10.1103/PhysRevLett.77.635}
+}
+
+% ===========================================================================
+% Data
+% ===========================================================================
+
+@article{clarke2024opendengue,
+  author  = {Clarke, J. and others},
+  title   = {A global dataset of publicly available dengue case count data},
+  journal = {Scientific Data},
+  volume  = {11},
+  pages   = {296},
+  year    = {2024},
+  doi     = {10.1038/s41597-024-03120-7}
+}
+
+@misc{opendengue131,
+  author       = {{OpenDengue}},
+  title        = {{OpenDengue} data release {V1.3.1} (National, Spatial and Temporal extracts)},
+  year         = {2026},
+  howpublished = {\url{https://github.com/OpenDengue/master-repo/tree/main/data/releases/V1.3.1}},
+  doi          = {10.6084/m9.figshare.24259573},
+  note         = {Release commit 99b6a3e (3 November 2026); figshare version 5; CC BY-SA}
+}
+
+@misc{aef_dataset,
+  author       = {{Google and Google DeepMind}},
+  title        = {{AlphaEarth} Foundations Satellite Embedding dataset, {V1} annual (\texttt{GOOGLE/SATELLITE\_EMBEDDING/V1/ANNUAL})},
+  year         = {2025},
+  howpublished = {Google Earth Engine Data Catalog, \url{https://developers.google.com/earth-engine/datasets/catalog/GOOGLE_SATELLITE_EMBEDDING_V1_ANNUAL}},
+  note         = {CC-BY 4.0}
+}
+
+@misc{era5land_ee,
+  author       = {{ECMWF}},
+  title        = {{ERA5-Land} daily aggregated (\texttt{ECMWF/ERA5\_LAND/DAILY\_AGGR})},
+  howpublished = {Google Earth Engine Data Catalog},
+  note         = {Copernicus licence}
+}
+
+@misc{mod13q1_ee,
+  author       = {{NASA LP DAAC}},
+  title        = {{MODIS} Terra Vegetation Indices 16-day 250\,m, Collection 6.1 (\texttt{MODIS/061/MOD13Q1})},
+  howpublished = {Google Earth Engine Data Catalog}
+}
+
+@misc{mod11a2_ee,
+  author       = {{NASA LP DAAC}},
+  title        = {{MODIS} Terra Land Surface Temperature 8-day 1\,km, Collection 6.1 (\texttt{MODIS/061/MOD11A2})},
+  howpublished = {Google Earth Engine Data Catalog}
+}
+
+@misc{viirs_ee,
+  author       = {{Earth Observation Group}},
+  title        = {{VIIRS} Nighttime Day/Night Band annual composites ({VNL} {V2.1}/{V2.2}; \texttt{NOAA/VIIRS/DNB/ANNUAL\_V21}, \texttt{ANNUAL\_V22})},
+  howpublished = {Google Earth Engine Data Catalog}
+}
+
+@misc{ghsl_pop,
+  author       = {{European Commission, Joint Research Centre}},
+  title        = {{GHSL} {P2023A} {GHS-POP} population grid (\texttt{JRC/GHSL/P2023A/GHS\_POP})},
+  howpublished = {Google Earth Engine Data Catalog},
+  note         = {Epochs 1975--2030 at 5-year steps; 2025 and 2030 are projections}
+}
+
+@misc{ghsl_built,
+  author       = {{European Commission, Joint Research Centre}},
+  title        = {{GHSL} {P2023A} {GHS-BUILT-S} built-up surface (\texttt{JRC/GHSL/P2023A/GHS\_BUILT\_S})},
+  howpublished = {Google Earth Engine Data Catalog}
+}
+
+% Verified, but not used by the v1 analyses (GHSL is the population source). Cite only if WorldPop is mentioned.
+@misc{worldpop_r2025a,
+  author       = {{WorldPop}},
+  title        = {{WorldPop} Global2 100\,m population, {R2025A} (\texttt{WorldPop/GP/100m/R2025A/v1/pop})},
+  doi          = {10.5258/SOTON/WP00839}
+}
+
+@misc{ibge2022malha,
+  author       = {{Instituto Brasileiro de Geografia e Estat\'istica (IBGE)}},
+  title        = {Malha municipal 2022 (\texttt{BR\_Municipios\_2022})},
+  year         = {2023},
+  howpublished = {IBGE geoftp}
+}
+
+@misc{geoboundaries_gbopen,
+  author       = {{geoBoundaries}},
+  title        = {{gbOpen} {ADM1}/{ADM2} boundaries for Colombia, Peru and Taiwan},
+  howpublished = {geoBoundaries API, commit 9469f09},
+  note         = {Colombia: DANE MGN 2020 (CC BY 4.0); Peru: IGN/OCHA (CC BY 3.0 IGO); Taiwan: OpenStreetMap 2017 (CC BY-SA 2.0)}
+}
+
+@misc{infodengue_api,
+  author       = {{InfoDengue}},
+  title        = {{InfoDengue} {API}: \texttt{alertcity} endpoint},
+  howpublished = {\url{https://info.dengue.mat.br/services/api/doc}},
+  note         = {Accessed November 2026}
+}
+
+@article{codeco2018infodengue,
+  author  = {Code{\c{c}}o, C. and Coelho, F. and Cruz, O. and Oliveira, S. and Castro, T. and Bastos, L.},
+  title   = {Infodengue: A nowcasting system for the surveillance of arboviruses in {Brazil}},
+  journal = {Revue d'{\'E}pid{\'e}miologie et de Sant{\'e} Publique},
+  volume  = {66},
+  number  = {S5},
+  pages   = {S386},
+  year    = {2018},
+  doi     = {10.1016/j.respe.2018.05.408}
+}
+
+@misc{taiwancdc_dengue_daily,
+  author       = {{Taiwan Centers for Disease Control}},
+  title        = {Dengue fever daily confirmed cases since 1998 (\texttt{Dengue\_Daily.csv})},
+  howpublished = {Taiwan government open data platform, dataset 21025, \url{https://data.gov.tw/dataset/21025}},
+  note         = {Open Government Data License v1.0. The dataset is now listed as archived; we used the Internet Archive snapshot of the od.cdc.gov.tw file of 29 July 2025. VERIFY: add the exact Internet Archive snapshot URL (R6 C)}
+}
+
+% ===========================================================================
+% Software
+% ===========================================================================
+
+@article{gorelick2017gee,
+  author  = {Gorelick, Noel and Hancher, Matt and Dixon, Mike and Ilyushchenko, Simon and Thau, David and Moore, Rebecca},
+  title   = {Google {Earth} {Engine}: Planetary-scale geospatial analysis for everyone},
+  journal = {Remote Sensing of Environment},
+  volume  = {202},
+  pages   = {18--27},
+  year    = {2017},
+  doi     = {10.1016/j.rse.2017.06.031}
+}
+
+@misc{baston_exactextract,
+  author       = {Baston, Daniel},
+  title        = {exactextract: Fast and accurate raster zonal statistics},
+  howpublished = {ISciences, \url{https://github.com/isciences/exactextract}},
+  doi          = {10.5281/zenodo.11396419},
+  note         = {Software, Apache-2.0 licence}
+}
+
+@inproceedings{ke2017lightgbm,
+  author    = {Ke, Guolin and Meng, Qi and Finley, Thomas and Wang, Taifeng and Chen, Wei and Ma, Weidong and Ye, Qiwei and Liu, Tie-Yan},
+  title     = {{LightGBM}: A Highly Efficient Gradient Boosting Decision Tree},
+  booktitle = {Advances in Neural Information Processing Systems 30 (NIPS 2017)},
+  year      = {2017},
+  url       = {https://papers.nips.cc/paper/2017/hash/6449f44a102fde848669bdd9eb6b76fa-Abstract.html}
+}

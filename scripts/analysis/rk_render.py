@@ -96,7 +96,7 @@ def fig_forest(t1: pd.DataFrame, sec: pd.DataFrame, fdir: Path, hlab: str = "h{1
     if len(t1) and len(sec):
         ax.axhline(n - len(t1) - 0.5, color="#BBBBBB", lw=0.6, ls="--")
     ax.set_xlabel("G_excess = WIS(L3+C*) − WIS(L4+C*), % of WIS(L3)   (positive = AlphaEarth helps)")
-    ax.set_title(f"F1. Excess embedding gain beyond the best ID control (pooled over {hlab}, "
+    ax.set_title(f"F1. Excess embedding gain beyond the selected location control C* (pooled over {hlab}, "
                  "primary horizons)\n"
                  "dot = estimate, thick = 90% CI (TOST), thin = 95% CI; blue = primary family, "
                  "grey = secondary", loc="left")
@@ -135,7 +135,7 @@ def fig_ladder(lad: pd.DataFrame, cells: list[str], fdir: Path, name: str, title
         l0 = d[(d.label == "L0") & (d.horizon == "pooled")].wis_log
         sub = f"\nL0 naive (off scale) = {l0.iloc[0]:.3f}" if len(l0) else ""
         ax.set_title(f"{c}{sub}", loc="left")
-    axes[0][0].set_ylabel("mean log1p WIS (lower = better)")
+    axes[0][0].set_ylabel("mean WIS on log(1 + cases), lower = better")
     hl, ll = axes[0][0].get_legend_handles_labels()
     fig.legend(hl, ll, loc="lower center", ncol=len(ll), frameon=False, bbox_to_anchor=(0.5, -0.06))
     fig.suptitle(title, x=0.01, ha="left", fontsize=8.5)
@@ -246,7 +246,7 @@ def fig_forest_v3(t1: pd.DataFrame, fdir: Path, hlab: str = "h{1,4}",
           Line2D([], [], color=OI[0], lw=3, label="90% CI"), Line2D([], [], color=OI[0], lw=1, label="95% CI"),
           Patch(color=OI[4], alpha=0.3, label="±1% equivalence margin")]
     fig.legend(handles=hd, loc="lower center", ncol=3, frameon=False, bbox_to_anchor=(0.5, -0.02))
-    fig.suptitle(f"F1. What AlphaEarth adds beyond the best location control "
+    fig.suptitle(f"F1. What AlphaEarth adds beyond the selected location control (C*) "
                  f"(G_excess, horizons {hlab[1:]} pooled)", x=0.01, ha="left", fontsize=8.5)
     fig.text(0.01, -0.06, SPLIT_KEY + " WIS = weighted interval score on log(1 + cases).",
              fontsize=6, color="#444444")
