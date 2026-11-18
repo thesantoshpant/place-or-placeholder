@@ -1,6 +1,6 @@
 # RESULTS BRIEF (auto-generated)
 
-Generated 2026-11-17 10:46 by `scripts/analysis/make_results.py`. Do not edit by hand: re-run the script. All numbers are log1p-scale WIS; a gain is positive when the second model has the lower WIS. Percentages are of WIS(L3) (WIS(N3) in the no-history arm). **Horizons:** every "pooled" estimate (T1, T3, T5, T6, per-year and strata rows, F1, F3) pools the primary horizons **h{1,4}** (manifest `primary_horizons`, deviation row 21), in every cell; S1 cells also show the secondary pooling over h1-4 (`horizon = pooled_h1-4`), which is never in the Holm family. Inference: DM test with EWC long-run variance and HLN correction on the weekly cross-unit mean loss difference; TOST against a ±1% margin (90% CI); MDE at 80% power. See `docs/methods/results_kit.md`.
+Generated 2026-11-17 22:13 by `scripts/analysis/make_results.py`. Do not edit by hand: re-run the script. All numbers are log1p-scale WIS; a gain is positive when the second model has the lower WIS. Percentages are of WIS(L3) (WIS(N3) in the no-history arm). **Horizons:** every "pooled" estimate (T1, T3, T5, T6, per-year and strata rows, F1, F3) pools the primary horizons **h{1,4}** (manifest `primary_horizons`, deviation row 21), in every cell; S1 cells also show the secondary pooling over h1-4 (`horizon = pooled_h1-4`), which is never in the Holm family. Inference: DM test with EWC long-run variance and HLN correction on the weekly cross-unit mean loss difference; TOST against a ±1% margin (90% CI); MDE at 80% power. See `docs/methods/results_kit.md`.
 
 Key: **G_emb** = WIS(L3) − WIS(L4) (raw AlphaEarth gain); **G_id** = WIS(L3) − WIS(L3+C*) (gain from a pure location/ID control); **G_excess** = WIS(L3+C*) − WIS(L4+C*) (primary: what AlphaEarth adds beyond the best ID control).
 
@@ -9,8 +9,8 @@ Key: **G_emb** = WIS(L3) − WIS(L4) (raw AlphaEarth gain); **G_id** = WIS(L3) �
 | cell | group | description | C* | status | what is missing |
 |---|---|---|---|---|---|
 | BR_S1 | primary/history | Brazil S1, history arm (primary) | C1 | available |  |
-| BR_S2 | primary/history | Brazil S2, history arm (primary) | C1 | pending | L3: brazil_s2_L3: partial (4 chunks); L4: brazil_s2_L4: not started; L3C: brazil_s2_L3_Cstar: not started; L4C: brazil_s2_L4_Cstar: not started |
-| BR_S3 | primary/history | Brazil S3, history arm (primary) | C1 | pending | L3: brazil_s3_L3: not started; L4: brazil_s3_L4: not started; L3C: brazil_s3_L3_Cstar: not started; L4C: brazil_s3_L4_Cstar: not started |
+| BR_S2 | primary/history | Brazil S2, history arm (primary) | C1 | available |  |
+| BR_S3 | primary/history | Brazil S3, history arm (primary) | C1 | pending | L4C: brazil_s3_L4_Cstar: partial (1 chunks) |
 | BR_S4 | primary/history | Brazil S4, history arm (primary) | selection pending (stale) | pending | L3: brazil_s4_L3: not started; L4: brazil_s4_L4: not started; L3C: brazil_s4_L3_Cstar: not started; L4C: brazil_s4_L4_Cstar: not started |
 | BR_S5 | primary/history | Brazil S5, history arm (primary) | C3 | available |  |
 | CO_S1 | primary/history | Colombia S1, history arm (primary) | C1 | available |  |
@@ -32,7 +32,7 @@ Key: **G_emb** = WIS(L3) − WIS(L4) (raw AlphaEarth gain); **G_id** = WIS(L3) �
 | BR_S1_nohist | secondary/no-history | Brazil S1, no-history arm (ref = N3) | selection pending (stale) | pending | L3: brazil_s1_nohist_N3: not started; L4: brazil_s1_nohist_N4: not started; L3C: brazil_s1_nohist_N3_Cstar: not started; L4C: brazil_s1_nohist_N4_Cstar: not started |
 | BR_S2_nohist | secondary/no-history | Brazil S2, no-history arm (ref = N3) | selection pending (stale) | pending | L3: brazil_s2_nohist_N3: not started; L4: brazil_s2_nohist_N4: not started; L3C: brazil_s2_nohist_N3_Cstar: not started; L4C: brazil_s2_nohist_N4_Cstar: not started |
 
-Primary family: **11 of 14 cells available**. Holm p-values are over the available cells only and are provisional until all 14 are in; `p_bonf14` in T1 is the conservative bound.
+Primary family: **12 of 14 cells available**. Holm p-values are over the available cells only and are provisional until all 14 are in; `p_bonf14` in T1 is the conservative bound.
 
 ## 2. Headline numbers
 
@@ -46,6 +46,16 @@ Rows scored 5,759,748; test years [2020, 2021, 2022, 2023, 2024]; horizons score
 - **ID share**: not estimable: G_emb 95% CI includes 0
 - Ladder (pooled h{1,4}): L0 0.4645, L1 0.1703, L2 0.1692, L3 0.1684, L4 0.1679, L3+C* 0.1684, L4+C* 0.1679. Best = L4. 80% coverage 0.77–0.91 overall, 0.40–0.68 on non-zero targets.
 - G_excess by stratum (pooled h{1,4}): observed +0.57% [-0.08, +1.23]; zero_filled -1.74% [-2.77, -0.71]; outbreak +0.15% [-0.77, +1.07]
+
+### BR_S2: Brazil S2, history arm (primary) (C* = C1)
+Rows scored 2,879,874; test years [2020, 2021, 2022, 2023, 2024]; horizons scored [1, 4], primary pooled over h{1,4}; seeds [0]; zero-filled share 0.53; outbreak share 0.080.
+
+- **G_excess** (pooled h{1,4}, primary) +0.02% [-0.37, +0.41]: L4+C* improves on L3+C* by 0.02% of WIS(ref) (95% CI -0.37 to +0.41%; p = 0.928; MDE 0.55%): **equivalent**, i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
+- **G_emb** (pooled h{1,4}, primary) -0.01% [-0.39, +0.37]: L4 is worse than L3 by 0.01% of WIS(ref) (95% CI -0.39 to +0.37%; p = 0.957; MDE 0.53%): **equivalent**, i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
+- **G_id** (pooled h{1,4}, primary) -0.05% [-0.12, +0.01]: L3+C* is worse than L3 by 0.05% of WIS(ref) (95% CI -0.12 to +0.01%; p = 0.116; MDE 0.10%): **equivalent**, i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
+- **ID share**: not estimable: G_emb 95% CI includes 0
+- Ladder (pooled h{1,4}): L3 0.1692, L4 0.1693, L3+C* 0.1693, L4+C* 0.1693. Best = L3. 80% coverage 0.90–0.90 overall, 0.65–0.65 on non-zero targets.
+- G_excess by stratum (pooled h{1,4}): observed +0.35% [-0.14, +0.84]; zero_filled -1.59% [-2.70, -0.49]; outbreak -0.95% [-1.97, +0.07]
 
 ### BR_S5: Brazil S5, history arm (primary) (C* = C3)
 Rows scored 2,879,874; test years [2020, 2021, 2022, 2023, 2024]; horizons scored [1, 4], primary pooled over h{1,4}; seeds [0]; zero-filled share 0.53; outbreak share 0.080.
@@ -230,7 +240,7 @@ Per-cell intermediate results: `runs/analysis_cache/<cell>/` (est.parquet, ladde
 ## 5. Compute status (scheduler snapshot)
 
 ```
-snapshot 2026-11-17 10:46:10 (6 s old); budget 56 threads (others 233% CPU (incl. own non-pipeline jobs)) = 14 workers; held 15; free -1
+snapshot 2026-11-17 22:13:19 (16 s old); budget 48 threads (others 1284% CPU (incl. own non-pipeline jobs)) = 12 workers; held 15; free -3
   T1 brazil_s1_shared             done                                     -                                  held  0 unclaimed   0
   T1 peru_s1_shared               done                                     -                                  held  0 unclaimed   0
   T1 taiwan_s1_shared             done                                     -                                  held  0 unclaimed   0
@@ -244,8 +254,8 @@ snapshot 2026-11-17 10:46:10 (6 s old); budget 56 threads (others 233% CPU (incl
   T2 colombia_s2                  done                                     -                                  held  0 unclaimed   0
   T2 colombia_s3                  done                                     -                                  held  0 unclaimed   0
   T2 colombia_s4                  done                                     -                                  held  0 unclaimed   0
-  T2 brazil_s2                    running                                  brazil_s2_L3                       held 15 unclaimed  31
-  T2 brazil_s3                    running                                  brazil_s3_L3                       held  0 unclaimed  50
+  T2 brazil_s2                    done                                     -                                  held  0 unclaimed   0
+  T2 brazil_s3                    running                                  brazil_s3_L4_Cstar                 held 15 unclaimed  34
   T3 brazil_s1_nohist             running                                  brazil_s1_nohist_controls_2019     held  0 unclaimed  12
   T3 brazil_s2_nohist             running                                  brazil_s2_nohist_controls_2019     held  0 unclaimed 110
   T4 brazil_s1_sens_yref          running                                  brazil_s1_sens_yref_L3             held  0 unclaimed  10
