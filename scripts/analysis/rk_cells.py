@@ -119,38 +119,92 @@ def s1_ladder(country: str) -> list[dict]:
             {"label": "L2", "dir": f"runs/{country}_s1_L2", "run": "lgbm-L2"}]
 
 
+ROW_FILTER = None                  # manifest `row_filter` (v3: "origin_year")
+FAMILY_SIZE = 14                   # manifest `family_size`
+
+
+def _roles_from(spec: dict, plan: dict, pdir: Path | None) -> dict:
+    """role -> {dirs, markers} from a manifest `runs` mapping (plan.json reuse on dir 0)."""
+    roles = {}
+    for r in ROLES:
+        v = spec[r]
+        dirs = [v] if isinstance(v, str) else list(v)
+        p = plan.get(STAGE[r])
+        if isinstance(p, str) and p.startswith("reuse:"):
+            dirs = [p[len("reuse:"):]] + dirs[1:]
+        mk = [str(pdir / f"stage_{STAGE[r]}.done") if pdir else None] + [None] * (len(dirs) - 1)
+        roles[r] = {"dirs": dirs, "markers": mk}
+    return roles
+
+
+def add_years_state(add: dict | None) -> tuple[str, dict]:
+    """('none' | 'complete' | 'pending', role states) of a cell's `add_test_years` runs."""
+    if not add:
+        return "none", {}
+    st = {r: run_state(add["runs"][r]) for r in ROLES}
+    return ("complete" if all(v == "complete" for v in st.values()) else "pending"), st
+
+
 def build_registry(manifest: str = "configs/primary_cells.yaml") -> list[dict]:
-    global PRIMARY_HORIZONS, SECONDARY_HORIZONS
+    """Primary cells of the manifest + secondary arms.
+
+    v3 manifest keys: `row_filter` (primary scored rows, e.g. origin_year), `family_size`,
+    per cell `family: primary`, `secondary_pooling: true` (S1: also pool h1-h4; the old key
+    `secondary: true` is read the same way; it never meant "not in the family"), and
+    `add_test_years: {years: [...], runs: {role: dir}}` = extra test-year runs appended to every
+    role when all four are complete. While they are not, the cell falls back to its base runs and
+    carries flag "<years> pending". The base-runs-only variant is always registered as the
+    secondary cell <id>_no<years> (sensitivity: the old test-year set)."""
+    global PRIMARY_HORIZONS, SECONDARY_HORIZONS, ROW_FILTER, FAMILY_SIZE
     cells = []
     man = yaml.safe_load(Path(manifest).read_text())
     PRIMARY_HORIZONS = sorted(int(h) for h in man.get("primary_horizons", [1, 4]))
     SECONDARY_HORIZONS = sorted(int(h) for h in man.get("secondary_horizons", [1, 2, 3, 4]))
+    ROW_FILTER = man.get("row_filter")
+    FAMILY_SIZE = int(man.get("family_size", len(man["cells"])))
+    extra = []
     for c in man["cells"]:
         country, split = c["country"], c["split"]
-        pdir = Path(c["plan"]).parent if c.get("plan") else Path(c["runs"]["L3"]).parent
+        pdir = Path(c["plan"]).parent if c.get("plan") else Path(
+            c["runs"]["L3"] if isinstance(c["runs"]["L3"], str) else c["runs"]["L3"][0]).parent
         plan = _plan(pdir)
-        roles = {}
-        for r in ROLES:
-            v = c["runs"][r]
-            dirs = [v] if isinstance(v, str) else list(v)
-            p = plan.get(STAGE[r])
-            if isinstance(p, str) and p.startswith("reuse:"):
-                dirs = [p[len("reuse:"):]] + dirs[1:]
-            roles[r] = {"dirs": dirs, "markers": [str(pdir / f"stage_{STAGE[r]}.done")]
-                        + [None] * (len(dirs) - 1)}
+        roles = _roles_from(c["runs"], plan, pdir)
         l3 = c["runs"]["L3"]
         prefix = str(l3 if isinstance(l3, str) else l3[0]).rsplit("_L3", 1)[0]
         sel = Path(f"{prefix}_controls_2019")
-        cells.append({
-            "id": f"{COUNTRY_CODE[country]}_{split}", "group": "primary", "arm": "history",
-            "country": country, "split": split,
+        cid = f"{COUNTRY_CODE[country]}_{split}"
+        sec_pool = bool(c.get("secondary_pooling", c.get("secondary")))
+        base = {
+            "id": cid, "group": "primary" if c.get("family", "primary") == "primary" else "secondary",
+            "arm": "history", "country": country, "split": split,
             "desc": f"{country.title()} {split}, history arm (primary)",
             "roles": roles, "ref": "L3",
             "ladder": s1_ladder(country) if split == "S1" else [],
             "selection": {"dir": str(sel), "marker": str(pdir / "stage_select_control.done")},
-            "cstar": _cstar(sel, plan), "note": "", "estimands": None, "role_labels": None,
+            "cstar": _cstar(sel, plan), "note": c.get("note", ""), "estimands": None,
+            "role_labels": None, "flags": [], "row_filter": ROW_FILTER,
             "primary_horizons": list(PRIMARY_HORIZONS),
-            "secondary_horizons": list(SECONDARY_HORIZONS) if c.get("secondary") else None})
+            "secondary_horizons": list(SECONDARY_HORIZONS) if sec_pool else None}
+        add = c.get("add_test_years")
+        if add:
+            yrs = "+".join(str(y) for y in add["years"])
+            st, _ = add_years_state(add)
+            base["add_test_years"] = {"years": list(add["years"]), "state": st}
+            # sensitivity: the old test-year set (base runs only)
+            extra.append({**base, "id": f"{cid}_no{yrs}", "group": "secondary",
+                          "arm": "sensitivity", "flags": [],
+                          "desc": f"{country.title()} {split} without test year(s) {yrs} "
+                                  "(the pre-review test-year set)",
+                          "roles": {r: {k: list(v) for k, v in roles[r].items()} for r in ROLES},
+                          "ladder": [], "add_test_years": None})
+            if st == "complete":
+                for r in ROLES:
+                    roles[r]["dirs"].append(add["runs"][r])
+                    roles[r]["markers"].append(None)
+                base["desc"] += f"; test years incl. {yrs}"
+            else:
+                base["flags"].append(f"{yrs} pending (base test years only)")
+        cells.append(base)
     by = {c["id"]: c for c in cells}
 
     # ---- secondary arms
@@ -217,7 +271,10 @@ def build_registry(manifest: str = "configs/primary_cells.yaml") -> list[dict]:
              "marker": f"runs/brazil_{s}_nohist/stage_{lv}_C1.done"} for lv in ("N3", "N4")]
         cell["role_labels"] = {"L3": "N3", "L4": "N4", "L3C": "N3+C*", "L4C": "N4+C*"}
         sec.append(cell)
-    return cells + sec
+    for c in sec + extra:
+        c.setdefault("flags", [])
+        c.setdefault("row_filter", ROW_FILTER)
+    return cells + extra + sec
 
 
 def cell_status(cell: dict) -> tuple[str, dict]:

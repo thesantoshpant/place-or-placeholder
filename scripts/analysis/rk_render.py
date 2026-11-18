@@ -179,3 +179,212 @@ def fig_per_year(est: pd.DataFrame, cells: list[str], fdir: Path, hlab: str = "h
     fig.tight_layout()
     _save(fig, fdir, "F3_per_year_gains")
     return "F3_per_year_gains"
+
+
+# ------------------------------------------------------------------ v3 figures
+COUNTRY_NAME = {"BR": "Brazil", "CO": "Colombia", "PE": "Peru", "TW": "Taiwan"}
+SPLIT_NAME = {"S1": "new years", "S2": "held-out states", "S3": "held-out buffered blocks",
+              "S4": "held-out random districts", "S5": "held-out country"}
+SPLIT_COLOR = {"S1": OI[0], "S2": OI[1], "S3": OI[2], "S4": OI[3], "S5": OI[5]}
+STRATUM_NAME = {"positive": "cases > 0", "recorded_zero": "zero listed by the source",
+                "zero_filled": "zero filled (week not listed)"}
+STRATUM_COLOR = {"positive": OI[0], "recorded_zero": OI[4], "zero_filled": OI[1]}
+SPLIT_KEY = ("Splits: S1 new years (temporal); S2 held-out states; S3 held-out spatial blocks with a "
+             "buffer; S4 held-out random districts; S5 held-out country.")
+
+
+def _ylab(cell: str) -> str:
+    cc, _, sp = cell.partition("_")
+    return f"{COUNTRY_NAME.get(cc, cc)} {sp} ({SPLIT_NAME.get(sp, '')})"
+
+
+def fig_forest_v3(t1: pd.DataFrame, fdir: Path, hlab: str = "h{1,4}",
+                  separate=("TW_S5",)) -> str | None:
+    """F1: G_excess (% of WIS(L3)) per family cell, 95% (thin) and 90% (thick) CI, ±1% band.
+    Filled dot = Holm-adjusted DM p < .05, open dot = not; cells in `separate` (e.g. Taiwan S5,
+    an order of magnitude larger) get their own panel with their own x scale."""
+    if t1 is None or t1.empty:
+        return None
+    plt = _plt()
+    from matplotlib.lines import Line2D
+    from matplotlib.patches import Patch
+    main = t1[~t1.cell.isin(separate)]
+    side = t1[t1.cell.isin(separate)]
+    nm, ns = len(main), max(len(side), 1)
+    fig, axes = plt.subplots(1, 2 if len(side) else 1, figsize=(7.2, 0.30 * nm + 1.6), squeeze=False,
+                             gridspec_kw={"width_ratios": [3.2, 1.2]} if len(side) else None)
+
+    def draw(ax, d, n):
+        ax.axvspan(-1, 1, color=OI[4], alpha=0.15, lw=0)
+        ax.axvline(0, color="#444444", lw=0.8)
+        for i, r in enumerate(d.itertuples()):
+            y = n - 1 - i
+            pct = float(getattr(r, "pct_of_WIS_ref", np.nan))
+            if not str(r.status).startswith("available") or not np.isfinite(pct):
+                ax.text(0, y, "pending", ha="center", va="center", fontsize=6.5, color=GREY,
+                        style="italic", bbox=dict(fc="white", ec="none", pad=0.5))
+                continue
+            sig = float(getattr(r, "Holm_p", np.nan)) < 0.05
+            ax.plot([r.lo95_pct, r.hi95_pct], [y, y], color=OI[0], lw=1.0)
+            ax.plot([r.lo90_pct, r.hi90_pct], [y, y], color=OI[0], lw=3.0, solid_capstyle="butt")
+            ax.plot(pct, y, "o", ms=5, mfc=OI[0] if sig else "white", mec=OI[0], mew=1.2)
+        ax.set_yticks(range(n))
+        fl = [str(f) if isinstance(f, str) and f else "" for f in d.get("flags", [""] * len(d))]
+        ax.set_yticklabels([_ylab(c) + (f"\n[{f.split(' (')[0]}]" if f else "")
+                            for c, f in zip(d.cell, fl)][::-1])
+        ax.set_ylim(-0.7, n - 0.3)
+        ax.grid(axis="y", visible=False)
+
+    draw(axes[0][0], main, nm)
+    axes[0][0].set_xlabel("Excess gain from AlphaEarth, % of WIS(L3)\n(positive = embeddings help)")
+    if len(side):
+        draw(axes[0][1], side, ns)
+        axes[0][1].set_xlabel("same, own scale")
+        axes[0][1].set_title("Taiwan held out\n(different scale)", loc="left", fontsize=7.5)
+    hd = [Line2D([], [], marker="o", ls="", mfc=OI[0], mec=OI[0], label="Holm-adjusted p < .05"),
+          Line2D([], [], marker="o", ls="", mfc="white", mec=OI[0], label="not significant after Holm"),
+          Line2D([], [], color=OI[0], lw=3, label="90% CI"), Line2D([], [], color=OI[0], lw=1, label="95% CI"),
+          Patch(color=OI[4], alpha=0.3, label="±1% equivalence margin")]
+    fig.legend(handles=hd, loc="lower center", ncol=3, frameon=False, bbox_to_anchor=(0.5, -0.02))
+    fig.suptitle(f"F1. What AlphaEarth adds beyond the best location control "
+                 f"(G_excess, horizons {hlab[1:]} pooled)", x=0.01, ha="left", fontsize=8.5)
+    fig.text(0.01, -0.06, SPLIT_KEY + " WIS = weighted interval score on log(1 + cases).",
+             fontsize=6, color="#444444")
+    fig.tight_layout(rect=(0, 0.08, 1, 1))
+    _save(fig, fdir, "F1_forest_G_excess")
+    return "F1_forest_G_excess"
+
+
+def fig_strata_contrib(s3: pd.DataFrame, fdir: Path) -> str | None:
+    """F2: per cell, additive contribution of each target type to G_excess (% of the cell's
+    WIS(L3)); bars sum to the total (black diamond). One panel per country (own x scale)."""
+    if s3 is None or s3.empty:
+        return None
+    d = s3[s3.estimand == "G_excess"]
+    if d.empty:
+        return None
+    plt = _plt()
+    from matplotlib.lines import Line2D
+    from matplotlib.patches import Patch
+    ctry = [c for c in ("BR", "CO", "PE", "TW") if any(d.cell.str.startswith(c + "_"))]
+    n_by = {c: d[d.cell.str.startswith(c + "_")].cell.nunique() for c in ctry}
+    fig, axes = plt.subplots(len(ctry), 1, figsize=(6.4, 0.55 * sum(n_by.values()) + 0.6 * len(ctry) + 0.8),
+                             squeeze=False, gridspec_kw={"height_ratios": [n_by[c] + 0.6 for c in ctry]})
+    bh = 0.25
+    for ax, cc in zip(axes[:, 0], ctry):
+        x = d[d.cell.str.startswith(cc + "_")]
+        cl = list(dict.fromkeys(x.cell))
+        ax.axvline(0, color="#444444", lw=0.8)
+        for i, c in enumerate(cl):
+            y0 = len(cl) - 1 - i
+            xc = x[x.cell == c].set_index("stratum")
+            for j, st in enumerate(("positive", "recorded_zero", "zero_filled")):
+                if st not in xc.index or xc.loc[st, "n_rows"] == 0:
+                    continue
+                v = float(xc.loc[st, "contrib_pct"])
+                y = y0 + (1 - j) * bh
+                ax.barh(y, v, height=bh * 0.9, color=STRATUM_COLOR[st], lw=0)
+                lo, hi = xc.loc[st, "contrib_lo95_pct"], xc.loc[st, "contrib_hi95_pct"]
+                if np.isfinite(lo):
+                    ax.plot([lo, hi], [y, y], color="#333333", lw=0.7)
+            ax.plot(float(xc.total_pct.iloc[0]), y0, "D", ms=4.5, color="black", zorder=5)
+        ax.set_yticks(range(len(cl)))
+        ax.set_yticklabels([f"{c.split('_')[1]} {SPLIT_NAME.get(c.split('_')[1], '')}" for c in cl][::-1])
+        ax.set_title(COUNTRY_NAME[cc], loc="left", fontsize=8)
+        ax.grid(axis="y", visible=False)
+        ax.set_ylim(-0.6, len(cl) - 0.4)
+    axes[-1, 0].set_xlabel("Contribution to G_excess, % of the cell's WIS(L3)  (negative = embeddings hurt)")
+    hd = [Patch(color=STRATUM_COLOR[s], label=STRATUM_NAME[s]) for s in STRATUM_NAME] + \
+         [Line2D([], [], marker="D", ls="", color="black", label="total (sum of the bars)"),
+          Line2D([], [], color="#333333", lw=0.7, label="95% CI")]
+    fig.legend(handles=hd, loc="lower center", ncol=3, frameon=False, bbox_to_anchor=(0.5, -0.03))
+    fig.suptitle("F2. Where the excess gain comes from, by type of target week", x=0.01, ha="left",
+                 fontsize=8.5)
+    fig.tight_layout(rect=(0, 0.05, 1, 1))
+    _save(fig, fdir, "F2_strata_contributions")
+    return "F2_strata_contributions"
+
+
+def fig_distance(units: pd.DataFrame | None, bins: pd.DataFrame | None, fdir: Path,
+                 cells=("BR_S5", "CO_S5", "PE_S5", "TW_S5")) -> str | None:
+    """F3: held-out country cells: per-district G_excess (% of the cell's WIS(L3)) against the
+    district's max cosine similarity to the training districts (AlphaEarth, year y-1); grey
+    dots = districts, blue = quintile-bin means with 95% CI."""
+    if units is None or units.empty:
+        return None
+    cl = [c for c in cells if c in set(units.cell)]
+    if not cl:
+        return None
+    plt = _plt()
+    fig, axes = plt.subplots(1, len(cl), figsize=(min(1.9 * len(cl) + 0.6, 7.2), 2.6), squeeze=False)
+    for ax, c in zip(axes[0], cl):
+        u = units[units.cell == c]
+        b = bins[bins.cell == c] if bins is not None else pd.DataFrame()
+        ax.axhline(0, color="#444444", lw=0.8)
+        ax.scatter(u.cos_max, u.G_excess_pct_cell, s=3, color=GREY, alpha=0.35, lw=0)
+        if len(b):
+            ax.errorbar(b.cos_max_mean, b.G_excess_pct_cell,
+                        yerr=[b.G_excess_pct_cell - b.G_excess_lo95_pct_cell,
+                              b.G_excess_hi95_pct_cell - b.G_excess_pct_cell],
+                        fmt="o", ms=4, color=OI[0], lw=1, capsize=0)
+        lo, hi = np.nanpercentile(u.G_excess_pct_cell, [1, 99])
+        if len(b):
+            lo = min(lo, np.nanmin(b.G_excess_lo95_pct_cell))
+            hi = max(hi, np.nanmax(b.G_excess_hi95_pct_cell))
+        pad = 0.05 * (hi - lo + 1e-9)
+        ax.set_ylim(lo - pad, hi + pad)
+        ax.set_title(f"{COUNTRY_NAME[c[:2]]} held out", loc="left")
+        ax.set_xlabel("similarity to training districts\n(max cosine, AlphaEarth y-1)")
+    axes[0][0].set_ylabel("district excess gain, % of WIS(L3)\n(negative = embeddings hurt)")
+    fig.suptitle("F3. Held-out country: district similarity to the training districts vs the "
+                 "district's excess gain\n(grey = districts; blue = quintile means with 95% CI; "
+                 "districts beyond the 1st-99th percentile not shown)", x=0.01, ha="left", fontsize=7.5)
+    fig.tight_layout()
+    _save(fig, fdir, "F3_s5_embedding_distance")
+    return "F3_s5_embedding_distance"
+
+
+def fig_per_year_v3(py: pd.DataFrame | None, fdir: Path, hlab: str = "h{1,4}") -> str | None:
+    """F4: G_excess per test year (% of that year's WIS(L3), 95% CI) per family cell; one panel
+    per country (own y scale), splits by colour (fixed order) and offset."""
+    if py is None or py.empty:
+        return None
+    d = py[py.estimand == "G_excess"].copy()
+    if d.empty:
+        return None
+    plt = _plt()
+    d["cc"] = d.cell.str[:2]
+    d["sp"] = d.cell.str.split("_").str[1]
+    ctry = [c for c in ("BR", "CO", "PE", "TW") if c in set(d.cc)]
+    fig, axes = plt.subplots(1, len(ctry), figsize=(7.2, 2.7), squeeze=False)
+    sps = [s for s in ("S1", "S2", "S3", "S4", "S5") if s in set(d.sp)]
+    for ax, cc in zip(axes[0], ctry):
+        x = d[d.cc == cc]
+        ax.axhspan(-1, 1, color=OI[4], alpha=0.15, lw=0)
+        ax.axhline(0, color="#444444", lw=0.8)
+        here = [s for s in sps if s in set(x.sp)]
+        for k, sp in enumerate(here):
+            z = x[x.sp == sp].sort_values("test_year")
+            off = (k - (len(here) - 1) / 2) * 0.12
+            yr = z.test_year.astype(int).to_numpy() + off
+            p = z.pct_of_ref.astype(float).to_numpy()
+            ax.errorbar(yr, p, yerr=[p - z.lo95_pct.astype(float), z.hi95_pct.astype(float) - p], fmt="o",
+                        ms=3.2, lw=0.9, capsize=0, color=SPLIT_COLOR[sp], label=f"{sp} {SPLIT_NAME[sp]}")
+        ax.set_title(COUNTRY_NAME[cc], loc="left")
+        ax.xaxis.set_major_locator(__import__("matplotlib").ticker.MaxNLocator(integer=True))
+        ax.tick_params(axis="x", rotation=45)
+    axes[0][0].set_ylabel("G_excess, % of WIS(L3)\n(positive = embeddings help)")
+    hd, lb = [], []
+    for ax in axes[0]:
+        for h, l in zip(*ax.get_legend_handles_labels()):
+            if l not in lb:
+                hd.append(h)
+                lb.append(l)
+        order = sorted(range(len(lb)), key=lambda i: lb[i])
+    fig.legend([hd[i] for i in order], [lb[i] for i in order], loc="lower center", ncol=5,
+               frameon=False, bbox_to_anchor=(0.5, -0.05))
+    fig.suptitle(f"F4. Excess gain per test year (horizons {hlab[1:]} pooled; % of that year's "
+                 "WIS(L3); 95% CI; band = ±1%). Each panel has its own scale.", x=0.01, ha="left", fontsize=8.5)
+    fig.tight_layout(rect=(0, 0.06, 1, 1))
+    _save(fig, fdir, "F4_per_year_gains")
+    return "F4_per_year_gains"

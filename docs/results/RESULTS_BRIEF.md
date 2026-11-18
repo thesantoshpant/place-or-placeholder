@@ -1,12 +1,47 @@
-# RESULTS BRIEF (auto-generated)
+# RESULTS BRIEF (auto-generated, results kit v3)
 
-Generated 2026-11-18 00:03 by `scripts/analysis/make_results.py`. Do not edit by hand: re-run the script. All numbers are log1p-scale WIS; a gain is positive when the second model has the lower WIS. Percentages are of WIS(L3) (WIS(N3) in the no-history arm). **Horizons:** every "pooled" estimate (T1, T3, T5, T6, per-year and strata rows, F1, F3) pools the primary horizons **h{1,4}** (manifest `primary_horizons`, deviation row 21), in every cell; S1 cells also show the secondary pooling over h1-4 (`horizon = pooled_h1-4`), which is never in the Holm family. Inference: DM test with EWC long-run variance and HLN correction on the weekly cross-unit mean loss difference; TOST against a ±1% margin (90% CI); MDE at 80% power. See `docs/methods/results_kit.md`.
+Generated 2026-11-18 02:14 by `scripts/analysis/make_results.py`. Do not edit by hand: re-run the script. All numbers are log1p-scale WIS unless marked 'case scale'; a gain is positive when the second model has the lower WIS. Percentages are of WIS(L3) (WIS(N3) in the no-history arm).
 
-Key: **G_emb** = WIS(L3) − WIS(L4) (raw AlphaEarth gain); **G_id** = WIS(L3) − WIS(L3+C*) (gain from a pure location/ID control); **G_excess** = WIS(L3+C*) − WIS(L4+C*) (primary: what AlphaEarth adds beyond the best ID control).
+**Scored rows (deviation row 24).** Every estimate keeps only rows whose forecast origin (target week − h) lies in the same epi-year as the target, which removes the yearly-feature and training-label look-ahead (review R1): at h1 the first epi-week of each test year is dropped (1.9% of rows), at h4 the first four (7.7%). T1 also shows G_excess on all rows ('all rows %').
 
-## 1. Status of every cell
+**Horizons.** Every 'pooled' estimate pools the primary horizons **h{1,4}** in every cell (row 21); S1 cells also show a secondary pooling over h1-4 (`horizon = pooled_h1-4`), which is never in the Holm family and uses only test years scored at all four horizons.
 
-| cell | group | description | C* | status | what is missing |
+**Inference.** DM test with EWC long-run variance and HLN correction on the weekly cross-unit mean loss difference; TOST against ±1% of WIS(L3); Holm over the 14-cell family (DM p and TOST p separately). Robustness columns: EWC with B = 4 cosine terms, IAAFT-surrogate-calibrated p (review RC), delta-method CI that treats WIS(L3) as estimated, case-scale G_excess. See `docs/methods/results_kit.md`.
+
+**Exclusions (row 34).** Primary scoring uses `data/processed/exclusions_v2/`: v1 (units without geometry, incomplete weeks) plus every Espírito Santo row of every test year (target weeks from 2019-12-29) (the source has false zeros for all 78 municipalities while InfoDengue shows cases). Applied to all four models at scoring only; the models were not refitted, so 2020–23 training targets still contain these false zeros. T1 shows G_excess under the v1 exclusions ('v1 excl %').
+
+**Taiwan (row 25).** Both Taiwan cells use test years 2020–2024 including 2021, a year with no local cases; the pre-review set (without 2021) is the sensitivity cell `TW_*_no2021`. A cell whose 2021 runs are not finished uses its base runs and is flagged '2021 pending'.
+
+**Loss-counting rule.** A cell counts as a **loss** (gain) when its G_excess is negative (positive) and the Holm-adjusted DM p over the 14-cell family is < .05; a loss is **small** when the point estimate is inside ±1% of WIS(L3). Nominal (unadjusted) p < .05 alone is reported as 'nominal', never counted. While a family cell is pending, Holm runs over the available cells and the count is provisional.
+
+Key: **G_emb** = WIS(L3) − WIS(L4) (raw AlphaEarth gain); **G_id** = WIS(L3) − WIS(L3+C*) (gain from a location/ID control); **G_excess** = WIS(L3+C*) − WIS(L4+C*) (primary: what AlphaEarth adds beyond the best ID control).
+
+## 1. Headline table (T1)
+
+Family: **13 of 14 cells available** — Holm p values are over the available cells and are **provisional**.
+
+| cell | C* | G_excess % [95% CI] | DM p | Holm p | label (±1%) | B=4 p | IAAFT p | all rows % | v1 excl % | case % |
+|---|---|---|---|---|---|---|---|---|---|---|
+| BR_S1 | C1 | +0.23 [-0.33, +0.79] | 0.392 | 0.802 | no significant difference; within ±1% (TOST, Holm-adjusted) | 0.447 | 0.507 | +0.26 | +0.23 | -0.03 |
+| BR_S2 | C1 | -0.00 [-0.34, +0.34] | 0.996 | 0.996 | no significant difference; within ±1% (TOST, Holm-adjusted) | 0.997 | 0.997 | +0.03 | -0.01 | -0.73 |
+| BR_S3 | C1 | -0.16 [-0.34, +0.03] | 0.090 | 0.395 | no significant difference; within ±1% (TOST, Holm-adjusted) | 0.259 | 0.214 | -0.10 | -0.19 | -1.30 |
+| BR_S4 | selection pending (stale) | pending | | | | | | | | |
+| BR_S5 | C3 | -0.60 [-0.84, -0.36] | 7.5e-05 | 0.00097 | small negative difference, significant after Holm correction; within ±1% (TOST, Holm-adjusted) | 0.002 | 0.0005 | -0.62 | -0.61 | -0.86 |
+| CO_S1 | C1 | -0.39 [-0.58, -0.19] | 0.001 | 0.011 | small negative difference, significant after Holm correction; within ±1% (TOST, Holm-adjusted) | 0.007 | 0.001 | -0.39 | n/a | -0.81 |
+| CO_S2 | C1 | -0.47 [-0.69, -0.25] | 0.00056 | 0.006 | small negative difference, significant after Holm correction; within ±1% (TOST, Holm-adjusted) | 0.002 | 0.0005 | -0.48 | n/a | -0.64 |
+| CO_S3 | C1 | -0.65 [-1.04, -0.27] | 0.003 | 0.026 | small negative difference, significant after Holm correction; within ±1% (unadjusted TOST only) | 0.008 | 0.0005 | -0.68 | n/a | -0.70 |
+| CO_S4 | C1 | -0.43 [-0.68, -0.18] | 0.003 | 0.025 | small negative difference, significant after Holm correction; within ±1% (TOST, Holm-adjusted) | 0.016 | 0.006 | -0.44 | n/a | -0.88 |
+| CO_S5 | C2 | +0.22 [-0.19, +0.63] | 0.267 | 0.802 | no significant difference; within ±1% (TOST, Holm-adjusted) | 0.490 | 0.461 | +0.18 | n/a | +0.51 |
+| PE_S1 | C1 | -0.70 [-1.41, +0.02] | 0.056 | 0.342 | no significant difference; not shown to be within ±1% | 0.159 | 0.083 | -0.62 | n/a | -1.14 |
+| PE_S5 | C3 | +0.96 [-0.13, +2.05] | 0.079 | 0.395 | no significant difference; not shown to be within ±1% | 0.023 | 0.006 | +1.01 | n/a | -0.59 |
+| TW_S1 | C1 | -0.60 [-1.20, -0.00] | 0.049 | 0.342 | nominal small negative difference, not significant after Holm correction; not shown to be within ±1% | 0.104 | 0.078 | -0.55 | n/a | -0.00 |
+| TW_S5 (2021 pending (base test years only)) | C3 | -11.16 [-15.66, -6.65] | 0.00013 | 0.002 | negative difference, significant after Holm correction; not shown to be within ±1% | 0.004 | 0.001 | -11.53 | n/a | -2.93 |
+
+Counts under the loss-counting rule: loss: 1, nominal only: 1, none: 6, pending: 1, small loss: 5.
+
+## 2. Status of every cell
+
+| cell | group | description | C* | status | flags / what is missing |
 |---|---|---|---|---|---|
 | BR_S1 | primary/history | Brazil S1, history arm (primary) | C1 | available |  |
 | BR_S2 | primary/history | Brazil S2, history arm (primary) | C1 | available |  |
@@ -20,8 +55,10 @@ Key: **G_emb** = WIS(L3) − WIS(L4) (raw AlphaEarth gain); **G_id** = WIS(L3) �
 | CO_S5 | primary/history | Colombia S5, history arm (primary) | C2 | available |  |
 | PE_S1 | primary/history | Peru S1, history arm (primary) | C1 | available |  |
 | PE_S5 | primary/history | Peru S5, history arm (primary) | C3 | available |  |
-| TW_S1 | primary/history | Taiwan S1, history arm (primary) | C1 | available |  |
-| TW_S5 | primary/history | Taiwan S5, history arm (primary) | C3 | available |  |
+| TW_S1 | primary/history | Taiwan S1, history arm (primary); test years incl. 2021 | C1 | available |  |
+| TW_S5 | primary/history | Taiwan S5, history arm (primary) | C3 | available | 2021 pending (base test years only) |
+| TW_S1_no2021 | secondary/sensitivity | Taiwan S1 without test year(s) 2021 (the pre-review test-year set) | C1 | available |  |
+| TW_S5_no2021 | secondary/sensitivity | Taiwan S5 without test year(s) 2021 (the pre-review test-year set) | C3 | available |  |
 | BR_S1_3seeds | secondary/sensitivity | Brazil S1, primary + 2 extra seeds (seed-averaged; extra seeds h1/h4) | C1 | available |  |
 | BR_S1_yref | secondary/sensitivity | Brazil S1 sensitivity: yearly features aligned to the origin year (strictly causal) (G_emb only) | n/a (no C* run) | pending | L3: brazil_s1_sens_yref_L3: not started; L4: brazil_s1_sens_yref_L4: not started; L3C: brazil_s1_sens_yref_L3: not started; L4C: brazil_s1_sens_yref_L4: not started |
 | BR_S1_delay2 | secondary/sensitivity | Brazil S1 sensitivity: 2-week reporting delay (G_emb only) | n/a (no C* run) | pending | L3: brazil_s1_sens_delay2_L3: not started; L4: brazil_s1_sens_delay2_L4: not started; L3C: brazil_s1_sens_delay2_L3: not started; L4C: brazil_s1_sens_delay2_L4: not started |
@@ -29,228 +66,265 @@ Key: **G_emb** = WIS(L3) − WIS(L4) (raw AlphaEarth gain); **G_id** = WIS(L3) �
 | BR_S1_ctrlC6 | secondary/sensitivity | Brazil S1 controls panel: C6 in place of C* (h1, h4) | C6 | pending | L3C: brazil_s1_sens_ctrl_L3_C6: not started; L4C: brazil_s1_sens_ctrl_L4_C6: not started |
 | BR_S1_perlevel | secondary/sensitivity | Brazil S1, per-level tuning (L3/L4 31 leaves; superseded primary) | C1 | available |  |
 | TW_S1_BRparams | secondary/sensitivity | Taiwan S1 with Brazil's tuned params and C* | C1 | available |  |
-| BR_S1_nohist | secondary/no-history | Brazil S1, no-history arm (ref = N3) | selection pending (stale) | pending | L3: brazil_s1_nohist_N3: not started; L4: brazil_s1_nohist_N4: not started; L3C: brazil_s1_nohist_N3_Cstar: not started; L4C: brazil_s1_nohist_N4_Cstar: not started |
+| BR_S1_nohist | secondary/no-history | Brazil S1, no-history arm (ref = N3) | C2 | pending | L3: brazil_s1_nohist_N3: partial (2 chunks); L4: brazil_s1_nohist_N4: not started; L3C: brazil_s1_nohist_N3_Cstar: not started; L4C: brazil_s1_nohist_N4_Cstar: not started |
 | BR_S2_nohist | secondary/no-history | Brazil S2, no-history arm (ref = N3) | selection pending (stale) | pending | L3: brazil_s2_nohist_N3: not started; L4: brazil_s2_nohist_N4: not started; L3C: brazil_s2_nohist_N3_Cstar: not started; L4C: brazil_s2_nohist_N4_Cstar: not started |
 
-Primary family: **13 of 14 cells available**. Holm p-values are over the available cells only and are provisional until all 14 are in; `p_bonf14` in T1 is the conservative bound.
-
-## 2. Headline numbers
+## 3. Per-cell detail
 
 ### BR_S1: Brazil S1, history arm (primary) (C* = C1)
-Rows scored 5,759,748; test years [2020, 2021, 2022, 2023, 2024]; horizons scored [1, 2, 3, 4], primary pooled over h{1,4}; seeds [0, 1, 2]; zero-filled share 0.53; outbreak share 0.080.
+Rows scored (primary horizons) 2,703,183; row filter origin_year dropped 271,950 rows of 5678316 (all horizons); test years [2020, 2021, 2022, 2023, 2024]; seeds [0, 1, 2]; zero-filled share 0.52; outbreak share 0.082.
 
-- **G_excess** (pooled h{1,4}, primary) +0.26% [-0.38, +0.90]: L4+C* improves on L3+C* by 0.26% of WIS(ref) (95% CI -0.38 to +0.90%; p = 0.399; MDE 0.90%): **equivalent**, i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
-- **G_emb** (pooled h{1,4}, primary) +0.29% [-0.35, +0.93]: L4 improves on L3 by 0.29% of WIS(ref) (95% CI -0.35 to +0.93%; p = 0.354; MDE 0.90%): **equivalent**, i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
-- **G_id** (pooled h{1,4}, primary) +0.01% [-0.15, +0.17]: L3+C* improves on L3 by 0.01% of WIS(ref) (95% CI -0.15 to +0.17%; p = 0.878; MDE 0.22%): **equivalent**, i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
-- *Secondary* G_excess pooled over h1-4 (not in the Holm family): +0.27% [-0.37, +0.91]; p = 0.384; equivalent.
+- **G_excess** (pooled h{1,4}) +0.23% [-0.33, +0.79]: L4+C* improves on L3+C* by 0.23% of WIS(ref) (95% CI -0.33 to +0.79%; p = 0.392; MDE 0.79%): **equivalent** (unadjusted rule), i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
+- **G_emb** (pooled h{1,4}) +0.26% [-0.31, +0.82]: L4 improves on L3 by 0.26% of WIS(ref) (95% CI -0.31 to +0.82%; p = 0.348; MDE 0.80%): **equivalent** (unadjusted rule), i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
+- **G_id** (pooled h{1,4}) +0.03% [-0.11, +0.18]: L3+C* improves on L3 by 0.03% of WIS(ref) (95% CI -0.11 to +0.18%; p = 0.651; MDE 0.21%): **equivalent** (unadjusted rule), i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
+- *Secondary* G_excess pooled over h1-4 (years [2020, 2021, 2022, 2023, 2024]; not in the Holm family): +0.25% [-0.33, +0.82]; p = 0.381; equivalent.
+- G_excess by target type (stratum estimate, % of the stratum's WIS(L3) | additive contribution, % of the cell's WIS(L3)): positive (27% rows) +0.30 | +0.46; recorded_zero (21% rows) -0.27 | -0.02; zero_filled (52% rows) -1.67 | -0.20; identity residual 0.0e+00.
 - **ID share**: not estimable: G_emb 95% CI includes 0
-- Ladder (pooled h{1,4}): L0 0.4645, L1 0.1703, L2 0.1692, L3 0.1684, L4 0.1679, L3+C* 0.1684, L4+C* 0.1679. Best = L4. 80% coverage 0.77–0.91 overall, 0.40–0.68 on non-zero targets.
-- G_excess by stratum (pooled h{1,4}): observed +0.57% [-0.08, +1.23]; zero_filled -1.74% [-2.77, -0.71]; outbreak +0.15% [-0.77, +1.07]
+- Ladder (pooled h{1,4}, 2,703,183 common rows): L0 0.4695, L1 0.1700, L2 0.1690, L3 0.1681, L4 0.1677, L3+C* 0.1680, L4+C* 0.1676. Best = L4+C*. 80% coverage 0.77–0.91 overall, 0.40–0.68 on non-zero targets.
 
 ### BR_S2: Brazil S2, history arm (primary) (C* = C1)
-Rows scored 2,879,874; test years [2020, 2021, 2022, 2023, 2024]; horizons scored [1, 4], primary pooled over h{1,4}; seeds [0]; zero-filled share 0.53; outbreak share 0.080.
+Rows scored (primary horizons) 2,703,183; row filter origin_year dropped 135,975 rows of 2839158 (all horizons); test years [2020, 2021, 2022, 2023, 2024]; seeds [0]; zero-filled share 0.52; outbreak share 0.082.
 
-- **G_excess** (pooled h{1,4}, primary) +0.02% [-0.37, +0.41]: L4+C* improves on L3+C* by 0.02% of WIS(ref) (95% CI -0.37 to +0.41%; p = 0.928; MDE 0.55%): **equivalent**, i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
-- **G_emb** (pooled h{1,4}, primary) -0.01% [-0.39, +0.37]: L4 is worse than L3 by 0.01% of WIS(ref) (95% CI -0.39 to +0.37%; p = 0.957; MDE 0.53%): **equivalent**, i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
-- **G_id** (pooled h{1,4}, primary) -0.05% [-0.12, +0.01]: L3+C* is worse than L3 by 0.05% of WIS(ref) (95% CI -0.12 to +0.01%; p = 0.116; MDE 0.10%): **equivalent**, i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
+- **G_excess** (pooled h{1,4}) -0.00% [-0.34, +0.34]: L4+C* is worse than L3+C* by 0.00% of WIS(ref) (95% CI -0.34 to +0.34%; p = 0.996; MDE 0.48%): **equivalent** (unadjusted rule), i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
+- **G_emb** (pooled h{1,4}) -0.02% [-0.34, +0.30]: L4 is worse than L3 by 0.02% of WIS(ref) (95% CI -0.34 to +0.30%; p = 0.881; MDE 0.45%): **equivalent** (unadjusted rule), i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
+- **G_id** (pooled h{1,4}) -0.05% [-0.13, +0.02]: L3+C* is worse than L3 by 0.05% of WIS(ref) (95% CI -0.13 to +0.02%; p = 0.135; MDE 0.10%): **equivalent** (unadjusted rule), i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
+- G_excess by target type (stratum estimate, % of the stratum's WIS(L3) | additive contribution, % of the cell's WIS(L3)): positive (27% rows) -0.00 | +0.14; recorded_zero (21% rows) +0.72 | +0.05; zero_filled (52% rows) -1.48 | -0.18; identity residual 0.0e+00.
 - **ID share**: not estimable: G_emb 95% CI includes 0
-- Ladder (pooled h{1,4}): L3 0.1692, L4 0.1693, L3+C* 0.1693, L4+C* 0.1693. Best = L3. 80% coverage 0.90–0.90 overall, 0.65–0.65 on non-zero targets.
-- G_excess by stratum (pooled h{1,4}): observed +0.35% [-0.14, +0.84]; zero_filled -1.59% [-2.70, -0.49]; outbreak -0.95% [-1.97, +0.07]
+- Ladder (pooled h{1,4}, 2,703,183 common rows): L3 0.1689, L4 0.1690, L3+C* 0.1690, L4+C* 0.1690. Best = L3. 80% coverage 0.90–0.90 overall, 0.66–0.66 on non-zero targets.
 
 ### BR_S3: Brazil S3, history arm (primary) (C* = C1)
-Rows scored 2,879,874; test years [2020, 2021, 2022, 2023, 2024]; horizons scored [1, 4], primary pooled over h{1,4}; seeds [0]; zero-filled share 0.53; outbreak share 0.080.
+Rows scored (primary horizons) 2,703,183; row filter origin_year dropped 135,975 rows of 2839158 (all horizons); test years [2020, 2021, 2022, 2023, 2024]; seeds [0]; zero-filled share 0.52; outbreak share 0.082.
 
-- **G_excess** (pooled h{1,4}, primary) -0.13% [-0.38, +0.12]: L4+C* is worse than L3+C* by 0.13% of WIS(ref) (95% CI -0.38 to +0.12%; p = 0.279; MDE 0.35%): **equivalent**, i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
-- **G_emb** (pooled h{1,4}, primary) -0.10% [-0.39, +0.18]: L4 is worse than L3 by 0.10% of WIS(ref) (95% CI -0.39 to +0.18%; p = 0.457; MDE 0.41%): **equivalent**, i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
-- **G_id** (pooled h{1,4}, primary) -0.02% [-0.13, +0.09]: L3+C* is worse than L3 by 0.02% of WIS(ref) (95% CI -0.13 to +0.09%; p = 0.698; MDE 0.16%): **equivalent**, i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
+- **G_excess** (pooled h{1,4}) -0.16% [-0.34, +0.03]: L4+C* is worse than L3+C* by 0.16% of WIS(ref) (95% CI -0.34 to +0.03%; p = 0.090; MDE 0.26%): **equivalent** (unadjusted rule), i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
+- **G_emb** (pooled h{1,4}) -0.13% [-0.35, +0.09]: L4 is worse than L3 by 0.13% of WIS(ref) (95% CI -0.35 to +0.09%; p = 0.215; MDE 0.31%): **equivalent** (unadjusted rule), i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
+- **G_id** (pooled h{1,4}) -0.03% [-0.14, +0.08]: L3+C* is worse than L3 by 0.03% of WIS(ref) (95% CI -0.14 to +0.08%; p = 0.592; MDE 0.16%): **equivalent** (unadjusted rule), i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
+- G_excess by target type (stratum estimate, % of the stratum's WIS(L3) | additive contribution, % of the cell's WIS(L3)): positive (27% rows) +0.28 | +0.22; recorded_zero (21% rows) -0.34 | -0.03; zero_filled (52% rows) -2.75 | -0.35; identity residual 0.0e+00.
 - **ID share**: not estimable: G_emb 95% CI includes 0
-- Ladder (pooled h{1,4}): L3 0.1710, L4 0.1712, L3+C* 0.1710, L4+C* 0.1713. Best = L3. 80% coverage 0.90–0.90 overall, 0.65–0.65 on non-zero targets.
-- G_excess by stratum (pooled h{1,4}): observed +0.52% [+0.09, +0.94]; zero_filled -3.14% [-4.77, -1.51]; outbreak -0.89% [-1.66, -0.12]
+- Ladder (pooled h{1,4}, 2,703,183 common rows): L3 0.1706, L4 0.1709, L3+C* 0.1707, L4+C* 0.1710. Best = L3. 80% coverage 0.90–0.90 overall, 0.66–0.66 on non-zero targets.
 
 ### BR_S5: Brazil S5, history arm (primary) (C* = C3)
-Rows scored 2,879,874; test years [2020, 2021, 2022, 2023, 2024]; horizons scored [1, 4], primary pooled over h{1,4}; seeds [0]; zero-filled share 0.53; outbreak share 0.080.
+Rows scored (primary horizons) 2,703,183; row filter origin_year dropped 135,975 rows of 2839158 (all horizons); test years [2020, 2021, 2022, 2023, 2024]; seeds [0]; zero-filled share 0.52; outbreak share 0.082.
 
-- **G_excess** (pooled h{1,4}, primary) -0.63% [-0.88, -0.39]: L4+C* is worse than L3+C* by 0.63% of WIS(ref) (95% CI -0.88 to -0.39%; p = 0.000; MDE 0.34%): **equivalent**, i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
-- **G_emb** (pooled h{1,4}, primary) -0.36% [-1.29, +0.57]: L4 is worse than L3 by 0.36% of WIS(ref) (95% CI -1.29 to +0.57%; p = 0.423; MDE 1.30%): **inconclusive**, i.e. the CI crosses 0 and reaches past the ±1% margin: the data cannot tell.
-- **G_id** (pooled h{1,4}, primary) +0.09% [-0.79, +0.98]: L3+C* improves on L3 by 0.09% of WIS(ref) (95% CI -0.79 to +0.98%; p = 0.827; MDE 1.25%): **equivalent**, i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
+- **G_excess** (pooled h{1,4}) -0.60% [-0.84, -0.36]: L4+C* is worse than L3+C* by 0.60% of WIS(ref) (95% CI -0.84 to -0.36%; p = 0.000; MDE 0.34%): **equivalent** (unadjusted rule), i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
+- **G_emb** (pooled h{1,4}) -0.34% [-1.24, +0.56]: L4 is worse than L3 by 0.34% of WIS(ref) (95% CI -1.24 to +0.56%; p = 0.439; MDE 1.27%): **inconclusive** (unadjusted rule), i.e. the CI crosses 0 and reaches past the ±1% margin: the data cannot tell.
+- **G_id** (pooled h{1,4}) +0.10% [-0.75, +0.96]: L3+C* improves on L3 by 0.10% of WIS(ref) (95% CI -0.75 to +0.96%; p = 0.797; MDE 1.20%): **equivalent** (unadjusted rule), i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
+- G_excess by target type (stratum estimate, % of the stratum's WIS(L3) | additive contribution, % of the cell's WIS(L3)): positive (27% rows) +0.55 | +0.28; recorded_zero (21% rows) -2.69 | -0.22; zero_filled (52% rows) -5.22 | -0.66; identity residual 0.0e+00.
 - **ID share**: not estimable: G_emb 95% CI includes 0
-- Ladder (pooled h{1,4}): L3 0.1908, L4 0.1915, L3+C* 0.1906, L4+C* 0.1918. Best = L3+C*. 80% coverage 0.87–0.88 overall, 0.59–0.63 on non-zero targets.
-- G_excess by stratum (pooled h{1,4}): observed +0.32% [-0.06, +0.70]; zero_filled -5.48% [-6.43, -4.53]; outbreak +0.80% [+0.15, +1.45]
+- Ladder (pooled h{1,4}, 2,703,183 common rows): L3 0.1914, L4 0.1921, L3+C* 0.1912, L4+C* 0.1924. Best = L3+C*. 80% coverage 0.87–0.88 overall, 0.60–0.64 on non-zero targets.
 
 ### CO_S1: Colombia S1, history arm (primary) (C* = C1)
-Rows scored 671,960; test years [2020, 2021, 2022]; horizons scored [1, 2, 3, 4], primary pooled over h{1,4}; seeds [0]; zero-filled share 0.78; outbreak share 0.023.
+Rows scored (primary horizons) 319,930; row filter origin_year dropped 32,100 rows of 671960 (all horizons); test years [2020, 2021, 2022]; seeds [0]; zero-filled share 0.79; outbreak share 0.023.
 
-- **G_excess** (pooled h{1,4}, primary) -0.39% [-0.58, -0.20]: L4+C* is worse than L3+C* by 0.39% of WIS(ref) (95% CI -0.58 to -0.20%; p = 0.001; MDE 0.26%): **equivalent**, i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
-- **G_emb** (pooled h{1,4}, primary) -0.35% [-0.57, -0.13]: L4 is worse than L3 by 0.35% of WIS(ref) (95% CI -0.57 to -0.13%; p = 0.005; MDE 0.31%): **equivalent**, i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
-- **G_id** (pooled h{1,4}, primary) -0.06% [-0.34, +0.23]: L3+C* is worse than L3 by 0.06% of WIS(ref) (95% CI -0.34 to +0.23%; p = 0.673; MDE 0.40%): **equivalent**, i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
-- *Secondary* G_excess pooled over h1-4 (not in the Holm family): -0.38% [-0.60, -0.17]; p = 0.002; equivalent.
-- **ID share**: not estimable: G_emb < 1% of WIS(L3)
-- Ladder (pooled h{1,4}): L0 0.3286, L1 0.1237, L2 0.1235, L3 0.1231, L4 0.1235, L3+C* 0.1232, L4+C* 0.1237. Best = L3. 80% coverage 0.81–0.93 overall, 0.53–0.72 on non-zero targets.
-- G_excess by stratum (pooled h{1,4}): observed +0.28% [-0.29, +0.85]; zero_filled -2.12% [-3.51, -0.72]; outbreak -0.64% [-2.21, +0.93]
+- **G_excess** (pooled h{1,4}) -0.39% [-0.58, -0.19]: L4+C* is worse than L3+C* by 0.39% of WIS(ref) (95% CI -0.58 to -0.19%; p = 0.001; MDE 0.27%): **equivalent** (unadjusted rule), i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
+- **G_emb** (pooled h{1,4}) -0.36% [-0.58, -0.13]: L4 is worse than L3 by 0.36% of WIS(ref) (95% CI -0.58 to -0.13%; p = 0.005; MDE 0.31%): **equivalent** (unadjusted rule), i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
+- **G_id** (pooled h{1,4}) -0.07% [-0.34, +0.20]: L3+C* is worse than L3 by 0.07% of WIS(ref) (95% CI -0.34 to +0.20%; p = 0.602; MDE 0.38%): **equivalent** (unadjusted rule), i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
+- *Secondary* G_excess pooled over h1-4 (years [2020, 2021, 2022]; not in the Holm family): -0.39% [-0.61, -0.17]; p = 0.002; equivalent.
+- G_excess by target type (stratum estimate, % of the stratum's WIS(L3) | additive contribution, % of the cell's WIS(L3)): positive (21% rows) +0.28 | +0.21; recorded_zero (0% rows) n/a | +0.00; zero_filled (79% rows) -2.11 | -0.59; identity residual 0.0e+00.
+- **ID share**: not estimable: G_emb significantly negative (embeddings hurt)
+- Ladder (pooled h{1,4}, 319,930 common rows): L0 0.3272, L1 0.1226, L2 0.1224, L3 0.1220, L4 0.1225, L3+C* 0.1221, L4+C* 0.1226. Best = L3. 80% coverage 0.81–0.93 overall, 0.53–0.72 on non-zero targets.
 
 ### CO_S2: Colombia S2, history arm (primary) (C* = C1)
-Rows scored 335,980; test years [2020, 2021, 2022]; horizons scored [1, 4], primary pooled over h{1,4}; seeds [0]; zero-filled share 0.78; outbreak share 0.023.
+Rows scored (primary horizons) 319,930; row filter origin_year dropped 16,050 rows of 335980 (all horizons); test years [2020, 2021, 2022]; seeds [0]; zero-filled share 0.79; outbreak share 0.023.
 
-- **G_excess** (pooled h{1,4}, primary) -0.48% [-0.69, -0.27]: L4+C* is worse than L3+C* by 0.48% of WIS(ref) (95% CI -0.69 to -0.27%; p = 0.000; MDE 0.29%): **equivalent**, i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
-- **G_emb** (pooled h{1,4}, primary) -0.59% [-0.79, -0.38]: L4 is worse than L3 by 0.59% of WIS(ref) (95% CI -0.79 to -0.38%; p = 0.000; MDE 0.29%): **equivalent**, i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
-- **G_id** (pooled h{1,4}, primary) -0.07% [-0.12, -0.03]: L3+C* is worse than L3 by 0.07% of WIS(ref) (95% CI -0.12 to -0.03%; p = 0.003; MDE 0.06%): **equivalent**, i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
-- **ID share**: not estimable: G_emb < 1% of WIS(L3)
-- Ladder (pooled h{1,4}): L3 0.1235, L4 0.1243, L3+C* 0.1236, L4+C* 0.1242. Best = L3. 80% coverage 0.92–0.92 overall, 0.70–0.71 on non-zero targets.
-- G_excess by stratum (pooled h{1,4}): observed +0.26% [-0.32, +0.84]; zero_filled -2.46% [-3.77, -1.16]; outbreak -1.00% [-2.77, +0.78]
+- **G_excess** (pooled h{1,4}) -0.47% [-0.69, -0.25]: L4+C* is worse than L3+C* by 0.47% of WIS(ref) (95% CI -0.69 to -0.25%; p = 0.001; MDE 0.30%): **equivalent** (unadjusted rule), i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
+- **G_emb** (pooled h{1,4}) -0.59% [-0.80, -0.37]: L4 is worse than L3 by 0.59% of WIS(ref) (95% CI -0.80 to -0.37%; p = 0.000; MDE 0.30%): **equivalent** (unadjusted rule), i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
+- **G_id** (pooled h{1,4}) -0.08% [-0.13, -0.04]: L3+C* is worse than L3 by 0.08% of WIS(ref) (95% CI -0.13 to -0.04%; p = 0.002; MDE 0.06%): **equivalent** (unadjusted rule), i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
+- G_excess by target type (stratum estimate, % of the stratum's WIS(L3) | additive contribution, % of the cell's WIS(L3)): positive (21% rows) +0.26 | +0.22; recorded_zero (0% rows) n/a | +0.00; zero_filled (79% rows) -2.46 | -0.69; identity residual 0.0e+00.
+- **ID share**: not estimable: G_emb significantly negative (embeddings hurt)
+- Ladder (pooled h{1,4}, 319,930 common rows): L3 0.1224, L4 0.1232, L3+C* 0.1225, L4+C* 0.1231. Best = L3. 80% coverage 0.92–0.92 overall, 0.70–0.71 on non-zero targets.
 
 ### CO_S3: Colombia S3, history arm (primary) (C* = C1)
-Rows scored 335,980; test years [2020, 2021, 2022]; horizons scored [1, 4], primary pooled over h{1,4}; seeds [0]; zero-filled share 0.78; outbreak share 0.023.
+Rows scored (primary horizons) 319,930; row filter origin_year dropped 16,050 rows of 335980 (all horizons); test years [2020, 2021, 2022]; seeds [0]; zero-filled share 0.79; outbreak share 0.023.
 
-- **G_excess** (pooled h{1,4}, primary) -0.68% [-1.07, -0.29]: L4+C* is worse than L3+C* by 0.68% of WIS(ref) (95% CI -1.07 to -0.29%; p = 0.003; MDE 0.55%): **inferior**, i.e. the 95% CI excludes 0 on the harm side: the second model is worse.
-- **G_emb** (pooled h{1,4}, primary) -0.86% [-1.18, -0.53]: L4 is worse than L3 by 0.86% of WIS(ref) (95% CI -1.18 to -0.53%; p = 0.000; MDE 0.45%): **inferior**, i.e. the 95% CI excludes 0 on the harm side: the second model is worse.
-- **G_id** (pooled h{1,4}, primary) -0.12% [-0.21, -0.04]: L3+C* is worse than L3 by 0.12% of WIS(ref) (95% CI -0.21 to -0.04%; p = 0.009; MDE 0.12%): **equivalent**, i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
-- **ID share**: not estimable: G_emb < 1% of WIS(L3)
-- Ladder (pooled h{1,4}): L3 0.1255, L4 0.1265, L3+C* 0.1256, L4+C* 0.1265. Best = L3. 80% coverage 0.92–0.92 overall, 0.70–0.71 on non-zero targets.
-- G_excess by stratum (pooled h{1,4}): observed +0.13% [-0.32, +0.59]; zero_filled -2.59% [-4.14, -1.03]; outbreak -1.80% [-3.37, -0.22]
+- **G_excess** (pooled h{1,4}) -0.65% [-1.04, -0.27]: L4+C* is worse than L3+C* by 0.65% of WIS(ref) (95% CI -1.04 to -0.27%; p = 0.003; MDE 0.54%): **equivalent** (unadjusted rule), i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
+- **G_emb** (pooled h{1,4}) -0.83% [-1.14, -0.52]: L4 is worse than L3 by 0.83% of WIS(ref) (95% CI -1.14 to -0.52%; p = 0.000; MDE 0.44%): **inferior** (unadjusted rule), i.e. the 95% CI excludes 0 on the harm side: the second model is worse.
+- **G_id** (pooled h{1,4}) -0.13% [-0.22, -0.05]: L3+C* is worse than L3 by 0.13% of WIS(ref) (95% CI -0.22 to -0.05%; p = 0.007; MDE 0.12%): **equivalent** (unadjusted rule), i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
+- G_excess by target type (stratum estimate, % of the stratum's WIS(L3) | additive contribution, % of the cell's WIS(L3)): positive (21% rows) +0.15 | +0.10; recorded_zero (0% rows) n/a | +0.00; zero_filled (79% rows) -2.55 | -0.76; identity residual 0.0e+00.
+- **ID share**: not estimable: G_emb significantly negative (embeddings hurt)
+- Ladder (pooled h{1,4}, 319,930 common rows): L3 0.1244, L4 0.1255, L3+C* 0.1246, L4+C* 0.1254. Best = L3. 80% coverage 0.92–0.92 overall, 0.70–0.71 on non-zero targets.
 
 ### CO_S4: Colombia S4, history arm (primary) (C* = C1)
-Rows scored 335,980; test years [2020, 2021, 2022]; horizons scored [1, 4], primary pooled over h{1,4}; seeds [0]; zero-filled share 0.78; outbreak share 0.023.
+Rows scored (primary horizons) 319,930; row filter origin_year dropped 16,050 rows of 335980 (all horizons); test years [2020, 2021, 2022]; seeds [0]; zero-filled share 0.79; outbreak share 0.023.
 
-- **G_excess** (pooled h{1,4}, primary) -0.44% [-0.68, -0.20]: L4+C* is worse than L3+C* by 0.44% of WIS(ref) (95% CI -0.68 to -0.20%; p = 0.002; MDE 0.33%): **equivalent**, i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
-- **G_emb** (pooled h{1,4}, primary) -0.51% [-0.74, -0.28]: L4 is worse than L3 by 0.51% of WIS(ref) (95% CI -0.74 to -0.28%; p = 0.000; MDE 0.32%): **equivalent**, i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
-- **G_id** (pooled h{1,4}, primary) -0.12% [-0.17, -0.07]: L3+C* is worse than L3 by 0.12% of WIS(ref) (95% CI -0.17 to -0.07%; p = 0.000; MDE 0.07%): **equivalent**, i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
-- **ID share**: not estimable: G_emb < 1% of WIS(L3)
-- Ladder (pooled h{1,4}): L3 0.1233, L4 0.1240, L3+C* 0.1235, L4+C* 0.1240. Best = L3. 80% coverage 0.92–0.92 overall, 0.70–0.71 on non-zero targets.
-- G_excess by stratum (pooled h{1,4}): observed +0.31% [-0.31, +0.94]; zero_filled -2.53% [-4.03, -1.02]; outbreak -0.92% [-2.77, +0.94]
+- **G_excess** (pooled h{1,4}) -0.43% [-0.68, -0.18]: L4+C* is worse than L3+C* by 0.43% of WIS(ref) (95% CI -0.68 to -0.18%; p = 0.003; MDE 0.35%): **equivalent** (unadjusted rule), i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
+- **G_emb** (pooled h{1,4}) -0.52% [-0.75, -0.28]: L4 is worse than L3 by 0.52% of WIS(ref) (95% CI -0.75 to -0.28%; p = 0.001; MDE 0.33%): **equivalent** (unadjusted rule), i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
+- **G_id** (pooled h{1,4}) -0.13% [-0.18, -0.08]: L3+C* is worse than L3 by 0.13% of WIS(ref) (95% CI -0.18 to -0.08%; p = 0.000; MDE 0.07%): **equivalent** (unadjusted rule), i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
+- G_excess by target type (stratum estimate, % of the stratum's WIS(L3) | additive contribution, % of the cell's WIS(L3)): positive (21% rows) +0.31 | +0.26; recorded_zero (0% rows) n/a | +0.00; zero_filled (79% rows) -2.48 | -0.69; identity residual 0.0e+00.
+- **ID share**: not estimable: G_emb significantly negative (embeddings hurt)
+- Ladder (pooled h{1,4}, 319,930 common rows): L3 0.1222, L4 0.1229, L3+C* 0.1224, L4+C* 0.1229. Best = L3. 80% coverage 0.92–0.93 overall, 0.71–0.71 on non-zero targets.
 
 ### CO_S5: Colombia S5, history arm (primary) (C* = C2)
-Rows scored 335,980; test years [2020, 2021, 2022]; horizons scored [1, 4], primary pooled over h{1,4}; seeds [0]; zero-filled share 0.78; outbreak share 0.023.
+Rows scored (primary horizons) 319,930; row filter origin_year dropped 16,050 rows of 335980 (all horizons); test years [2020, 2021, 2022]; seeds [0]; zero-filled share 0.79; outbreak share 0.023.
 
-- **G_excess** (pooled h{1,4}, primary) +0.18% [-0.21, +0.58]: L4+C* improves on L3+C* by 0.18% of WIS(ref) (95% CI -0.21 to +0.58%; p = 0.326; MDE 0.55%): **equivalent**, i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
-- **G_emb** (pooled h{1,4}, primary) -0.06% [-0.38, +0.26]: L4 is worse than L3 by 0.06% of WIS(ref) (95% CI -0.38 to +0.26%; p = 0.683; MDE 0.45%): **equivalent**, i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
-- **G_id** (pooled h{1,4}, primary) -0.84% [-1.28, -0.39]: L3+C* is worse than L3 by 0.84% of WIS(ref) (95% CI -1.28 to -0.39%; p = 0.002; MDE 0.62%): **inferior**, i.e. the 95% CI excludes 0 on the harm side: the second model is worse.
+- **G_excess** (pooled h{1,4}) +0.22% [-0.19, +0.63]: L4+C* improves on L3+C* by 0.22% of WIS(ref) (95% CI -0.19 to +0.63%; p = 0.267; MDE 0.57%): **equivalent** (unadjusted rule), i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
+- **G_emb** (pooled h{1,4}) -0.04% [-0.37, +0.28]: L4 is worse than L3 by 0.04% of WIS(ref) (95% CI -0.37 to +0.28%; p = 0.774; MDE 0.46%): **equivalent** (unadjusted rule), i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
+- **G_id** (pooled h{1,4}) -0.81% [-1.16, -0.46]: L3+C* is worse than L3 by 0.81% of WIS(ref) (95% CI -1.16 to -0.46%; p = 0.000; MDE 0.49%): **inferior** (unadjusted rule), i.e. the 95% CI excludes 0 on the harm side: the second model is worse.
+- G_excess by target type (stratum estimate, % of the stratum's WIS(L3) | additive contribution, % of the cell's WIS(L3)): positive (21% rows) +0.37 | +0.27; recorded_zero (0% rows) n/a | +0.00; zero_filled (79% rows) -0.13 | -0.05; identity residual 0.0e+00.
 - **ID share**: not estimable: G_emb 95% CI includes 0
-- Ladder (pooled h{1,4}): L3 0.1251, L4 0.1252, L3+C* 0.1261, L4+C* 0.1259. Best = L3. 80% coverage 0.93–0.94 overall, 0.68–0.75 on non-zero targets.
-- G_excess by stratum (pooled h{1,4}): observed +0.34% [+0.03, +0.64]; zero_filled -0.08% [-2.25, +2.09]; outbreak -0.41% [-1.59, +0.76]
+- Ladder (pooled h{1,4}, 319,930 common rows): L3 0.1238, L4 0.1239, L3+C* 0.1249, L4+C* 0.1246. Best = L3. 80% coverage 0.93–0.94 overall, 0.68–0.75 on non-zero targets.
 
 ### PE_S1: Peru S1, history arm (primary) (C* = C1)
-Rows scored 96,108; test years [2020, 2021, 2022, 2023]; horizons scored [1, 2, 3, 4], primary pooled over h{1,4}; seeds [0]; zero-filled share 0.56; outbreak share 0.228.
+Rows scored (primary horizons) 45,754; row filter origin_year dropped 4,600 rows of 96108 (all horizons); test years [2020, 2021, 2022, 2023]; seeds [0]; zero-filled share 0.56; outbreak share 0.229.
 
-- **G_excess** (pooled h{1,4}, primary) -0.62% [-1.35, +0.12]: L4+C* is worse than L3+C* by 0.62% of WIS(ref) (95% CI -1.35 to +0.12%; p = 0.094; MDE 1.03%): **inconclusive**, i.e. the CI crosses 0 and reaches past the ±1% margin: the data cannot tell.
-- **G_emb** (pooled h{1,4}, primary) -0.89% [-1.64, -0.13]: L4 is worse than L3 by 0.89% of WIS(ref) (95% CI -1.64 to -0.13%; p = 0.025; MDE 1.06%): **inferior**, i.e. the 95% CI excludes 0 on the harm side: the second model is worse.
-- **G_id** (pooled h{1,4}, primary) -0.28% [-1.02, +0.46]: L3+C* is worse than L3 by 0.28% of WIS(ref) (95% CI -1.02 to +0.46%; p = 0.427; MDE 1.04%): **equivalent**, i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
-- *Secondary* G_excess pooled over h1-4 (not in the Holm family): -0.57% [-1.29, +0.15]; p = 0.112; inconclusive.
-- **ID share**: not estimable: G_emb < 1% of WIS(L3)
-- Ladder (pooled h{1,4}): L0 0.6541, L1 0.2454, L2 0.2442, L3 0.2448, L4 0.2469, L3+C* 0.2454, L4+C* 0.2470. Best = L2. 80% coverage 0.73–0.84 overall, 0.47–0.69 on non-zero targets.
-- G_excess by stratum (pooled h{1,4}): observed +0.03% [-0.83, +0.89]; zero_filled -6.40% [-8.90, -3.90]; outbreak -1.05% [-2.65, +0.54]
+- **G_excess** (pooled h{1,4}) -0.70% [-1.41, +0.02]: L4+C* is worse than L3+C* by 0.70% of WIS(ref) (95% CI -1.41 to +0.02%; p = 0.056; MDE 1.01%): **inconclusive** (unadjusted rule), i.e. the CI crosses 0 and reaches past the ±1% margin: the data cannot tell.
+- **G_emb** (pooled h{1,4}) -0.94% [-1.70, -0.18]: L4 is worse than L3 by 0.94% of WIS(ref) (95% CI -1.70 to -0.18%; p = 0.020; MDE 1.07%): **inferior** (unadjusted rule), i.e. the 95% CI excludes 0 on the harm side: the second model is worse.
+- **G_id** (pooled h{1,4}) -0.26% [-1.05, +0.53]: L3+C* is worse than L3 by 0.26% of WIS(ref) (95% CI -1.05 to +0.53%; p = 0.493; MDE 1.11%): **equivalent** (unadjusted rule), i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
+- *Secondary* G_excess pooled over h1-4 (years [2020, 2021, 2022, 2023]; not in the Holm family): -0.63% [-1.35, +0.08]; p = 0.077; inconclusive.
+- G_excess by target type (stratum estimate, % of the stratum's WIS(L3) | additive contribution, % of the cell's WIS(L3)): positive (44% rows) -0.08 | +0.04; recorded_zero (0% rows) n/a | +0.00; zero_filled (56% rows) -6.14 | -0.74; identity residual 2.2e-19.
+- **ID share**: not estimable: G_emb significantly negative (embeddings hurt)
+- Ladder (pooled h{1,4}, 45,754 common rows): L0 0.6596, L1 0.2442, L2 0.2431, L3 0.2438, L4 0.2462, L3+C* 0.2445, L4+C* 0.2462. Best = L2. 80% coverage 0.73–0.84 overall, 0.47–0.70 on non-zero targets.
 
 ### PE_S5: Peru S5, history arm (primary) (C* = C3)
-Rows scored 48,054; test years [2020, 2021, 2022, 2023]; horizons scored [1, 4], primary pooled over h{1,4}; seeds [0]; zero-filled share 0.56; outbreak share 0.228.
+Rows scored (primary horizons) 45,754; row filter origin_year dropped 2,300 rows of 48054 (all horizons); test years [2020, 2021, 2022, 2023]; seeds [0]; zero-filled share 0.56; outbreak share 0.229.
 
-- **G_excess** (pooled h{1,4}, primary) +1.01% [+0.02, +2.00]: L4+C* improves on L3+C* by 1.01% of WIS(ref) (95% CI +0.02 to +2.00%; p = 0.046; MDE 1.39%): **superior**, i.e. the 95% CI excludes 0 on the improvement side: the second model is better.
-- **G_emb** (pooled h{1,4}, primary) +0.73% [-0.42, +1.89]: L4 improves on L3 by 0.73% of WIS(ref) (95% CI -0.42 to +1.89%; p = 0.195; MDE 1.62%): **inconclusive**, i.e. the CI crosses 0 and reaches past the ±1% margin: the data cannot tell.
-- **G_id** (pooled h{1,4}, primary) -0.45% [-0.79, -0.11]: L3+C* is worse than L3 by 0.45% of WIS(ref) (95% CI -0.79 to -0.11%; p = 0.014; MDE 0.48%): **equivalent**, i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
+- **G_excess** (pooled h{1,4}) +0.96% [-0.13, +2.05]: L4+C* improves on L3+C* by 0.96% of WIS(ref) (95% CI -0.13 to +2.05%; p = 0.079; MDE 1.53%): **inconclusive** (unadjusted rule), i.e. the CI crosses 0 and reaches past the ±1% margin: the data cannot tell.
+- **G_emb** (pooled h{1,4}) +0.68% [-0.59, +1.96]: L4 improves on L3 by 0.68% of WIS(ref) (95% CI -0.59 to +1.96%; p = 0.268; MDE 1.79%): **inconclusive** (unadjusted rule), i.e. the CI crosses 0 and reaches past the ±1% margin: the data cannot tell.
+- **G_id** (pooled h{1,4}) -0.44% [-0.80, -0.07]: L3+C* is worse than L3 by 0.44% of WIS(ref) (95% CI -0.80 to -0.07%; p = 0.022; MDE 0.51%): **equivalent** (unadjusted rule), i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
+- G_excess by target type (stratum estimate, % of the stratum's WIS(L3) | additive contribution, % of the cell's WIS(L3)): positive (44% rows) +1.61 | +1.28; recorded_zero (0% rows) n/a | +0.00; zero_filled (56% rows) -2.97 | -0.32; identity residual 0.0e+00.
 - **ID share**: not estimable: G_emb 95% CI includes 0
-- Ladder (pooled h{1,4}): L3 0.2400, L4 0.2382, L3+C* 0.2411, L4+C* 0.2386. Best = L4. 80% coverage 0.83–0.84 overall, 0.65–0.68 on non-zero targets.
-- G_excess by stratum (pooled h{1,4}): observed +1.66% [+0.45, +2.87]; zero_filled -3.16% [-4.86, -1.47]; outbreak +3.76% [+1.76, +5.75]
+- Ladder (pooled h{1,4}, 45,754 common rows): L3 0.2383, L4 0.2367, L3+C* 0.2394, L4+C* 0.2371. Best = L4. 80% coverage 0.83–0.84 overall, 0.65–0.68 on non-zero targets.
 
-### TW_S1: Taiwan S1, history arm (primary) (C* = C1)
-Rows scored 238,260; test years [2020, 2022, 2023, 2024]; horizons scored [1, 2, 3, 4], primary pooled over h{1,4}; seeds [0]; zero-filled share 0.97; outbreak share 0.008.
+### TW_S1: Taiwan S1, history arm (primary); test years incl. 2021 (C* = C1)
+Rows scored (primary horizons) 141,645; row filter origin_year dropped 12,825 rows of 267900 (all horizons); test years [2020, 2021, 2022, 2023, 2024]; seeds [0]; zero-filled share 0.97; outbreak share 0.008.
 
-- **G_excess** (pooled h{1,4}, primary) -0.39% [-1.00, +0.22]: L4+C* is worse than L3+C* by 0.39% of WIS(ref) (95% CI -1.00 to +0.22%; p = 0.192; MDE 0.86%): **equivalent**, i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
-- **G_emb** (pooled h{1,4}, primary) -0.93% [-1.84, -0.02]: L4 is worse than L3 by 0.93% of WIS(ref) (95% CI -1.84 to -0.02%; p = 0.045; MDE 1.28%): **inferior**, i.e. the 95% CI excludes 0 on the harm side: the second model is worse.
-- **G_id** (pooled h{1,4}, primary) -0.65% [-1.70, +0.40]: L3+C* is worse than L3 by 0.65% of WIS(ref) (95% CI -1.70 to +0.40%; p = 0.203; MDE 1.47%): **inconclusive**, i.e. the CI crosses 0 and reaches past the ±1% margin: the data cannot tell.
-- *Secondary* G_excess pooled over h1-4 (not in the Holm family): -0.35% [-0.93, +0.23]; p = 0.215; equivalent.
-- **ID share**: not estimable: G_emb < 1% of WIS(L3)
-- Ladder (pooled h{1,4}): L0 0.0885, L1 0.0380, L2 0.0465, L3 0.0383, L4 0.0387, L3+C* 0.0386, L4+C* 0.0387. Best = L1. 80% coverage 0.95–0.98 overall, 0.00–0.26 on non-zero targets.
-- G_excess by stratum (pooled h{1,4}): observed -0.14% [-1.19, +0.91]; zero_filled -5.46% [-18.26, +7.35]; outbreak -0.13% [-0.87, +0.62]
+- **G_excess** (pooled h{1,4}) -0.60% [-1.20, -0.00]: L4+C* is worse than L3+C* by 0.60% of WIS(ref) (95% CI -1.20 to -0.00%; p = 0.049; MDE 0.84%): **inferior** (unadjusted rule), i.e. the 95% CI excludes 0 on the harm side: the second model is worse.
+- **G_emb** (pooled h{1,4}) -1.06% [-1.96, -0.16]: L4 is worse than L3 by 1.06% of WIS(ref) (95% CI -1.96 to -0.16%; p = 0.024; MDE 1.27%): **inferior** (unadjusted rule), i.e. the 95% CI excludes 0 on the harm side: the second model is worse.
+- **G_id** (pooled h{1,4}) -0.63% [-1.68, +0.43]: L3+C* is worse than L3 by 0.63% of WIS(ref) (95% CI -1.68 to +0.43%; p = 0.225; MDE 1.48%): **inconclusive** (unadjusted rule), i.e. the CI crosses 0 and reaches past the ±1% margin: the data cannot tell.
+- *Secondary* G_excess pooled over h1-4 (years [2020, 2022, 2023, 2024]; not in the Holm family): -0.38% [-0.92, +0.15]; p = 0.145; equivalent.
+- G_excess by target type (stratum estimate, % of the stratum's WIS(L3) | additive contribution, % of the cell's WIS(L3)): positive (2% rows) -0.15 | -0.07; recorded_zero (0% rows) n/a | +0.00; zero_filled (98% rows) -9.46 | -0.53; identity residual 0.0e+00.
+- **ID share**: not estimable: G_emb significantly negative (embeddings hurt)
+- Ladder (pooled h{1,4}, 113,430 common rows): L0 0.0922, L1 0.0394, L2 0.0477, L3 0.0398, L4 0.0402, L3+C* 0.0400, L4+C* 0.0402. Best = L1. 80% coverage 0.94–0.98 overall, 0.00–0.25 on non-zero targets.
 
 ### TW_S5: Taiwan S5, history arm (primary) (C* = C3)
-Rows scored 119,130; test years [2020, 2022, 2023, 2024]; horizons scored [1, 4], primary pooled over h{1,4}; seeds [0]; zero-filled share 0.97; outbreak share 0.008.
+Rows scored (primary horizons) 113,430; row filter origin_year dropped 5,700 rows of 119130 (all horizons); test years [2020, 2022, 2023, 2024]; seeds [0]; zero-filled share 0.97; outbreak share 0.009. Flags: 2021 pending (base test years only).
 
-- **G_excess** (pooled h{1,4}, primary) -11.53% [-15.83, -7.23]: L4+C* is worse than L3+C* by 11.53% of WIS(ref) (95% CI -15.83 to -7.23%; p = 0.000; MDE 6.04%): **inferior**, i.e. the 95% CI excludes 0 on the harm side: the second model is worse.
-- **G_emb** (pooled h{1,4}, primary) -15.29% [-20.87, -9.72]: L4 is worse than L3 by 15.29% of WIS(ref) (95% CI -20.87 to -9.72%; p = 0.000; MDE 7.83%): **inferior**, i.e. the 95% CI excludes 0 on the harm side: the second model is worse.
-- **G_id** (pooled h{1,4}, primary) -2.53% [-5.71, +0.66]: L3+C* is worse than L3 by 2.53% of WIS(ref) (95% CI -5.71 to +0.66%; p = 0.111; MDE 4.47%): **inconclusive**, i.e. the CI crosses 0 and reaches past the ±1% margin: the data cannot tell.
-- **ID share**: not estimable: G_emb < 1% of WIS(L3)
-- Ladder (pooled h{1,4}): L3 0.0245, L4 0.0283, L3+C* 0.0252, L4+C* 0.0280. Best = L3. 80% coverage 0.99–0.99 overall, 0.56–0.63 on non-zero targets.
-- G_excess by stratum (pooled h{1,4}): observed +1.90% [-0.35, +4.16]; zero_filled -34.56% [-46.23, -22.89]; outbreak +1.09% [-0.33, +2.51]
+- **G_excess** (pooled h{1,4}) -11.16% [-15.66, -6.65]: L4+C* is worse than L3+C* by 11.16% of WIS(ref) (95% CI -15.66 to -6.65%; p = 0.000; MDE 6.32%): **inferior** (unadjusted rule), i.e. the 95% CI excludes 0 on the harm side: the second model is worse.
+- **G_emb** (pooled h{1,4}) -14.68% [-20.24, -9.11]: L4 is worse than L3 by 14.68% of WIS(ref) (95% CI -20.24 to -9.11%; p = 0.000; MDE 7.81%): **inferior** (unadjusted rule), i.e. the 95% CI excludes 0 on the harm side: the second model is worse.
+- **G_id** (pooled h{1,4}) -2.31% [-5.52, +0.90]: L3+C* is worse than L3 by 2.31% of WIS(ref) (95% CI -5.52 to +0.90%; p = 0.145; MDE 4.51%): **inconclusive** (unadjusted rule), i.e. the CI crosses 0 and reaches past the ±1% margin: the data cannot tell.
+- G_excess by target type (stratum estimate, % of the stratum's WIS(L3) | additive contribution, % of the cell's WIS(L3)): positive (3% rows) +2.16 | +1.33; recorded_zero (0% rows) n/a | +0.00; zero_filled (97% rows) -35.22 | -12.48; identity residual 0.0e+00.
+- **ID share**: not estimable: G_emb significantly negative (embeddings hurt)
+- Ladder (pooled h{1,4}, 113,430 common rows): L3 0.0246, L4 0.0283, L3+C* 0.0252, L4+C* 0.0280. Best = L3. 80% coverage 0.99–0.99 overall, 0.56–0.63 on non-zero targets.
+
+### TW_S1_no2021: Taiwan S1 without test year(s) 2021 (the pre-review test-year set) (C* = C1)
+Rows scored (primary horizons) 113,430; row filter origin_year dropped 11,400 rows of 238260 (all horizons); test years [2020, 2022, 2023, 2024]; seeds [0]; zero-filled share 0.97; outbreak share 0.009.
+
+- **G_excess** (pooled h{1,4}) -0.44% [-1.01, +0.14]: L4+C* is worse than L3+C* by 0.44% of WIS(ref) (95% CI -1.01 to +0.14%; p = 0.123; MDE 0.80%): **equivalent** (unadjusted rule), i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
+- **G_emb** (pooled h{1,4}) -0.94% [-1.85, -0.03]: L4 is worse than L3 by 0.94% of WIS(ref) (95% CI -1.85 to -0.03%; p = 0.043; MDE 1.27%): **inferior** (unadjusted rule), i.e. the 95% CI excludes 0 on the harm side: the second model is worse.
+- **G_id** (pooled h{1,4}) -0.63% [-1.69, +0.44]: L3+C* is worse than L3 by 0.63% of WIS(ref) (95% CI -1.69 to +0.44%; p = 0.228; MDE 1.50%): **inconclusive** (unadjusted rule), i.e. the CI crosses 0 and reaches past the ±1% margin: the data cannot tell.
+- *Secondary* G_excess pooled over h1-4 (years [2020, 2022, 2023, 2024]; not in the Holm family): -0.38% [-0.92, +0.15]; p = 0.145; equivalent.
+- G_excess by target type (stratum estimate, % of the stratum's WIS(L3) | additive contribution, % of the cell's WIS(L3)): positive (3% rows) -0.15 | -0.07; recorded_zero (0% rows) n/a | +0.00; zero_filled (97% rows) -6.74 | -0.36; identity residual 0.0e+00.
+- **ID share**: not estimable: G_emb significantly negative (embeddings hurt)
+- Ladder (pooled h{1,4}, 113,430 common rows): L3 0.0398, L4 0.0402, L3+C* 0.0400, L4+C* 0.0402. Best = L3. 80% coverage 0.98–0.98 overall, 0.24–0.25 on non-zero targets.
+
+### TW_S5_no2021: Taiwan S5 without test year(s) 2021 (the pre-review test-year set) (C* = C3)
+Rows scored (primary horizons) 113,430; row filter origin_year dropped 5,700 rows of 119130 (all horizons); test years [2020, 2022, 2023, 2024]; seeds [0]; zero-filled share 0.97; outbreak share 0.009.
+
+- **G_excess** (pooled h{1,4}) -11.16% [-15.66, -6.65]: L4+C* is worse than L3+C* by 11.16% of WIS(ref) (95% CI -15.66 to -6.65%; p = 0.000; MDE 6.32%): **inferior** (unadjusted rule), i.e. the 95% CI excludes 0 on the harm side: the second model is worse.
+- **G_emb** (pooled h{1,4}) -14.68% [-20.24, -9.11]: L4 is worse than L3 by 14.68% of WIS(ref) (95% CI -20.24 to -9.11%; p = 0.000; MDE 7.81%): **inferior** (unadjusted rule), i.e. the 95% CI excludes 0 on the harm side: the second model is worse.
+- **G_id** (pooled h{1,4}) -2.31% [-5.52, +0.90]: L3+C* is worse than L3 by 2.31% of WIS(ref) (95% CI -5.52 to +0.90%; p = 0.145; MDE 4.51%): **inconclusive** (unadjusted rule), i.e. the CI crosses 0 and reaches past the ±1% margin: the data cannot tell.
+- G_excess by target type (stratum estimate, % of the stratum's WIS(L3) | additive contribution, % of the cell's WIS(L3)): positive (3% rows) +2.16 | +1.33; recorded_zero (0% rows) n/a | +0.00; zero_filled (97% rows) -35.22 | -12.48; identity residual 0.0e+00.
+- **ID share**: not estimable: G_emb significantly negative (embeddings hurt)
+- Ladder (pooled h{1,4}, 113,430 common rows): L3 0.0246, L4 0.0283, L3+C* 0.0252, L4+C* 0.0280. Best = L3. 80% coverage 0.99–0.99 overall, 0.56–0.63 on non-zero targets.
 
 ### BR_S1_3seeds: Brazil S1, primary + 2 extra seeds (seed-averaged; extra seeds h1/h4) (C* = C1)
-Rows scored 5,759,748; test years [2020, 2021, 2022, 2023, 2024]; horizons scored [1, 2, 3, 4], primary pooled over h{1,4}; seeds [0, 1, 2]; zero-filled share 0.53; outbreak share 0.080.
+Rows scored (primary horizons) 2,703,183; row filter origin_year dropped 271,950 rows of 5678316 (all horizons); test years [2020, 2021, 2022, 2023, 2024]; seeds [0, 1, 2]; zero-filled share 0.52; outbreak share 0.082.
 
-- **G_excess** (pooled h{1,4}, primary) +0.26% [-0.38, +0.90]: L4+C* improves on L3+C* by 0.26% of WIS(ref) (95% CI -0.38 to +0.90%; p = 0.399; MDE 0.90%): **equivalent**, i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
-- **G_emb** (pooled h{1,4}, primary) +0.29% [-0.35, +0.93]: L4 improves on L3 by 0.29% of WIS(ref) (95% CI -0.35 to +0.93%; p = 0.354; MDE 0.90%): **equivalent**, i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
-- **G_id** (pooled h{1,4}, primary) +0.01% [-0.15, +0.17]: L3+C* improves on L3 by 0.01% of WIS(ref) (95% CI -0.15 to +0.17%; p = 0.878; MDE 0.22%): **equivalent**, i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
-- *Secondary* G_excess pooled over h1-4 (not in the Holm family): +0.27% [-0.37, +0.91]; p = 0.384; equivalent.
+- **G_excess** (pooled h{1,4}) +0.23% [-0.33, +0.79]: L4+C* improves on L3+C* by 0.23% of WIS(ref) (95% CI -0.33 to +0.79%; p = 0.392; MDE 0.79%): **equivalent** (unadjusted rule), i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
+- **G_emb** (pooled h{1,4}) +0.26% [-0.31, +0.82]: L4 improves on L3 by 0.26% of WIS(ref) (95% CI -0.31 to +0.82%; p = 0.348; MDE 0.80%): **equivalent** (unadjusted rule), i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
+- **G_id** (pooled h{1,4}) +0.03% [-0.11, +0.18]: L3+C* improves on L3 by 0.03% of WIS(ref) (95% CI -0.11 to +0.18%; p = 0.651; MDE 0.21%): **equivalent** (unadjusted rule), i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
+- *Secondary* G_excess pooled over h1-4 (years [2020, 2021, 2022, 2023, 2024]; not in the Holm family): +0.25% [-0.33, +0.82]; p = 0.381; equivalent.
+- G_excess by target type (stratum estimate, % of the stratum's WIS(L3) | additive contribution, % of the cell's WIS(L3)): positive (27% rows) +0.30 | +0.46; recorded_zero (21% rows) -0.27 | -0.02; zero_filled (52% rows) -1.67 | -0.20; identity residual 0.0e+00.
 - **ID share**: not estimable: G_emb 95% CI includes 0
-- Ladder (pooled h{1,4}): L3 0.1684, L4 0.1679, L3+C* 0.1684, L4+C* 0.1679. Best = L4. 80% coverage 0.90–0.90 overall, 0.66–0.66 on non-zero targets.
-- G_excess by stratum (pooled h{1,4}): observed +0.57% [-0.08, +1.23]; zero_filled -1.74% [-2.77, -0.71]; outbreak +0.15% [-0.77, +1.07]
+- Ladder (pooled h{1,4}, 2,703,183 common rows): L3 0.1681, L4 0.1677, L3+C* 0.1680, L4+C* 0.1676. Best = L4+C*. 80% coverage 0.90–0.90 overall, 0.66–0.67 on non-zero targets.
 
 ### BR_S1_perlevel: Brazil S1, per-level tuning (L3/L4 31 leaves; superseded primary) (C* = C1)
-Rows scored 5,759,748; test years [2020, 2021, 2022, 2023, 2024]; horizons scored [1, 2, 3, 4], primary pooled over h{1,4}; seeds [0]; zero-filled share 0.53; outbreak share 0.080.
+Rows scored (primary horizons) 2,703,183; row filter origin_year dropped 271,950 rows of 5678316 (all horizons); test years [2020, 2021, 2022, 2023, 2024]; seeds [0]; zero-filled share 0.52; outbreak share 0.082.
 
-- **G_excess** (pooled h{1,4}, primary) +0.26% [-0.10, +0.63]: L4+C* improves on L3+C* by 0.26% of WIS(ref) (95% CI -0.10 to +0.63%; p = 0.143; MDE 0.51%): **equivalent**, i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
-- **G_emb** (pooled h{1,4}, primary) +0.24% [-0.08, +0.55]: L4 improves on L3 by 0.24% of WIS(ref) (95% CI -0.08 to +0.55%; p = 0.130; MDE 0.44%): **equivalent**, i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
-- **G_id** (pooled h{1,4}, primary) -0.07% [-0.31, +0.18]: L3+C* is worse than L3 by 0.07% of WIS(ref) (95% CI -0.31 to +0.18%; p = 0.557; MDE 0.34%): **equivalent**, i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
-- *Secondary* G_excess pooled over h1-4 (not in the Holm family): +0.26% [-0.09, +0.60]; p = 0.133; equivalent.
+- **G_excess** (pooled h{1,4}) +0.25% [-0.07, +0.56]: L4+C* improves on L3+C* by 0.25% of WIS(ref) (95% CI -0.07 to +0.56%; p = 0.113; MDE 0.44%): **equivalent** (unadjusted rule), i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
+- **G_emb** (pooled h{1,4}) +0.21% [-0.05, +0.47]: L4 improves on L3 by 0.21% of WIS(ref) (95% CI -0.05 to +0.47%; p = 0.105; MDE 0.37%): **equivalent** (unadjusted rule), i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
+- **G_id** (pooled h{1,4}) -0.06% [-0.30, +0.18]: L3+C* is worse than L3 by 0.06% of WIS(ref) (95% CI -0.30 to +0.18%; p = 0.615; MDE 0.33%): **equivalent** (unadjusted rule), i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
+- *Secondary* G_excess pooled over h1-4 (years [2020, 2021, 2022, 2023, 2024]; not in the Holm family): +0.25% [-0.06, +0.57]; p = 0.108; equivalent.
+- G_excess by target type (stratum estimate, % of the stratum's WIS(L3) | additive contribution, % of the cell's WIS(L3)): positive (27% rows) +0.22 | +0.27; recorded_zero (21% rows) +0.30 | +0.01; zero_filled (52% rows) -0.06 | -0.03; identity residual 5.4e-20.
 - **ID share**: not estimable: G_emb 95% CI includes 0
-- Ladder (pooled h{1,4}): L0 0.4645, L1 0.1703, L2 0.1692, L3 0.1717, L4 0.1713, L3+C* 0.1718, L4+C* 0.1713. Best = L2. 80% coverage 0.77–0.91 overall, 0.40–0.68 on non-zero targets.
-- G_excess by stratum (pooled h{1,4}): observed +0.36% [+0.00, +0.72]; zero_filled -0.09% [-0.70, +0.53]; outbreak +0.24% [-0.26, +0.73]
+- Ladder (pooled h{1,4}, 2,703,183 common rows): L0 0.4695, L1 0.1700, L2 0.1690, L3 0.1714, L4 0.1710, L3+C* 0.1714, L4+C* 0.1710. Best = L2. 80% coverage 0.77–0.91 overall, 0.40–0.68 on non-zero targets.
 
 ### TW_S1_BRparams: Taiwan S1 with Brazil's tuned params and C* (C* = C1)
-Rows scored 238,260; test years [2020, 2022, 2023, 2024]; horizons scored [1, 2, 3, 4], primary pooled over h{1,4}; seeds [0]; zero-filled share 0.97; outbreak share 0.008.
+Rows scored (primary horizons) 113,430; row filter origin_year dropped 11,400 rows of 238260 (all horizons); test years [2020, 2022, 2023, 2024]; seeds [0]; zero-filled share 0.97; outbreak share 0.009.
 
-- **G_excess** (pooled h{1,4}, primary) -0.27% [-0.91, +0.37]: L4+C* is worse than L3+C* by 0.27% of WIS(ref) (95% CI -0.91 to +0.37%; p = 0.380; MDE 0.90%): **equivalent**, i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
-- **G_emb** (pooled h{1,4}, primary) -0.86% [-1.77, +0.04]: L4 is worse than L3 by 0.86% of WIS(ref) (95% CI -1.77 to +0.04%; p = 0.060; MDE 1.27%): **inconclusive**, i.e. the CI crosses 0 and reaches past the ±1% margin: the data cannot tell.
-- **G_id** (pooled h{1,4}, primary) -0.76% [-1.73, +0.21]: L3+C* is worse than L3 by 0.76% of WIS(ref) (95% CI -1.73 to +0.21%; p = 0.117; MDE 1.36%): **inconclusive**, i.e. the CI crosses 0 and reaches past the ±1% margin: the data cannot tell.
-- *Secondary* G_excess pooled over h1-4 (not in the Holm family): -0.29% [-0.89, +0.31]; p = 0.318; equivalent.
+- **G_excess** (pooled h{1,4}) -0.33% [-0.89, +0.23]: L4+C* is worse than L3+C* by 0.33% of WIS(ref) (95% CI -0.89 to +0.23%; p = 0.220; MDE 0.79%): **equivalent** (unadjusted rule), i.e. the 90% CI lies inside ±1% of WIS(ref): any effect is too small to matter.
+- **G_emb** (pooled h{1,4}) -0.87% [-1.78, +0.03]: L4 is worse than L3 by 0.87% of WIS(ref) (95% CI -1.78 to +0.03%; p = 0.057; MDE 1.27%): **inconclusive** (unadjusted rule), i.e. the CI crosses 0 and reaches past the ±1% margin: the data cannot tell.
+- **G_id** (pooled h{1,4}) -0.71% [-1.67, +0.26]: L3+C* is worse than L3 by 0.71% of WIS(ref) (95% CI -1.67 to +0.26%; p = 0.140; MDE 1.36%): **inconclusive** (unadjusted rule), i.e. the CI crosses 0 and reaches past the ±1% margin: the data cannot tell.
+- *Secondary* G_excess pooled over h1-4 (years [2020, 2022, 2023, 2024]; not in the Holm family): -0.33% [-0.86, +0.21]; p = 0.213; equivalent.
+- G_excess by target type (stratum estimate, % of the stratum's WIS(L3) | additive contribution, % of the cell's WIS(L3)): positive (3% rows) +0.02 | -0.11; recorded_zero (0% rows) n/a | +0.00; zero_filled (97% rows) -4.10 | -0.23; identity residual 2.7e-20.
 - **ID share**: not estimable: G_emb 95% CI includes 0
-- Ladder (pooled h{1,4}): L3 0.0384, L4 0.0387, L3+C* 0.0387, L4+C* 0.0388. Best = L3. 80% coverage 0.98–0.98 overall, 0.25–0.26 on non-zero targets.
-- G_excess by stratum (pooled h{1,4}): observed -0.00% [-1.18, +1.18]; zero_filled -2.50% [-15.54, +10.54]; outbreak -0.15% [-0.71, +0.41]
+- Ladder (pooled h{1,4}, 113,430 common rows): L3 0.0398, L4 0.0402, L3+C* 0.0401, L4+C* 0.0403. Best = L3. 80% coverage 0.98–0.98 overall, 0.24–0.25 on non-zero targets.
 
-## 3. Secondary comparisons (T6a)
+## 4. Sensitivity cells (T6a)
 
 | variant | vs | estimand | variant % [95% CI] | class | primary % | primary class |
 |---|---|---|---|---|---|---|
-| BR_S1_3seeds | BR_S1 | G_emb | +0.29 [-0.35, +0.93] | equivalent | +0.29 | equivalent |
-| BR_S1_3seeds | BR_S1 | G_id | +0.01 [-0.15, +0.17] | equivalent | +0.01 | equivalent |
-| BR_S1_3seeds | BR_S1 | G_excess | +0.26 [-0.38, +0.90] | equivalent | +0.26 | equivalent |
-| BR_S1_yref | BR_S1 | G_emb | pending | pending | +0.29 | equivalent |
-| BR_S1_delay2 | BR_S1 | G_emb | pending | pending | +0.29 | equivalent |
-| BR_S1_ctrlC3 | BR_S1 | G_emb | pending | pending | +0.29 | equivalent |
-| BR_S1_ctrlC3 | BR_S1 | G_id | pending | pending | +0.01 | equivalent |
-| BR_S1_ctrlC3 | BR_S1 | G_excess | pending | pending | +0.26 | equivalent |
-| BR_S1_ctrlC6 | BR_S1 | G_emb | pending | pending | +0.29 | equivalent |
-| BR_S1_ctrlC6 | BR_S1 | G_id | pending | pending | +0.01 | equivalent |
-| BR_S1_ctrlC6 | BR_S1 | G_excess | pending | pending | +0.26 | equivalent |
-| BR_S1_perlevel | BR_S1 | G_emb | +0.24 [-0.08, +0.55] | equivalent | +0.29 | equivalent |
-| BR_S1_perlevel | BR_S1 | G_id | -0.07 [-0.31, +0.18] | equivalent | +0.01 | equivalent |
-| BR_S1_perlevel | BR_S1 | G_excess | +0.26 [-0.10, +0.63] | equivalent | +0.26 | equivalent |
-| TW_S1_BRparams | TW_S1 | G_emb | -0.86 [-1.77, +0.04] | inconclusive | -0.93 | inferior |
-| TW_S1_BRparams | TW_S1 | G_id | -0.76 [-1.73, +0.21] | inconclusive | -0.65 | inconclusive |
-| TW_S1_BRparams | TW_S1 | G_excess | -0.27 [-0.91, +0.37] | equivalent | -0.39 | equivalent |
+| BR_S1_3seeds | BR_S1 | G_emb | +0.26 [-0.31, +0.82] | equivalent | +0.26 | equivalent |
+| BR_S1_3seeds | BR_S1 | G_id | +0.03 [-0.11, +0.18] | equivalent | +0.03 | equivalent |
+| BR_S1_3seeds | BR_S1 | G_excess | +0.23 [-0.33, +0.79] | equivalent | +0.23 | equivalent |
+| BR_S1_yref | BR_S1 | G_emb | pending | pending | +0.26 | equivalent |
+| BR_S1_delay2 | BR_S1 | G_emb | pending | pending | +0.26 | equivalent |
+| BR_S1_ctrlC3 | BR_S1 | G_emb | pending | pending | +0.26 | equivalent |
+| BR_S1_ctrlC3 | BR_S1 | G_id | pending | pending | +0.03 | equivalent |
+| BR_S1_ctrlC3 | BR_S1 | G_excess | pending | pending | +0.23 | equivalent |
+| BR_S1_ctrlC6 | BR_S1 | G_emb | pending | pending | +0.26 | equivalent |
+| BR_S1_ctrlC6 | BR_S1 | G_id | pending | pending | +0.03 | equivalent |
+| BR_S1_ctrlC6 | BR_S1 | G_excess | pending | pending | +0.23 | equivalent |
+| BR_S1_perlevel | BR_S1 | G_emb | +0.21 [-0.05, +0.47] | equivalent | +0.26 | equivalent |
+| BR_S1_perlevel | BR_S1 | G_id | -0.06 [-0.30, +0.18] | equivalent | +0.03 | equivalent |
+| BR_S1_perlevel | BR_S1 | G_excess | +0.25 [-0.07, +0.56] | equivalent | +0.23 | equivalent |
+| TW_S1_BRparams | TW_S1 | G_emb | -0.87 [-1.78, +0.03] | inconclusive | -1.06 | inferior |
+| TW_S1_BRparams | TW_S1 | G_id | -0.71 [-1.67, +0.26] | inconclusive | -0.63 | inconclusive |
+| TW_S1_BRparams | TW_S1 | G_excess | -0.33 [-0.89, +0.23] | equivalent | -0.60 | inferior |
+| TW_S1_no2021 | TW_S1 | G_emb | -0.94 [-1.85, -0.03] | inferior | -1.06 | inferior |
+| TW_S1_no2021 | TW_S1 | G_id | -0.63 [-1.69, +0.44] | inconclusive | -0.63 | inconclusive |
+| TW_S1_no2021 | TW_S1 | G_excess | -0.44 [-1.01, +0.14] | equivalent | -0.60 | inferior |
+| TW_S5_no2021 | TW_S5 | G_emb | -14.68 [-20.24, -9.11] | inferior | -14.68 | inferior |
+| TW_S5_no2021 | TW_S5 | G_id | -2.31 [-5.52, +0.90] | inconclusive | -2.31 | inconclusive |
+| TW_S5_no2021 | TW_S5 | G_excess | -11.16 [-15.66, -6.65] | inferior | -11.16 | inferior |
+| BR_S1_nohist | BR_S1 | G_emb | pending | pending | +0.26 | equivalent |
+| BR_S1_nohist | BR_S1 | G_id | pending | pending | +0.03 | equivalent |
+| BR_S1_nohist | BR_S1 | G_excess | pending | pending | +0.23 | equivalent |
+| BR_S2_nohist | BR_S2 | G_emb | pending | pending | -0.02 | equivalent |
+| BR_S2_nohist | BR_S2 | G_id | pending | pending | -0.05 | equivalent |
+| BR_S2_nohist | BR_S2 | G_excess | pending | pending | -0.00 | equivalent |
 
-Both columns pool the primary horizons h{1,4}. Variants scored on h1/h4 only (controls panel, extra seeds) are therefore on the same horizons as the primary.
+Both columns pool the primary horizons h{1,4} on origin-year rows.
 
-## 4. Where everything is
+## 5. Where everything is
 
 Tables (`docs/results/tables/`, each as .csv and a LaTeX booktabs fragment .tex):
 
-- `T1_primary_family` — 14 primary cells: G_excess pooled over h{1,4}, % of WIS(L3), 95%/90% CI, DM p, Holm p (available cells, primary values only), p_bonf14, TOST class, MDE; `sec_*` = S1 secondary pooling over h1-4.
-- `T2_ladder` (+ `T2_ladder_long.csv`) — L0–L4, L3+C*, L4+C* per cell: WIS per horizon and pooled; 40/80% coverage, overall and on non-zero targets.
+- `T1_primary_family` — the 14 family cells: absolute WIS of L3/L4/L3+C*/L4+C*, G_emb, G_id, G_excess (% of WIS(L3), 95%/90% CI), DM p, Holm p, p_bonf14, unadjusted TOST class and the Holm-adjusted TOST class, plain label, loss_or_gain, EWC B=4 p/CI (+Holm), IAAFT p (+Holm), delta-method CI, case-scale G_excess, all-rows G_excess, S1 secondary pooling (`sec_*`).
+- `T1b_margin_sensitivity` — TOST at ±0.5/1/2% (unadjusted, Holm), near-margin flags, labels.
+- `T2_ladder` (+ `T2_ladder_long.csv`) — ladder per cell and horizon, coverage.
 - `T3_estimands` — G_emb / G_id / G_excess / ID share per cell × horizon and per test year (CSV).
-- `T4_cstar_selection` — every control candidate at the 2019 origin, mean ± SD over seeds, chosen C*.
-- `T5_strata` — estimands for observed vs zero-filled targets and outbreak vs non-outbreak weeks, pooled and per year (CSV).
-- `T6a_sensitivities` — extra seeds, yearly_ref: origin, report delay 2, controls panel C3/C6, per-level tuning, TW with BR params; `T6b_nohist_estimands`, `T6c_nohist_ladder` — no-history arm.
+- `T4_cstar_selection` — control candidates at the 2019 origin and the chosen C*.
+- `T5_strata` — three target types (cases > 0 / recorded zero / zero-filled): stratum estimates and additive contributions (G_emb, G_id, G_excess in the CSV).
+- `T6a_sensitivities` (incl. TW without 2021), `T6b_nohist_estimands`, `T6c_nohist_ladder`.
+- Supporting: `S1_baselines`, `S2_control_panel`, `S3_outbreak`, `S4_weighted`, `S5_recalibration`, `S6_q90_mechanism`, `S7_embedding_distance` (+ `S7b_..._bins.csv`), `S8_per_year` (with context flags).
+
+Made: T1: T1_primary_family, T1b_margin_sensitivity; T2: T2_ladder; T3: T3_estimands; T4: T4_cstar_selection; T5: T5_strata; T6: T6a_sensitivities, T6b_nohist_estimands, T6c_nohist_ladder; S1: S1_baselines; S2: S2_control_panel (pending: control panel file not found); S3: S3_outbreak; S4: S4_weighted; S5: S5_recalibration; S6: S6_q90_mechanism; S7: S7_embedding_distance; S8: S8_per_year
 
 Figures (`docs/results/figures/`, PDF + PNG):
 
-- `F1_forest_G_excess` — forest plot of G_excess pooled over h{1,4} (% of WIS(L3)), 95% and 90% CI, ±1% band; all cells
-- `F2_ladder_S1` — S1 ladder per country
-- `F3_per_year_gains` — per-test-year G_emb and G_excess pooled over h{1,4}, S1 cells
-- `F4` — no-history arm ladder (**pending: no data yet**)
+- `F1_forest_G_excess` — forest plot of G_excess per family cell (pooled h{1,4}, % of WIS(L3), 95%/90% CI, ±1% band); Taiwan S5 in its own panel
+- `F2_strata_contributions` — three target types: additive contributions to G_excess per cell
+- `F3_s5_embedding_distance` — held-out country (S5): AlphaEarth similarity to the training districts vs district gain
+- `F4_per_year_gains` — G_excess per test year and cell
+- `FS1_ladder_S1` — ladder per country, S1
+- `FS2` — no-history arm ladder (**pending: no data yet**)
 
-Per-cell intermediate results: `runs/analysis_cache/<cell>/` (est.parquet, ladder.parquet, info.json with row counts, exclusions and seeds).
+Per-cell intermediate results: `runs/analysis_cache/<cell>/` (est.parquet, ladder.parquet, extras/*.parquet, info.json with row counts, filter, exclusions and seeds).
 
-## 5. Compute status (scheduler snapshot)
+## 6. Compute status (scheduler snapshot)
 
 ```
-snapshot 2026-11-18 00:03:48 (10 s old); budget 56 threads (others 288% CPU (incl. own non-pipeline jobs)) = 14 workers; held 14; free 0
+snapshot 2026-11-18 02:13:58 (7 s old); budget 44 threads (others 1587% CPU (incl. own non-pipeline jobs)) = 11 workers; held 12; free -1
   T1 brazil_s1_shared             done                                     -                                  held  0 unclaimed   0
   T1 peru_s1_shared               done                                     -                                  held  0 unclaimed   0
   T1 taiwan_s1_shared             done                                     -                                  held  0 unclaimed   0
@@ -266,12 +340,12 @@ snapshot 2026-11-18 00:03:48 (10 s old); budget 56 threads (others 288% CPU (inc
   T2 colombia_s4                  done                                     -                                  held  0 unclaimed   0
   T2 brazil_s2                    done                                     -                                  held  0 unclaimed   0
   T2 brazil_s3                    done                                     -                                  held  0 unclaimed   0
-  T3 brazil_s1_nohist             running                                  brazil_s1_nohist_controls_2019     held  1 unclaimed   0
-  T3 brazil_s2_nohist             running                                  brazil_s2_nohist_controls_2019     held 12 unclaimed  97
+  T3 brazil_s1_nohist             running                                  brazil_s1_nohist_N3                held  5 unclaimed   0
+  T3 brazil_s2_nohist             running                                  brazil_s2_nohist_N3                held  3 unclaimed  47
   T4 brazil_s1_sens_yref          running                                  brazil_s1_sens_yref_L3             held  0 unclaimed  10
   T4 brazil_s1_sens_delay         running                                  brazil_s1_sens_delay2_L3           held  0 unclaimed  10
   T4 brazil_s1_sens_ctrl          running                                  brazil_s1_sens_ctrl_L3_C3          held  0 unclaimed  10
   T4 taiwan_s1_l2shared           running                                  taiwan_s1_shared_L2                held  0 unclaimed  16
   T5 brazil_s4                    running                                  brazil_s4_controls_2019            held  0 unclaimed 130
-  other run_experiment configs (counted in the budget): {'configs/taiwan_s1_tw2021_L4.yaml': 1}
+  other run_experiment configs (counted in the budget): {'configs/colombia_s1_panel_L4_C2.yaml': 2, 'configs/taiwan_s5_tw2021_L4_Cstar.yaml': 2}
 ```

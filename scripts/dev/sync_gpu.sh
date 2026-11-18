@@ -9,7 +9,8 @@ REMOTE="spant@epyc2.knoxds.org:/net/home/spant/0-100/group-research/place-or-pla
 LOCAL="$(cd "$(dirname "$0")/../.." && pwd)/"
 SSH="ssh -o BatchMode=yes -J jumper@math.knox.edu"
 FILTER=(--update --exclude=.git/ --exclude=.venv/ --exclude=.tools/ --exclude=.cache/ --exclude=/tmp/
-        --exclude=/data/ --exclude=/outputs/ --exclude=/runs/ --exclude=__pycache__/ --exclude=.DS_Store --exclude=._* --exclude=.pytest_cache/ --exclude=*.egg-info/)
+        --exclude=/data/ --exclude=/outputs/ --exclude=/runs/ --exclude=__pycache__/ --exclude=.DS_Store --exclude=._* --exclude=.pytest_cache/ --exclude=*.egg-info/
+        --exclude=/docs/results/review/cells/ --exclude=/docs/results/review/*_cells/ --exclude=/docs/results/review/*.parquet --exclude=/docs/results/review/RB_distance_unit*.csv)
 case "${1:-}" in
   pull) rsync -av "${FILTER[@]}" -e "$SSH" "$REMOTE" "$LOCAL" ;;
   push) rsync -av "${FILTER[@]}" -e "$SSH" "$LOCAL" "$REMOTE" ;;

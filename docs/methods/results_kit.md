@@ -1,107 +1,138 @@
-# Results kit (`scripts/analysis/make_results.py`)
+# Results kit (`scripts/analysis/make_results.py`), v3
 
 One command regenerates every paper table, figure and the writers' brief from whatever runs are
 finished. It is idempotent and cached, so re-running it after more compute finishes only computes
-the new cells.
+the new or changed cells. Version 3 (2026-11-18) folds in the post-review decisions (deviation rows
+24–33); what changed and the before/after numbers are in `docs/results/review/KIT3_changes.md`.
 
 ## How to run
 
 ```bash
 cd /net/home/spant/0-100/group-research/place-or-placeholder && source env.sh
-nice -n 19 python scripts/analysis/make_results.py            # everything, cached
-nice -n 19 python scripts/analysis/make_results.py --force    # ignore the cache
+export OMP_NUM_THREADS=4
+nice -n 19 python scripts/analysis/make_results.py                 # everything, cached
+nice -n 19 python scripts/analysis/make_results.py --force         # ignore the cache
 nice -n 19 python scripts/analysis/make_results.py --only BR_S1 --force   # recompute one cell
-nice -n 19 python scripts/analysis/make_results.py --n-boot 2000          # add the 52-week bootstrap
+nice -n 19 python scripts/analysis/make_results.py --extras none   # fast: no forecast-reading analyses
+nice -n 19 python scripts/analysis/make_results.py --n-boot 2000   # add the 52-week bootstrap
 ```
 
-Log of the last full run: `runs/analysis_cache/make_results.log`. Test: `pytest tests/test_make_results.py`
-(synthetic runs, ~25 s).
+Long runs go in tmux (`pop_kit3`). Log of the last full run: `runs/kit3_full.log`. Tests:
+`pytest tests/test_make_results.py` (synthetic runs, ~40 s).
 
-Run time: a cached cell takes about 1 s. A new Brazil S1 cell (5.8M rows per role) takes several
-minutes. Peru and Taiwan take seconds. The default is `OMP_NUM_THREADS=2`.
+**Isolation.** Each cell that needs computing runs in its own worker process
+(`make_results.py --worker CELL`, internal), so memory goes back to the OS after every cell and
+only one cell is in memory at a time. `--in-process` turns this off (tests, debugging).
+
+**Run time.** A cached cell takes about 1 s. With `--extras all`, a Brazil cell takes tens of minutes
+(the recalibration, q0.9 and distance analyses read the forecast files); Peru and Taiwan take a few
+minutes. BR S4 and the no-history cells are picked up automatically, with the same filters, the
+next time the script runs after their runs finish.
+
+## Options
+
+| Option | Meaning |
+|---|---|
+| `--extras none` | estimand table, ladder, all-rows sensitivity, EWC B=4, delta-method CI, three strata |
+| `--extras cheap` | + IAAFT-calibrated p (`--iaaft-reps`, default 2000), case scale, weighting, outbreak, per year, S1 baselines |
+| `--extras all` (default) | + causal recalibration, q0.9 mechanism on zero rows, embedding distance (S2–S5) |
+| `--exclusions v2` (default) / `v1` | scoring exclusions: v2 = v1 + unit-week exclusions (Espírito Santo, IBGE `^32\d{5}$`, target weeks ≥ 2019-12-29; row 34); with v2 the v1 result is also stored per cell (`exclv1_*` in T1, `strata3_excl_v1`) |
+| `--control-panel PATH` | fixed control panel CSV (default `docs/results/review/RE_control_panel.csv`; pending if absent) |
+
+The heavier analyses run on primary cells only; secondary cells get the estimand table, ladder and
+the cheap robustness columns.
 
 ## Cells
 
-The cells are defined in `scripts/analysis/rk_cells.py` (`build_registry`).
+Defined in `scripts/analysis/rk_cells.py` (`build_registry`) from `configs/primary_cells.yaml`.
 
-**Primary cells (14).** These come from `configs/primary_cells.yaml`. When a run's `plan.json` marks a stage `reuse:<dir>`, that directory is used for the role.
+**Primary family (14 cells).** BR S1–S5, CO S1–S5, PE S1, PE S5, TW S1, TW S5; every manifest cell
+carries `family: primary` (Taiwan S1 included; deviation row 25). `family_size: 14` sets the
+Holm family size. When a run's `plan.json` marks a stage `reuse:<dir>`, that directory is used.
 
-**C\*.** A cell's C\* is read only from `<prefix>_controls_2019/selection.json` (prefix = the first L3 run dir minus `_L3`), and only when that file has `rule_version: 2` (the rule of `scripts/run/select_control.py`). A missing file, an older rule (e.g. a pre-fix `runs/brazil_s5_controls_2019/selection.json` saying C4) or a `c_star` in `plan.json` is never used: the cell then shows **"selection pending (stale)"** in T1, T2, the brief and T4. Sensitivity cells with no C\* run (`BR_S1_yref`, `BR_S1_delay2`) show "n/a (no C\* run)".
+**Row filter (row 24).** Manifest `row_filter: origin_year`: every estimate, ladder and supporting
+table uses only rows whose forecast origin (target week − h) lies in the target's epi-year
+(epi-year = calendar year of the week's Wednesday). The filter is applied inside the kit, after
+`load_cell`, identically for all four roles; library defaults (`load_cell`, `infer_estimand`,
+`ewc_inference`) are unchanged. G_excess on all rows is kept as the `unfiltered_*` columns of T1.
 
-**Secondary cells:**
+**Extra test years (row 25).** A manifest cell may list `add_test_years: {years, runs}`. When all
+four of those runs are complete they are appended to the cell's roles; otherwise the cell uses its
+base runs and is flagged "<years> pending (base test years only)" in T1, F1 and the brief. The
+base-runs-only set is always registered as a sensitivity cell `<id>_no<years>`
+(`TW_S1_no2021`, `TW_S5_no2021`), shown in T6a.
 
-| Cell | What it is |
-|---|---|
-| `BR_S1_3seeds` | Primary runs plus `brazil_s1_sens_seed{1,2}_*`, averaged over seeds. The extra seeds cover h1 and h4 only. |
-| `BR_S1_yref`, `BR_S1_delay2` | Sensitivity runs for `yearly_ref: origin` and `report_delay: 2`. Only G_emb is reported, because these runs have no C\* run. |
-| `BR_S1_ctrlC3`, `BR_S1_ctrlC6` | Controls panel: the control is used in place of C\* on the test years. |
-| `BR_S1_perlevel` | The old per-level-tuned runs `brazil_s1_{L3,L4,L3_Cstar,L4_Cstar}`. |
-| `TW_S1_BRparams` | `taiwan_s1brp_*`, i.e. Taiwan run with Brazil's params and C\*. |
-| `BR_S1_nohist`, `BR_S2_nohist` | No-history arm: N3, N4, N3+C\*, N4+C\*, with reference N3. The ladder adds N3+C1 and N4+C1, and N2 if that run exists. |
+**C\*.** Read only from `<prefix>_controls_2019/selection.json` with `rule_version: 2`; otherwise
+"selection pending (stale)".
 
-**Completeness.** A role is complete only when all three conditions hold:
-- `scores.parquet` exists;
-- no chunk file is newer than `scores.parquet`;
-- its pipeline stage marker (`runs/<pipeline>/stage_<stage>.done`) exists, whenever the pipeline directory exists.
+**Secondary cells:** `BR_S1_3seeds` (duplicate of BR_S1 since row 22), `BR_S1_yref`,
+`BR_S1_delay2` (G_emb only), `BR_S1_ctrlC3`, `BR_S1_ctrlC6`, `BR_S1_perlevel`, `TW_S1_BRparams`,
+`TW_*_no2021`, `BR_S1_nohist`, `BR_S2_nohist`.
 
-A cell is computed only when all four of its roles are complete. Otherwise it shows as **pending**, with the reason for each role. Partial runs are never read.
+**Completeness.** A role is complete only when `scores.parquet` exists, no chunk file is newer and
+its stage marker exists (when the pipeline dir exists). Pending cells are never read.
 
-## Horizons
+## Horizons and seeds
 
-Every **primary pooled** estimate pools only the manifest's `primary_horizons` (h{1,4}, deviation row 21), in every cell. This applies to the rows labelled `horizon = "pooled"` of T1, T3, T5 and T6, the per-test-year and strata rows, the ladder's pooled column (T2, F2), and F1/F3. These are the same rows and the same estimator as `scripts/run/primary_family.py`, so T1 matches its `estimate`, `lo95`/`hi95` and `p` exactly (checked on PE S1 and TW S1: differences 0).
+Primary pooled estimates pool `primary_horizons` = h{1,4} in every cell (row 21). S1 cells
+(`secondary_pooling: true`, old key `secondary`) also get a secondary h1–h4 pooled row, computed
+only on test years scored at all four horizons (so Taiwan 2021, scored at h1/h4 only, is left out
+of it). Seeds: `seed_gain_frame(seed_policy="common")` as before.
 
-For S1 cells (manifest `secondary: true`; secondary-arm S1 cells too), the kit also emits the **secondary** pooling over `secondary_horizons` (h1–h4) as `horizon = "pooled_h1-4"` (overall only, not per year or stratum). In T1 this is in the `sec_*` columns and in the last LaTeX column. It is never in the Holm family. The secondary row is emitted only when the cell actually has more horizons than the primary set (cells scored on h1/h4 only get none).
+## Computation (all reused, nothing re-implemented)
 
-Per-horizon rows (`horizon = "1"`, …) are unchanged. Every estimand row has a `pooled_over` column listing its horizons. With a JSON `--registry` (tests), the horizons come from `configs/primary_cells.yaml` when present, else h{1,4} and h1–h4.
+- Rows: `scripts/run/estimands_report.load_cell` (v2 unit and incomplete-week files), then the unit-week exclusions of `exclusions_v2/unit_week_exclusions.csv` (kit-side, all four roles), then the row filter. Build v2 once with `python scripts/analysis/build_exclusions_v2.py`.
+- Estimands: `pop.eval.estimands.compute_estimands_v2` / `infer_estimand` (DM/EWC + HLN, TOST 1%, MDE).
+- Three strata and additive contributions: `review_explore.week_contributions` (exact identity;
+  the residual is stored and tested to be 0).
+- EWC B=4: the `ewc_hln_B4` construction of `inference_size_sim.run_methods` (tested equal).
+- IAAFT-calibrated p: `inference_size_sim.IAAFT` surrogates of the cell's own weekly G_excess
+  series, p = (1 + #|t*| ≥ |t|) / (1 + R), seed fixed per cell.
+- Delta-method CI: `review_sens.delta_ratio_ci`; plain labels: `review_sens.equivalence_label`.
+- Case scale: `load_cell` with `wis_case` served through `review_sens.patched_reader`.
+- Weighting, outbreak, per year, baselines, recalibration, q0.9 mechanism:
+  `review_more.run_*`; embedding distance: `review_explore.run_distance` / `distance_summaries`.
 
-**Seeds.** Rows come from `load_cell`, which uses `seed_gain_frame(seed_policy="common")`: each estimand uses, per row, only the seeds both of its roles have. If the two roles of an estimand have different seed sets at a primary horizon, the kit records it in `info.json` (`seed_set_mismatch_primary`) and in the brief; unlike `primary_family.py` it does not stop. Holm (T1) runs over the primary pooled DM p-values of the available primary cells only.
-
-## Computation
-
-The kit reuses the existing code and does not reimplement any statistics. It calls:
-- `scripts/run/estimands_report.load_cell` for the rows, the default exclusions (no-geometry units and the primary incomplete weeks), the strata flags and the seeds;
-- `pop.eval.estimands.compute_estimands_v2` for DM/EWC + HLN, the 95% and 90% t-CIs, TOST at 1% of WIS(L3), the MDE, the seed SD and the ID-share gate;
-- `pop.eval.stats.holm` for the primary family.
-
-The ladder is the seed-averaged mean of log1p WIS and the 40/80% coverage. It uses only the keys that every rung scores within the cell's estimand rows.
-
-**Cache.** Results go to `runs/analysis_cache/<cell>/{est,ladder}.parquet` and `info.json`. The cache key covers:
-- the size and mtime of every `scores.parquet` used;
-- the exclusion files;
-- the options and the cell's primary/secondary horizons (and `KIT_VERSION`, now 2).
+**Cache.** `runs/analysis_cache/<cell>/{est,ladder}.parquet`, `extras/*.parquet`, `info.json`
+(rows before/after the filter, % dropped per horizon, seeds, exclusions, extras errors). The key
+covers every `scores.parquet` used, the exclusion files, the options (row filter, extras level,
+IAAFT reps), C\*, flags, horizons and `KIT_VERSION` (3).
 
 ## Outputs
 
-**Tables.** These are written to `docs/results/tables/`, each as CSV plus a LaTeX booktabs `tabular` fragment that can be `\input`.
+Tables in `docs/results/tables/` (CSV + LaTeX booktabs fragment):
 
 | File | Contents |
 |---|---|
-| `T1_primary_family` | The 14 cells, with: G_excess (pooled over h{1,4}); % of WIS(L3); 95% and 90% CIs (absolute and %); DM p; Holm p over the available cells (provisional while cells are pending); `p_bonf14`; TOST p and class; MDE; seeds and seed SD; `sec_*` = S1 secondary pooling over h1–h4. |
-| `T2_ladder` (+ `T2_ladder_long.csv`) | WIS for L0–L4, L3+C\* and L4+C\*, per horizon, pooled over h{1,4}, and (S1) pooled over h1–h4 as a secondary column. Coverage at 40/80%, both overall and on rows with cases > 0. L0–L2 appear for S1 cells only. |
-| `T3_estimands` | G_emb, G_id, G_excess and the ID share, per cell × horizon (`1`…`4`, `pooled` = h{1,4}, `pooled_h1-4` = S1 secondary) and per test year (primary horizons). |
-| `T4_cstar_selection` | All candidates at the 2019 origin, as mean ± SD over seeds, with the selected C\*. Selections without `rule_version: 2` are listed as "selection pending (stale)". |
-| `T5_strata` | Observed vs zero-filled targets, and outbreak vs non-outbreak weeks. Given pooled, and per year in the CSV. |
-| `T6a_sensitivities` | Each variant vs its primary cell. |
-| `T6b_nohist_estimands`, `T6c_nohist_ladder` | No-history arm. |
+| `T1_primary_family` | Per family cell: absolute week-mean WIS of L3, L4, L3+C\*, L4+C\*; G_emb, G_id, G_excess (% of WIS(L3), 95/90% CI, p); DM p; Holm p over the available cells (`n_family_available`, `family_complete`); `p_bonf14`; unadjusted TOST class and the Holm-adjusted TOST p/class; `plain_label`; `loss_or_gain` (rule below); EWC B=4 p, CI and Holm p; IAAFT p and Holm p; delta-method CI; case-scale G_excess; all-rows G_excess; S1 `sec_*`; `flags`; `T_weeks` (integer; the v2 file held a pandas repr). |
+| `T1b_margin_sensitivity` | TOST at ±0.5/1/2%: unadjusted and Holm-adjusted p, within flags, near-margin flag, label. |
+| `T2_ladder` | Ladder per cell and horizon, coverage (origin-year rows common to every rung). |
+| `T3_estimands` | All estimands per cell × horizon and per test year. |
+| `T4_cstar_selection` | 2019-origin candidates and the chosen C\*. |
+| `T5_strata` | Three target types (cases > 0 / zero listed by the source / zero filled): stratum estimate (% of the stratum's WIS(L3)) and additive contribution (% of the cell's WIS(L3)), per estimand; contributions sum to the total. |
+| `T6a_sensitivities`, `T6b_nohist_estimands`, `T6c_nohist_ladder` | Sensitivity cells and the no-history arm. |
+| `S1_baselines` … `S8_per_year` | Supporting: baselines (relative WIS vs seasonal naive), fixed control panel (read from file), outbreak weeks, weighting, causal recalibration, q0.9 mechanism, embedding distance (Spearman; bins in `S7b_*.csv`), per year with context flags. |
 
-**Figures.** These are written to `docs/results/figures/` as PDF + PNG, using the Okabe–Ito colour-blind-safe palette.
+Figures in `docs/results/figures/` (PDF + PNG, Okabe–Ito palette, plain labels):
 
 | Figure | Contents |
 |---|---|
-| F1 | Forest plot of G_excess (pooled over h{1,4}) as % of WIS(L3), with 95% (thin) and 90% (thick) CIs and the ±1% band. Primary cells are blue, secondary cells grey, and pending cells are labelled. |
-| F2 | S1 ladder per country. L0 is given in the panel title because its scale differs. When BR S1 is pending, the panel shows `BR_S1_perlevel`. |
-| F3 | G_emb and G_excess per test year (pooled over h{1,4}) for the S1 cells. |
-| F4 | No-history ladder. |
+| F1 `F1_forest_G_excess` | G_excess per family cell, 95% and 90% CI, ±1% band; filled dot = Holm-adjusted p < .05; Taiwan S5 in its own panel (own scale). |
+| F2 `F2_strata_contributions` | Additive contribution of each target type to G_excess, per cell, one panel per country; diamond = total. |
+| F3 `F3_s5_embedding_distance` | Held-out country: district similarity to training districts vs district G_excess, quintile means with 95% CI. |
+| F4 `F4_per_year_gains` | G_excess per test year, one panel per country, splits by colour. |
+| FS1, FS2 | S1 ladder per country; no-history ladder. |
 
-**Brief.** `docs/results/RESULTS_BRIEF.md` contains:
-- the status of every cell;
-- the headline numbers for each available cell, each with a one-line plain-language reading;
-- the secondary comparisons;
-- pointers to all outputs;
-- a scheduler snapshot.
+**Brief.** `docs/results/RESULTS_BRIEF.md`: scored-row rule, Taiwan rule, loss-counting rule, the
+headline T1 table, cell status, per-cell detail, sensitivities, file pointers, scheduler snapshot.
 
 ## Conventions
 
-- **Gains.** A gain is positive when the second model has lower WIS. Percentages are of WIS(L3), or WIS(N3) in the no-history arm.
-- **TOST classes.** *equivalent* means the 90% CI lies inside ±1%. *superior* and *inferior* mean the 95% CI excludes 0 and p < .05. *inconclusive* covers everything else.
-- **Bootstrap.** The 52-week state-block bootstrap is a sensitivity analysis and is off by default.
+- A gain is positive when the second model has lower WIS; % of WIS(L3) (WIS(N3) no-history).
+- **Unadjusted class** (`TOST_class`): equivalent = 90% CI inside ±1%; superior/inferior = 95% CI
+  excludes 0 and p < .05; else inconclusive. **Holm class** (`TOST_class_Holm`): equivalent =
+  Holm-adjusted TOST p < .05; else inferior/superior = Holm-adjusted DM p < .05; else inconclusive.
+- **Loss-counting rule:** a loss (gain) = G_excess < 0 (> 0) with Holm-adjusted DM p < .05; "small"
+  if the estimate is inside ±1%; nominal p < .05 alone is "nominal only", never counted.
+- `scripts/run/primary_family.py` reads the same manifest but not `row_filter` / `add_test_years`;
+  it reproduces only the v2 (pre-review) numbers.

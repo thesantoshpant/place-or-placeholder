@@ -1,0 +1,58 @@
+# Taiwan S1 fixed control panel (review RE Comment 2): L4+C3 (seed 0)
+# Derived from configs/taiwan_s1_shared_L4_Cstar.yaml; shared L1 params; horizons 1, 4; 4 threads.
+exp_name: taiwan_s1_panel_L4_C3
+country: TAIWAN
+panel: data/processed/panel_weekly_v1.parquet
+split:
+  name: S1
+  folds: all
+test_years:
+- 2020
+- 2022
+- 2023
+- 2024
+tune_year: 2019
+horizons:
+- 1
+- 4
+quantiles:
+- 0.1
+- 0.2
+- 0.3
+- 0.4
+- 0.5
+- 0.6
+- 0.7
+- 0.8
+- 0.9
+coverage_levels:
+- 0.4
+- 0.8
+exclude_flag_gap: true
+seeds:
+- 0
+threads: 4
+features:
+  climate_lag_vars:
+  - tmean
+  - precip
+  - rh
+  yearly_ref: target
+  remote_sensing:
+    lst_screen: true
+  alphaearth:
+    weights: w
+    normalize: true
+  control_kw:
+    C1:
+      c1_period: auto
+    C4:
+      range_km: 27.12
+    C4s:
+      range_km: 27.12
+runs:
+- model: lgbm
+  level: L4+C3
+  name: lgbm-L4+C3
+  seeded: true
+  params_from: runs/taiwan_s1_baselines/tuning_lgbm-L1.json

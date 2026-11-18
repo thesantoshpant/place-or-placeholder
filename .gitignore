@@ -29,3 +29,9 @@ __pycache__/
 ._*
 .pytest_cache/
 *.egg-info/
+
+# large per-cell review outputs stay on the GPU
+/docs/results/review/cells/
+/docs/results/review/*_cells/
+/docs/results/review/*.parquet
+/docs/results/review/RB_distance_unit*.csv
