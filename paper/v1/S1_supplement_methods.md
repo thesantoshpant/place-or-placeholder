@@ -4,7 +4,7 @@ Contents: A. Data sources, processing and verification. B. Features and controls
 
 Automated AI agents (see Use of AI tools) wrote the code and ran the downloads, the verification scripts, the Earth Engine extractions, the model runs, the scoring, the statistical analyses and the internal audits described in this supplement. Where a check is called separate or independent below, it was written and run by a different automated AI agent from the one that produced the checked output, not by a person.
 
-Split codes used in this supplement: S1, new years; S2, held-out states; S3, held-out regions (buffered blocks); S4, held-out districts (random); S5, held-out country. Model codes: L0 to L4 for the ladder (L3 is the reference model), C\* for the selected location control and C1 to C6 for the controls (Table S7). Tables S17 to S42 and Figures S1 to S3 are in the Supplementary Results.
+Split codes used in this supplement: S1, new years; S2, held-out states; S3, held-out regions (compact blocks of districts with a buffer); S4, held-out districts (assigned at random); S5, held-out country. Model codes: L0 to L4 for the ladder (L3 is the reference model), C\* for the selected location control and C1 to C6 for the controls (Table S7). Gains: the embedding gain (L3 to L4), the control gain (L3 to L3 + C\*; called the identity gain in earlier drafts and `G_id` in the code and result files) and the excess gain (L3 + C\* to L4 + C\*). Tables S17 to S55 and Figures S1 to S4 are in the Supplementary Results.
 
 ---
 
@@ -49,6 +49,8 @@ Rows with weekly time resolution and Admin2 spatial resolution were taken from t
 | Taiwan | 287 | 1,409 | 404,383 | 7,673 | 0% | 98.1% |
 
 District counts are districts that ever reported a case, not administrative totals: Peru's 115 of about 196 provinces and Taiwan's 287 of about 368 townships (those that ever had a locally acquired case). <!-- src: docs/data/zero_fill_crosscheck.md (287 of ~368 townships); docs/data/completeness_v1.md "Peru zero-fill check" (~115 of ~196 provinces ever report) -->
+
+Three district counts appear in the paper. The panel has 6,990 districts (Table S2). Of these, 6,987 have a boundary polygon (Table S3; one Colombian and two Taiwanese districts have none). The scored count is 6,909: the 78 Espírito Santo municipalities have no scored row, because their exclusion (Section A6) covers every test year, so Brazil contributes 5,439, Colombia 1,070, Peru 115 and Taiwan 285. The headline count in the main text is the scored count, 6,909. <!-- src: Table S2 (5,517 + 1,071 + 115 + 287 = 6,990); Table S3 (5,517 + 1,070 + 115 + 285 = 6,987); S7_embedding_distance.csv n_units BR_S5 5,439, CO 1,070, PE 115, TW 285 (sum 6,909); docs/plans/deviations_from_protocol.md row 34 (78 ES municipalities) -->
 
 ### A3. Boundaries
 
@@ -125,7 +127,7 @@ OpenDengue V1.3.1 has no source data for Espírito Santo after 2020: Admin2 rows
 
 #### Rule
 
-Every district whose IBGE code matches `^32\d{5}$` is excluded from scoring for target weeks from 2019-12-29 (epidemiological year 2020) onward, in every Brazilian cell and for all models. This removes 38,766 primary rows per cell (1.41% of Brazilian primary rows) and moves every Brazilian excess gain by at most 0.03 percentage points. The exclusion does not depend on outcomes of other states: the source stopped reporting this state. Models were not refitted, so their 2020–2023 training targets still contain these false zeros (Espírito Santo is 1.9–4.5% of Brazil's zero-filled rows per year). <!-- src: docs/plans/deviations_from_protocol.md row 34; docs/results/review/KIT3_changes.md ES section; docs/data/zero_fill_crosscheck_2024.md ES table -->
+Every district whose IBGE code matches `^32\d{5}$` is excluded from scoring for target weeks from 2019-12-29 (epidemiological year 2020) onward, in every Brazilian cell and for all models. This removes 38,766 primary rows per cell (1.41% of the about 2.74 million Brazilian primary rows before this exclusion; 2,703,183 remain) and moves every Brazilian excess gain by at most 0.03 percentage points. The exclusion does not depend on outcomes of other states: the source stopped reporting this state. Models were not refitted, so their 2020–2023 training targets still contain these false zeros (Espírito Santo is 1.9–4.5% of Brazil's zero-filled rows per year). <!-- src: docs/plans/deviations_from_protocol.md row 34; docs/results/review/KIT3_changes.md ES section; docs/data/zero_fill_crosscheck_2024.md ES table -->
 
 ### A7. Covariates
 
@@ -151,7 +153,7 @@ ERA5-Land daily aggregates were summed or averaged to the panel's Sunday-start w
 - In a 10-municipality subset of the Brazilian pilot, 100 m was effectively exact against 10 m (mean cosine 0.99994), while naive 300 m resampling was not (0.993). Fetching blocks with `computePixels` and summing locally matched `reduceRegions` exactly at about 40% of its cost.
 - Image years extracted: Brazil 2017–2024, Colombia 2017–2021 and 2023, Peru and Taiwan 2017–2023. Target year y uses image year y − 1.
 - District means are not unit-length: the median population-weighted norm is 0.87–0.92 by country (range 0.70–0.98; Brazil median 0.92, range 0.74–0.98). Each mean is renormalised to unit length.
-- Fernando de Noronha (Brazil) has no AlphaEarth pixels in 2017–2021 upstream; its embedding inputs are missing for target years 2018–2022 and LightGBM routes them as missing.
+- Fernando de Noronha (Brazil) has no AlphaEarth pixels in 2017–2021 upstream; its embedding inputs are missing for target years 2018–2022 and LightGBM routes them as missing. The missing values are the same in every model that contains the embeddings (L4 and L4 + C\*), so they do not differ between the two sides of the excess gain.
 - Re-extracting one state-year with a different number of workers gave bitwise-identical sums.
 
 **Table S5. Independent recomputation of AlphaEarth district means.**
@@ -170,6 +172,46 @@ Note: The recomputation used a separate script, written and run by an automated 
 ### A8. Computation
 
 LightGBM 4.7.0 ran on CPU in deterministic mode with row-wise histograms; every pair of compared runs uses the same thread count, seed rule and version. On a checked booster, predictions were bit-identical across 2, 4, 8 and 16 threads. TimesFM ran on one GPU. <!-- src: docs/methods/compute_plan.md lines on determinism; docs/methods/timesfm.md -->
+
+#### Training and randomness
+
+Every booster is trained for a fixed 400 rounds; there is no early stopping and no validation set inside the test-year fits. The `seed` of a run sets LightGBM's random number generators, which act only through row subsampling (bagging fraction 0.8 at every iteration) and column subsampling (feature fraction 0.9), and it sets the random draws of the controls C3 (the source map of shuffled embeddings) and C4/C4s (the random fields). Nothing else in a run is random: the features, folds, test years and scoring are fixed. <!-- src: src/pop/models/lgbm.py lines 10-11, 21, 32 (num_boost_round 400, seed, no early stopping); src/pop/features/controls.py SEEDED_CONTROLS, _rng; docs/methods/round3_runs.md section S1 -->
+
+#### Size of each fit
+
+One fit is one booster for one quantile, horizon, test year and fold; each chunk fits 9 boosters (the median and the 8 other deciles) on the same training rows. Table S5b gives the range of training rows per fit for the full model L4 + C\* over test years and folds (the smallest at the first test year, 2020); the number of inputs is the same across models of a cell except for the embedding and control blocks (Table S6). The tuning and selection fits at the 2019 origin trained on the 2018 targets: Brazil 286,884 rows, Colombia 55,692, Peru 5,865 and Taiwan 14,924 (horizon 1). <!-- src: runs/<country>_s1_shared_controls_2019/chunks/lgbm__L3+C1__s0__2019__h1.done.json n_train -->
+
+**Table S5b. Training rows per fit for the full model (L4 + C\*), horizons 1 and 4.**
+
+<!-- src: runs/<run>/chunks/*.done.json n_train and n_features for test years >= 2020; run directories brazil_s1_shared_L4_Cstar, brazil_s2_L4_Cstar, brazil_s3_L4_Cstar, brazil_s5_L4_Cstar, colombia_s1_shared_L4_Cstar, colombia_s{2,3,4,5}_L4_Cstar, peru_s1_L4_Cstar, peru_s5_L4_Cstar, taiwan_s1_shared_L4_Cstar, taiwan_s5_L4_Cstar plus taiwan_s5_tw2021_L4_Cstar; brazil_s1_nohist_N4_Cstar -->
+
+| Cell | Training rows per fit (range over test years and folds) | Input columns |
+|---|---|---|
+| Brazil, new years | 573,768 – 1,726,821 | 151 |
+| Brazil, held-out states | 456,872 – 1,385,651 | 151 |
+| Brazil, held-out regions | 377,624 – 1,290,812 | 151 |
+| Brazil, held-out districts | [pending] <!-- PENDING: BR S4 --> | |
+| Brazil, held-out country | 153,077 – 405,242 | 214 |
+| Colombia, new years | 111,384 – 223,839 | 151 |
+| Colombia, held-out states | 89,024 – 179,113 | 151 |
+| Colombia, held-out regions | 54,912 – 216,942 | 151 |
+| Colombia, held-out districts | 89,024 – 179,113 | 151 |
+| Colombia, held-out country | 615,461 – 1,236,956 | 232 |
+| Peru, new years | 11,845 – 29,900 | 151 |
+| Peru, held-out country | 715,000 – 1,794,375 | 214 |
+| Taiwan, new years | 29,848 – 89,831 | 151 |
+| Taiwan, held-out country | 696,997 – 2,042,232 | 214 |
+| Brazil, new years, without case history | 573,768 – 1,726,821 | 211 |
+
+Note: Input columns of L4 + C\* as recorded by the runner (the 150 columns of L4 in Table S6 plus the control: 1 for C1, 64 for C3, 82 for C2). Held-out-country fits pool the three other countries.
+
+#### Total compute
+
+The LightGBM chunks that can be counted without opening any result still under blinding (Brazil held-out districts, Brazil held-out states without case history, and the Brazilian origin-keyed, reporting-delay and control-panel sensitivities) took 2,374 core-hours (wall time × threads, summed over the 3,202 completed chunks stored in the run directories; these include the 2019 tuning and control-selection runs, the sensitivity analyses and some superseded runs kept for the record, but not chunks invalidated and moved aside under rows 13–15 and 18). The total including the blinded runs and the round-3 runs is [pending]. TimesFM used 32 minutes of one GPU. Earth Engine extraction used about 182 EECU-hours for AlphaEarth and 8.9 for remote sensing. All runs used one server (AMD EPYC 7551P, 32 cores, 125 GiB RAM). <!-- src: runs/*/chunks/*.done.json seconds × threads, excluding runs/brazil_s4*, brazil_s2_nohist*, brazil_s1_sens_{yref,delay,ctrl}* (computed 2026-11-19); docs/methods/timesfm.md (32 min); project notes (AE 182 EECU-h); docs/features/remote_sensing.md (8.9 EECU-h) --> <!-- PENDING: total core-hours after unblinding and round-3 runs -->
+
+#### Derived data to be released
+
+The district-year AlphaEarth table (population-weighted and unweighted means, before and after renormalisation, with population sums and norms), the weekly district panel, the covariate tables, the split and fold definitions, all stored forecasts and the scoring code will be released with the code deposit [to be completed: deposit DOI]. The embedding table is derived from a CC BY 4.0 product; the case panel is derived from OpenDengue (CC BY-SA). <!-- AUTHORS: deposit DOI and repository URL -->
 
 ---
 
@@ -201,17 +243,27 @@ L0–L2 pass a code assertion that they contain no district-specific input. Week
 |---|---|---|---|---|
 | C1 | Historical risk | 1 | Mean log(1 + cases) over panel years before 2018 (Brazil 2014–2017), gap-flagged weeks dropped. S1: the district's own value, identical for training and test rows and at every origin. S2–S4: inverse-distance (1/(d + 1 km)) mean of the 5 nearest training districts' values; training districts get a matched leave-out value (S2 excludes their own state, S3 neighbours within D, S4 only themselves) | S1–S4 |
 | C2 | Geographic | 82 | Latitude, longitude and 80 orthonormal real spherical harmonics of degree 1–8, no constant term [@russwurm2024location; @klemmer2025satclip] | All |
-| C3 | Identifier | 64 | One fixed source map per seed and country, used in every year: district i gets the real year y − 1 AlphaEarth vector of its source district (never itself). S2–S4: each held-out district gets one random training district | All |
+| C3 | Identifier (S1–S4); dimension-matched noise (S5) | 64 | One fixed source map per seed and country, used in every year: district i gets the real year y − 1 AlphaEarth vector of its source district. S1 and S5: a random permutation of the country's districts; the identity permutation is rejected, but the permutation is not a derangement, so occasionally a district keeps its own vector (about one per country and seed). S2–S4: training districts are permuted among themselves, and each held-out district gets a training district drawn at random (with replacement), never itself | All |
 | C4 | Geographic | 64 | 64 Gaussian random fields per country, exponential covariance exp(−d/r) in great-circle distance, standardised within country; r fitted to the AlphaEarth semivariogram (Brazil 8,483 km, Colombia 705 km, Peru 148 km, Taiwan 27 km); drawn only on districts with coordinates | All |
 | C4s | Geographic | 64 | C4 with r = min(D, fitted range): Brazil 225 km, Colombia 130 km; equal to C4 in Peru and Taiwan, so not a separate candidate there | Brazil, Colombia, S5 |
 | C5 | Snapshot | 64 | AlphaEarth 2023 for every target year | All |
 | C6 | Identifier | 1 | District ID as one LightGBM categorical input | S1 only |
 
-Note: Each control replaces the AlphaEarth block (L3 + Ck) or is added beside it (L4 + Ck).
+Note: Each control replaces the AlphaEarth block (L3 + Ck) or is added beside it (L4 + Ck). In the held-out-country split, C3 gives each district the embedding of another district of the same unseen country, so it tests the cost of 64 extra columns of realistic values rather than district identity; we call it a dimension-matched noise control there. Districts without a polygon or point (Belén de Bajirá in Colombia; two non-spatial "other" buckets in Taiwan) get missing (NaN) values for C1, C2, C4 and C4s, which LightGBM routes as missing; they are excluded from scoring. <!-- src: src/pop/features/controls.py _perm (rejects only the identity permutation), c3_source_map docstring; ../audits/final_round/RC_repro_audit.md M3, L6 -->
 
 <!-- src: C4 ranges: ../audits/review_round/R1_timing_leakage.md section 0 (BR 8483, CO 705, PE 148 km); docs/methods/controls.md (C4s rule; PE/TW fitted 148/27 km). Taiwan's fitted range (27 km) is from docs/methods/controls.md. -->
 
 Controls are rebuilt for every split, fold, origin and seed. Districts are located by a polygon representative point. C1 does not change when every row from 2018 on, or every test-district row, is replaced by an extreme value (tested). <!-- src: docs/methods/controls.md "Leakage guarantees" -->
+
+### B1. Selection of the location control (rule v2)
+
+For each cell, every candidate control k is added to the reference model and scored at the 2019 origin (trained on 2018 targets, scored on 2019 targets, horizons 1 and 4). The score $\mathrm{Score}_k$ is the mean WIS on log(1 + cases) over rows (not week-weighted), averaged over seeds; C3, C4 and C4s use three seeds and the other candidates one. Candidates whose forecasts are bitwise equal to the reference model's are dropped as degenerate. With $\sigma_{\mathrm{seed}}$ the within-candidate seed standard deviation pooled over the multi-seed candidates of the cell and $n_k$ the number of seeds of candidate k,
+
+$$\mathrm{SE}_k = \frac{\sigma_{\mathrm{seed}}}{\sqrt{n_k}}, \qquad \mathcal{T} = \left\{k : \mathrm{Score}_k - \mathrm{Score}_{\mathrm{best}} \le 2\sqrt{\mathrm{SE}_{\mathrm{best}}^2 + \mathrm{SE}_k^2}\right\},$$
+
+so single-seed candidates (C1, C2, C5, C6) have $\mathrm{SE}_k = \sigma_{\mathrm{seed}}$. C\* is the first member of the tie set $\mathcal{T}$ in the priority order C1 > C3 > C2 > C4s > C4 > C5 (without case history: C3 > C2 > C6 > C4s > C4). If $\sigma_{\mathrm{seed}}$ is zero or undefined the cell is marked uninformative and C\* is the first non-degenerate candidate in priority order. <!-- src: scripts/run/select_control.py docstring (lines 20-30) and selection function (lines 125-151) -->
+
+The priority order puts the controls that most directly encode a district's own dengue history or identity first (C1, then the shuffled embedding C3, which keeps the embedding's dimension and distribution), then smooth geographic controls from the most flexible (coordinates with harmonics) to the least, and the 2023 snapshot last because it uses later imagery. The plain reference model was not a candidate, so a control was always selected, even where every candidate scored worse than L3 at 2019 (11 of 13 cells; Table S22). A "no control" rule is reported as a sensitivity analysis (Supplementary Results, Table S45). <!-- src: T4_cstar_selection.csv delta_vs_ref (only BR_S1 and CO_S5 below L3); ../audits/final_round/RC_repro_audit.md M4 -->
 
 ---
 
@@ -223,7 +275,7 @@ Quantile objective on log(1 + cases), one booster per quantile (9) and horizon; 
 
 #### Tuning
 
-Grid: leaves {31, 127} × minimum rows per leaf {100, 1,000}. Criterion: mean pinball loss on log(1 + cases) at quantiles 0.1, 0.5, 0.9 and horizons 1 and 4; train 2018, validate 2019; level L1; seed 0. Choice: Brazil 127/100 (validation 0.07406 vs 0.07428 for 31/100); Colombia, Peru and Taiwan 31/100. One configuration per country is used for every level, control and split. S5 uses Brazil's configuration, or Colombia's when Brazil is held out. The no-history arm uses Brazil's L1 configuration, which was tuned on a model with case history. <!-- src: docs/results/review/RF_summary.md (0.07406/0.07428); docs/methods/split_pipeline.md "Params"; docs/plans/deviations_from_protocol.md "No-history parameters" -->
+Grid: leaves {31, 127} × minimum rows per leaf {100, 1,000}. Criterion: mean pinball loss on log(1 + cases) at quantiles 0.1, 0.5, 0.9 and horizons 1 and 4; train 2018, validate 2019; level L1; seed 0. Choice: Brazil 127/100 (validation 0.07406 vs 0.07428 for 31/100); Colombia, Peru and Taiwan 31/100. One configuration per country is used for every level, control and split. S5 uses Brazil's configuration (127 leaves; so Taiwan held out, the cell with the largest loss, used 127 leaves), or Colombia's (31 leaves) when Brazil is held out. The no-history arm uses Brazil's L1 configuration, which was tuned on a model with case history. <!-- src: docs/results/review/RF_summary.md (0.07406/0.07428); docs/methods/split_pipeline.md "Params"; docs/plans/deviations_from_protocol.md "No-history parameters" -->
 
 #### Per-level tuning (sensitivity)
 
@@ -253,9 +305,9 @@ L0: the quantile τ is expm1(log1p(y at t − 52) + the τ-quantile of the train
 | Hyperparameters | Country L1 tuning at 2019 (train 2018, validate 2019), all districts | The same S1 tuning, so held-out districts' 2018–2019 outcomes informed the choice | As S2 | As S2 | Brazil's (Colombia's when Brazil is held out); no held-out-country outcome used |
 | C\* selection | All districts, 2019 outcomes | Train on training districts (2018), score held-out districts' 2019 outcomes | As S2, held-out blocks | As S2, held-out districts | Held-out country's 2019 outcomes |
 | C1 value | Own mean log(1 + cases) before 2018 | Held-out: distance-weighted mean of the 5 nearest training districts' pre-2018 means. Training: the same, excluding their own state | As S2; training districts exclude neighbours within D | As S2; training districts exclude only themselves | Not defined |
-| C3 value | Fixed random other district of the country | Held-out district gets a random training district's series | As S2 | As S2 | Fixed permutation within the held-out country |
+| C3 value | Fixed random permutation of the country's districts (a district can occasionally keep its own vector) | Held-out district gets a random training district's series (never its own) | As S2 | As S2 | Fixed permutation within the held-out country (a district can occasionally keep its own vector) |
 | C4/C4s range | Fitted on AlphaEarth 2017–2018 of all districts (covariates only, no outcomes) | As S1 | As S1 | As S1 | Per country, as S1 |
-| Buffer D | – | – | Correlogram of 2014–2019 outcomes of all districts, held-out included (pre-test) | – | – |
+| Buffer D | – | – | Correlograms of deseasonalised 2014–2019 case series of all districts, held-out included (pre-test; Section D3) | – | – |
 | Fold construction | – | Admin1 units assigned greedily by district count | k-means on centroids | Random, stratified by Admin1 | – |
 | District universe | Districts that ever reported a case, through the end of the data (hindsight) | Same | Same | Same | Same |
 | LST screen | Per district and calendar month, median of its own LST over years ≤ 2017 (off in Brazil S1–S4) | Same | Same | Same | Same (on for all countries) |
@@ -295,7 +347,7 @@ The filter keeps a row only if the epidemiological year of its origin week (the 
 | Case counts | One snapshot of final revised counts; no reporting delay except the delay-2 sensitivity | All | Unknown; flatters all models |
 | ERA5-Land | Reaches Earth Engine about 3 months after real time | L2 and above | Shared |
 | GHSL population and weights | Product released 2023; epochs 2015, 2020, 2025 (2025 a projection); climate weights use the nearest epoch, so 2023+ weeks use 2025 | L2 and above | Shared |
-| AlphaEarth model | Trained on imagery "covering 2017 to present", production model with labels through 2023–2024; annual layers released 30 July 2025 | L4, C3, C5 | Favours embeddings |
+| AlphaEarth model | Trained on imagery "covering 2017 to present", production model with labels through 2023–2024; annual layers released 30 July 2025. The imagery period overlaps every test year (2020–2024) | L4, C3, C5 | Favours embeddings, so it makes the observed lack of gain more, not less, convincing |
 | C5 (2023 static embedding) | 2023 imagery used for 2020–2022 targets | C5 only (never selected) | Favours the control |
 | District universe | Districts that ever reported a case; 565 enter in 2018 or later (Brazil 507, 111 first in 2024; Peru 28; Taiwan 18, all in 2023; Colombia 12) | All | Shared |
 | Incomplete-week exclusion | Rule uses later weeks of the same year | Scoring only | Shared; test-year effect 2 Peruvian department-weeks |
@@ -305,6 +357,8 @@ The filter keeps a row only if the epidemiological year of its origin week (the 
 A late-entry sensitivity (restricting the universe at origin Y to districts first seen before Y) is supported by the code but was not run. <!-- src: ../audits/review_round/R1_timing_leakage.md section 1c last row -->
 
 ### D3. Buffer geometry of the held-out-regions split
+
+The buffer distance D was estimated on 2014–2019 only (no test year), from districts with at least 10 weeks with cases (Brazil 4,249; Colombia 806). For each distance bin we computed the mean pairwise correlation between districts' weekly log(1 + cases) residuals under two definitions: the protocol residuals (district mean and week-of-year effects removed) and residuals that also remove each calendar week's national mean. D is the larger of the two distances at which these correlograms first fall below 0.1. In Brazil the protocol correlogram levels off at about 0.11 out to 2,000 km (national co-movement that no buffer can remove), so only the second crossing exists there: D = 225 km. In Colombia the crossings are 130 km and 80 km, so D = 130 km. Every training district within D of any held-out district of the fold is dropped from training. <!-- src: docs/methods/splits.md "Buffer distance D" -->
 
 The buffer uses polygon centroids, while C1, C2 and C4 use representative points. Under representative-point distances, 44 Brazilian and 13 Colombian training district-folds (about 0.23% and 0.38% of training memberships) lie within D of a held-out district; the minimum train–test distance in a fold is 161–218 km in Brazil (D = 225 km) and 122–146 km in Colombia (D = 130 km). <!-- src: ../audits/review_round/R1_timing_leakage.md section 3 -->
 
@@ -341,6 +395,8 @@ B &= \left\lfloor 0.4\,T^{2/3}\right\rfloor, & c_{\mathrm{HLN}} &= \sqrt{\frac{T
 \end{aligned}$$
 
 The 95% and 90% intervals are $\bar d \pm t_B\,\mathrm{SE}$, so a 95% interval excludes zero exactly when $p < 0.05$. The HLN factor at $h = 4$ is applied to the series pooled over horizons 1 and 4; because the correction grows with $h$, this is the conservative choice. TOST rejects both one-sided null hypotheses when the 90% interval lies inside ±1% of WIS(L3), where WIS(L3) uses the same week-pooled mean. The minimum detectable effect is $(t_{B,0.975} + t_{B,0.80})\,\mathrm{SE}$, unadjusted; Holm-adjusted thresholds are about 1.34 times larger.
+
+The WIS uses the median and the nine deciles, that is K = 4 central intervals (20%, 40%, 60% and 80%) plus the median, normalised by K + ½. It is therefore not on the same scale as the 23-quantile WIS of the forecast hubs (row 36). Unless a table says "row mean", a mean WIS in this paper is week-weighted: the mean over target weeks of the within-week mean over districts and horizons.
 
 #### Labels and counting
 
@@ -415,7 +471,7 @@ The primary test is acceptably calibrated when d_t is short-memory around a fixe
 |---|---|---|---|
 | Three seeds (primary) vs seed 0 | Brazil S1 | All three | Done |
 | Per-level tuning (original protocol) | Brazil S1 | All three | Done |
-| Fixed control panel C1, C2, C3, C6 | S1, all countries | Identity and excess gains | Colombia, Peru, Taiwan, Brazil C1/C2 done; Brazil C3/C6 pending <!-- PENDING: BR C3/C6 panel --> |
+| Fixed control panel C1, C2, C3, C6 | S1, all countries | Control and excess gains | Colombia, Peru, Taiwan, Brazil C1/C2 done; Brazil C3/C6 pending <!-- PENDING: BR C3/C6 panel --> |
 | Yearly inputs keyed to the origin year (strictly causal) | Brazil S1 | Embedding gain only | Pending <!-- PENDING: sensitivities yref/delay2 --> |
 | Two-week reporting delay in case inputs | Brazil S1 | Embedding gain only | Pending <!-- PENDING: sensitivities yref/delay2 --> |
 | Taiwan with Brazil's configuration and C\* | Taiwan S1 | All three | Done |
@@ -425,7 +481,20 @@ The primary test is acceptably calibrated when d_t is short-memory around a fixe
 | Late-entry district universe | All cells | Excess gain | Not run |
 | Long training window for L0–L3 (2013 to Y − 1; protocol) | Brazil S1 | Ladder | Not run (row 35) |
 | 23-quantile WIS (protocol secondary score) | All cells | All | Not computed (row 36) |
-| No-history identifier panel N3 + C6, N4 + C6 (exploratory) | Brazil S1 no-history | Identity and excess gains | Pending (row 38) <!-- PENDING: no-history C6 test years (RH) --> |
+| As planned vs as reported (Table S43) | All cells | Excess and embedding gains | Pending (row 44) <!-- PENDING: R3-A5 --> |
+| Positive-control ladder gains, margin anchor (Table S44) | S1, all countries | Ladder gains | Pending (row 41) <!-- PENDING: R3-A1 --> |
+| "No control" selection rule (Table S45) | All cells | Embedding or excess gain | Pending (row 40) <!-- PENDING: R3-A2 --> |
+| Per-year trend test (Table S46) | All cells | Excess and embedding gains | Pending (row 42) <!-- PENDING: R3-A3 --> |
+| Equivalence at ±0.5/1/2% with EWC and B = 4 SEs (Table S47) | All cells | Excess gain | Pending (row 43) <!-- PENDING: R3-A4 --> |
+| Outcome-agnostic checks (Table S48) | All cells; Colombia district-years | Excess gain, coverage, width | Pending (row 45) <!-- PENDING: R3-A6 --> |
+| Embedding stability (Table S49) | All countries | Cosine similarity | Pending (row 46) <!-- PENDING: R3-A7 --> |
+| Information probe (Table S50, Figure S4) | All countries | Cross-validated skill | Pending (row 47) <!-- PENDING: R3-E1 --> |
+| Representation variants V1–V4 (Table S51) | CO S1, CO S2, PE S1, TW S1, BR S2 | Variant gains | Pending (row 48) <!-- PENDING: EXP-A --> |
+| Seeds 0–2 (Table S52) | Colombia, Peru, Taiwan cells; Brazil S5 | All three | Pending (row 49) <!-- PENDING: EXP-B S1 --> |
+| Taiwan new-years ladder and panel with 2021 (Table S53) | Taiwan S1 | Ladder, control panel | Pending (row 50) <!-- PENDING: EXP-B S2 --> |
+| No case history, Colombia held-out states (Table S54) | Colombia S2 | All three | Pending (row 51) <!-- PENDING: EXP-B S3 --> |
+| Equal-budget tuning (Table S55) | Colombia S1 | Excess gain | Pending (row 52) <!-- PENDING: EXP-B S4 --> |
+| No-history identifier panel N3 + C6, N4 + C6 (exploratory) | Brazil S1 no-history | Control and excess gains | Pending (row 38) <!-- PENDING: no-history C6 test years (RH) --> |
 
 <!-- src: T6a_sensitivities.csv variant and variant_status; RE_summary.md; T1_primary_family.csv robustness columns; ../audits/review_round/R1_timing_leakage.md section 1c (late entry not run). Note: RE_summary.md says the control panel uses the v3 primary rows (origin-year filter, exclusions v2), while NOTES_FOR_WRITERS item 32 says all rows; see notes_B. -->
 
@@ -435,7 +504,9 @@ The reporting-delay sensitivity shifts only the case-history inputs two weeks ba
 
 ## F. Deviations from the original protocol
 
-The original protocol is the evaluation plan and its design review of 15 November 2026. Rows 1–10 were committed in d8c7944, the no-history arm was pre-specified in bd3ba50, rows 11–17 were recorded in fcc3c38 and the control fixes of rows 13–15 implemented in 9de7386, all on 16 November 2026 before any spatial-split result had been read. Rows 18–23 were committed in e9df1f1 (16 November, 20:29 CST), about three hours before the first spatial-split result (3ca02d7, 23:21 CST). Rows 24–34 were committed in f107238 (18 November, 02:16 CST) after external review, when the S1, S2, S3 and S5 results and Colombia S4 had been seen; only Brazil S4 and the no-history cells were still running. Rows 35–38 were added on 18 November 2026 after review of the full draft and recorded in the deposit commit, before the Brazil S4 and no-history Brazil S2 results were read; rows 35–37 record protocol commitments that were not carried out. <!-- src: docs/plans/deviations_from_protocol.md rows 35–38 (commit column "2026-11-18 deposit commit") --> Brazil, Peru and Taiwan S1 test-year results were seen before rows 2, 8, 9, 11, 12, 16 and 18–22, so S1 is partly unblinded; the baselines (L0–L2, TimesFM) were also looked at on test years during pipeline development. <!-- src: docs/plans/deviations_from_protocol.md header; docs/results/NOTES_FOR_WRITERS.md items 1–3; git log (commit times) -->
+The original protocol is the evaluation plan and its design review of 15 November 2026. Rows 1–10 were committed in d8c7944, the no-history arm was pre-specified in bd3ba50, rows 11–17 were recorded in fcc3c38 and the control fixes of rows 13–15 implemented in 9de7386, all on 16 November 2026 before any spatial-split result had been read. Rows 18–23 were committed in e9df1f1 (16 November, 20:29 CST), about three hours before the first spatial-split result (3ca02d7, 23:21 CST). Rows 24–34 were committed in f107238 (18 November, 02:16 CST) after external review, when the S1, S2, S3 and S5 results and Colombia S4 had been seen; only Brazil S4 and the no-history cells were still running. Rows 35–38 were added on 18 November 2026 after review of the full draft and recorded in the deposit commit, after the Brazil S1 no-history result had been read but before the Brazil S4 and no-history Brazil S2 results were read; rows 35–37 record protocol commitments that were not carried out. Rows 39–52 were added on 19 November 2026 after the third review round, when all 13 completed cells had been read; each was specified before it was scored. <!-- src: ../audits/final_round/RC_repro_audit.md L4; ../audits/final_round/TRIAGE_round3.md sections B, C --> <!-- src: docs/plans/deviations_from_protocol.md rows 35–38 (commit column "2026-11-18 deposit commit") --> Brazil, Peru and Taiwan S1 test-year results were seen before rows 2, 8, 9, 11, 12, 16 and 18–22, so S1 is partly unblinded; the baselines (L0–L2, TimesFM) were also looked at on test years during pipeline development.
+
+Timing of all 52 rows: rows 1–23 (23 rows) were decided after some new-years test results but before any held-out-place result; rows 24–34 (11 rows) after every completed cell except Brazil held-out districts and the analyses without case history; rows 35–38 (4 rows) after the Brazil new-years result without case history; rows 39–52 (14 rows) after all 13 completed cells. Four rows changed the primary estimand after results it affects had been read: row 2 (one shared configuration), row 21 (horizons 1 and 4 pooled in the new-years cells), row 24 (origin-year rows) and row 25 (Taiwan 2021 included, decided after both Taiwan cells had been read; it moved the Taiwan held-out excess gain from −11.16% to −17.30% and the Taiwan new-years gain from −0.44% to −0.60%). Row 49 (seed averaging) will change the primary estimates of the cells that gain seeds. <!-- src: commit times in the paragraph above; T6a_sensitivities.csv / Table S37 (TW without 2021: S5 −11.16, S1 −0.44); T1_primary_family.csv TW_S5 −17.30, TW_S1 −0.60 --> <!-- src: docs/plans/deviations_from_protocol.md header; docs/results/NOTES_FOR_WRITERS.md items 1–3; git log (commit times) -->
 
 **Table S14. Deviations from the original protocol.**
 
@@ -452,7 +523,7 @@ The original protocol is the evaluation plan and its design review of 15 Novembe
 | 9 | Smallest effect of interest = 1% of WIS(L3) (the protocol's ID-share gate); TOST on 90% intervals; minimum-detectable-effect table | A null result needs an explicit margin | Partly (Brazil and Peru S1 seen) | d8c7944 |
 | 10 | Deferred: TimesFM + LightGBM residual hybrid, monthly replication arm, PDFM (L5), reporting-lag analysis on data vintages | Time and scope | No | d8c7944 |
 | 11 | Inference: DM test on the weekly cross-district mean loss difference with EWC variance, fixed-b t and HLN; interval d̄ ± t_B · SE; TOST on the 90% version; the bootstrap becomes a sensitivity analysis with 52-week (not 8-week) blocks | Weekly loss differences stay autocorrelated at lags 8 and 52 (about 0.42–0.43); the 8-week bootstrap excluded 0 where DM p was 0.3–0.5 | Yes (Brazil S1); before any spatial result | fcc3c38 |
-| 12 | Primary family = pooled-horizon excess gain, history arm, 14 country × split cells, Holm; embedding and identity gains, per-horizon and per-year results secondary | The family had not been fixed | Yes (S1); before any spatial result | fcc3c38 |
+| 12 | Primary family = pooled-horizon excess gain, history arm, 14 country × split cells, Holm; embedding and control gains, per-horizon and per-year results secondary (the embedding gain is co-primary since row 39) | The family had not been fixed | Yes (S1); before any spatial result | fcc3c38 |
 | 13 | C3 uses one fixed source map per seed across all years | A new permutation each year meant C3 was not a stable identifier (0–0.05% of districts kept their source) | Found by an automated AI-agent audit (see Use of AI tools) after Brazil S1 test results; C3 had been scored at the 2019 origin only | fcc3c38; code 9de7386 |
 | 14 | C1 in S2–S4 = matched neighbour mean of the neighbours' pre-training-year mean log(1 + cases) (was their 2018 to Y − 1 targets) | In-period neighbour targets are contemporaneous with training targets (a diluted leak) and differ from the S1 definition | No spatial result read | fcc3c38; code 9de7386 |
 | 15 | C4 at two ranges: the fitted range (Brazil 8,483 km) and a short range (C4s) | At 8,483 km C4 is close to a planar trend, not an identifier | No | fcc3c38; code 9de7386 |
@@ -479,8 +550,22 @@ The original protocol is the evaluation plan and its design review of 15 Novembe
 | 36 | 23-quantile WIS (secondary score) not computed; all scores use the median and the 0.1–0.9 deciles | The fitted models output only the median and deciles, so a 23-quantile WIS would need refitting | Yes (after review of the full draft) | Deposit commit, 18 November 2026 |
 | 37 | Taiwan per-outbreak and county-level reporting replaced by per-year results (Table S30) and Taiwan's two cells in the 14-cell family | Taiwan's test years are almost all zeros, so per-outbreak estimates would rest on a handful of weeks | Yes (after review) | Deposit commit, 18 November 2026 |
 | 38 | Exploratory no-history identifier panel: N3 + C6 and N4 + C6 on Brazil S1 test years, seed 0, horizons 1 and 4, primary rows (results pending <!-- PENDING: no-history C6 test years (RH) -->) | Coordinates (the selected C\*) also carry environmental gradients, so a pure identifier is needed to read the no-history result | Yes for other cells; no for these runs (added before they produced any result) | Deposit commit, 18 November 2026 |
+| 39 | The embedding gain (L3 → L4) becomes co-primary beside the excess gain and is shown in Table 2 and Figure 2; the "identity gain" is renamed the "control gain" (wording only; code and file names unchanged) | The selected control often scored worse than L3, so the excess gain alone can understate or overstate the embeddings' contribution | Post hoc, after all 13 cells were read; specified before scoring | [pending commit] |
+| 40 | Sensitivity selection rule allowing "no control": C\* = none when no candidate beat L3 at 2019 by more than 2 SE; such cells then use the embedding gain (Table S45) | Rule v2 always selected a control, even when all candidates were worse than L3 (11 of 13 cells) | Post hoc, after all 13 cells were read; specified before scoring | [pending commit] |
+| 41 | Positive-control ladder gains (L1 → L2, L2 → L3, L1 → L3, L3 → L4) with CIs in every new-years cell, used to anchor the ±1% margin; ±0.5% reported alongside (Table S44) | The ±1% margin was set after the S1 results and needs an empirical anchor | Post hoc, after all 13 cells were read; specified before scoring | [pending commit] |
+| 42 | Per-year gains with a weighted trend test on training-window length, and a DM test on 2023–2024 for Brazil (Table S46) | Referees asked whether the null is specific to short training windows | Post hoc, after all 13 cells were read; specified before scoring | [pending commit] |
+| 43 | Equivalence at ±0.5/1/2% with both the EWC and the B = 4 standard errors (Table S47) | Equivalence claims should survive the more cautious variance estimator | Post hoc, after all 13 cells were read; specified before scoring | [pending commit] |
+| 44 | Supplementary "as planned vs as reported" table (Table S43) | One place to see the effect of every post-result choice on the primary family | Post hoc, after all 13 cells were read; specified before scoring | [pending commit] |
+| 45 | Outcome-agnostic checks: Colombian district-years with at least one case; change in 80% coverage and interval width on case and zero weeks (Table S48) | Outcome-defined strata can reward biased forecasts (forecaster's dilemma) | Post hoc, after all 13 cells were read; specified before scoring | [pending commit] |
+| 46 | Embedding stability: within-district year-to-year cosine against between-district cosine (Table S49) | Shows how far the yearly embedding acts as a fixed district signature | Post hoc, after all 13 cells were read; specified before scoring | [pending commit] |
+| 47 | Information probe: cross-sectional prediction of district burden from embeddings, coordinates and L3 statics (Table S50, Figure S4) | Separates "no dengue information in the embeddings" from "information redundant with case history at 1–4 weeks" | Post hoc, after all 13 cells were read; specified before scoring | [pending commit] |
+| 48 | Representation variants V1–V4 (embedding-space risk encoding, PCA-8, causal static 2017–2018 mean, substitution for the L3 block) in five cells; Holm within the variant family only (Table S51) | Referees asked whether a different use of the embeddings would show a gain | Post hoc, after all 13 cells were read; specified before scoring | [pending commit] |
+| 49 | Seeds 1–2 for L3, L4, L3 + C\* and L4 + C\* in the Colombian, Peruvian and Taiwanese cells and Brazil held out (C\* roles only in Peru and Taiwan held out); a cell's primary estimate becomes the mean over seeds 0–2 where all three exist, seed 0 a sensitivity analysis (Table S52) | Seed SD is of the same order as several estimates | Post hoc, after all 13 cells were read; specified before any new seed was seen | [pending commit] |
+| 50 | Taiwan new-years ladder (seasonal naive, negative binomial, L1, shared-configuration L2) and fixed control panel rerun with 2021 (Table S53) | Removes the 113,430 vs 141,645 row-set split between Taiwan tables | Post hoc, after all 13 cells were read; specified before scoring | [pending commit] |
+| 51 | Analysis without case history repeated for Colombia held-out states, exploratory (Table S54) | Checks whether the Brazilian no-history pattern holds in a second country | Post hoc, after all 13 cells were read; specified before scoring | [pending commit] |
+| 52 | Equal-budget per-level tuning of L3 + C\* and L4 + C\* in Colombia S1 (Table S55) | Checks whether one shared configuration favoured or penalised the embedding model | Post hoc, after all 13 cells were read; specified before scoring | [pending commit] |
 
-<!-- src: docs/plans/deviations_from_protocol.md rows 1–38 (row 2 validation range corrected per ../audits/review_round/R10_fact_check.md section B; row 13 timing per ../audits/review_round/R6_draft_and_medrxiv.md B MEDIUM 7; row 14 "log incidence" corrected to log(1 + cases) per RESOLUTION_LOG.md section B) -->
+<!-- src: docs/plans/deviations_from_protocol.md rows 1–38; rows 39–52 from ../audits/final_round/TRIAGE_round3.md sections A.4, B and C and docs/methods/round3_runs.md, to be added to the deviation log by the supervisor (row 2 validation range corrected per ../audits/review_round/R10_fact_check.md section B; row 13 timing per ../audits/review_round/R6_draft_and_medrxiv.md B MEDIUM 7; row 14 "log incidence" corrected to log(1 + cases) per RESOLUTION_LOG.md section B) -->
 
 #### Documented, not changed
 
@@ -533,20 +618,21 @@ Table S15 maps each item of the EPIFORGE 2020 checklist [@pollett2021epiforge] t
 | C\*, selected control | The location control chosen at the 2019 origin by selection rule v2 |
 | Cell | One combination of country and split |
 | Case scale | WIS computed on raw counts instead of log(1 + cases) |
-| Correlogram | Correlation between districts' case series as a function of the distance between them; used to set the S3 buffer D |
+| Correlogram | Mean correlation between districts' deseasonalised case series as a function of the distance between them; used to set the S3 buffer D (Section D3) |
 | Cosine similarity | Similarity of the directions of two vectors, from −1 to 1; 1 means the same direction |
 | Coverage | Share of observed values inside a central prediction interval (40% or 80%) |
-| D | Buffer distance of the held-out-regions split (Brazil 225 km, Colombia 130 km) |
+| D | Buffer distance of the held-out-regions split (Brazil 225 km, Colombia 130 km; Section D3) |
+| Dimension-matched noise control | C3 in the held-out-country split: 64 columns of real embeddings of other districts of the unseen country, which match the embedding block's size and distribution but carry no district identity the model could have learned |
 | Delta method | An approximation for the uncertainty of a ratio (here a gain as a percentage of WIS(L3)) when numerator and denominator are both estimated |
 | District | Our word for an Admin2 unit |
 | DM test | Diebold–Mariano test of equal forecast accuracy [@diebold1995comparing] |
 | EE, EECU | Google Earth Engine; Earth Engine compute units (a quota meter) |
 | Embedding | A fixed-length numeric vector summarising an object; here, a place's satellite observations in one year |
-| Embedding gain, $\Delta_{\text{emb}}$ | WIS(L3) − WIS(L4) |
+| Embedding gain, $\Delta_{\text{emb}}$ | WIS(L3) − WIS(L4); co-primary |
 | Epidemiological week, year | Sunday-start week; its year is the calendar year of its Wednesday |
 | EPIFORGE | Reporting guideline for epidemic forecasting studies (2020) |
 | EWC | Equal-weighted cosine long-run variance estimator [@lazarus2018har] |
-| Excess gain, $\Delta_{\text{excess}}$ | WIS(L3 + C\*) − WIS(L4 + C\*); the primary measure |
+| Excess gain, $\Delta_{\text{excess}}$ | WIS(L3 + C\*) − WIS(L4 + C\*); co-primary (the protocol's primary measure) |
 | Fixed-b | Critical values that treat the number of variance terms B as fixed, which keeps tests closer to their nominal size in short series [@lazarus2018har] |
 | GHSL | Global Human Settlement Layer (population and built-up surfaces) |
 | h | Forecast horizon in weeks (target week minus origin week) |
@@ -554,7 +640,7 @@ Table S15 maps each item of the EPIFORGE 2020 checklist [@pollett2021epiforge] t
 | Holm | Holm's step-down multiplicity correction [@holm1979simple] |
 | IAAFT | Iterative amplitude-adjusted Fourier transform surrogates: random series with a given distribution and spectrum |
 | Identity confound | The possibility that an embedding improves forecasts because it identifies the district, not because of what it says about the environment |
-| Identity gain, $\Delta_{\text{id}}$ | WIS(L3) − WIS(L3 + C\*) |
+| Control gain, $\Delta_{\text{ctrl}}$ | WIS(L3) − WIS(L3 + C\*); called the identity gain in earlier drafts (`G_id` in code and result files) |
 | k-means | A clustering method that splits points into k compact groups; used on district centroids to form the S3 blocks |
 | L0–L4 | Steps of the model ladder (Table S6) |
 | LightGBM | Gradient-boosted decision trees [@ke2017lightgbm]; here with a quantile loss |
@@ -574,7 +660,8 @@ Table S15 maps each item of the EPIFORGE 2020 checklist [@pollett2021epiforge] t
 | Quantile | The value below which a given share of the forecast distribution lies; the 0.9 quantile is exceeded with probability 0.1 |
 | Recorded zero | A week the source lists with 0 cases (Brazil 2020–2021 in the test years) |
 | Reference model | L3: the model with case history, climate, remote sensing and population, but without embeddings |
-| S1–S5 | Evaluation splits: new years (S1), held-out states (S2), held-out regions, that is, buffered blocks of districts (S3), held-out districts, assigned at random (S4), and held-out country (S5) |
+| Row mean | A mean WIS over all scored rows, so weeks with more rows weigh more; used only where a table says so |
+| S1–S5 | Evaluation splits: new years (S1), held-out states (S2), held-out regions, that is, compact blocks of districts with a buffer (S3), held-out districts, assigned at random (S4), and held-out country (S5) |
 | SE | Standard error |
 | Static history | The historical-risk control (C1) used as a separate step in the analysis without case history |
 | Spherical harmonics | Smooth functions of position on the globe, used as flexible coordinate features (C2) [@russwurm2024location] |
@@ -582,7 +669,8 @@ Table S15 maps each item of the EPIFORGE 2020 checklist [@pollett2021epiforge] t
 | TimesFM | A pretrained time-series foundation model, used zero-shot as a baseline [@das2024timesfm] |
 | TOST | Two one-sided tests for equivalence [@lakens2017equivalence] |
 | VIIRS | Visible Infrared Imaging Radiometer Suite (night lights) |
-| WIS | Weighted interval score [@bracher2021wis]; lower is better |
+| WIS | Weighted interval score [@bracher2021wis]; lower is better. Here from the median and nine deciles (K = 4 intervals), normalised by K + ½ |
+| Week-weighted | A mean over target weeks of the within-week mean over districts and horizons, so each week has equal weight (the default in this paper) |
 | WIS(L3), reference WIS | Mean WIS of the reference model in the cell; the denominator of every percentage |
 | y − 1 | The year before the target year, the source year of yearly inputs |
 | y, Y | y: the target's epidemiological year; Y: the test year of an annual refit |
@@ -593,7 +681,7 @@ Table S15 maps each item of the EPIFORGE 2020 checklist [@pollett2021epiforge] t
 
 ## I. Further limitations
 
-- Calibration. Eighty per cent intervals of the full model (L4 + C\*) covered 61–75% of weeks with cases (24% in Taiwan, new years), and other rungs were similar (56–75%); causal recalibration raised this mainly in Peru. <!-- src: T2_ladder.csv cov_80_nonzero for L4+C* (range 0.614–0.752; TW_S1 0.241); L1–L4+C* outside TW_S1 0.558–0.752; S5_recalibration.csv cov80pos_L4+C* (PE 0.67 → 0.76–0.77; others ≤ 0.03 change) -->
+- Calibration. Eighty per cent intervals of the full model (L4 + C\*) covered 61–75% of weeks with cases (24% in Taiwan, new years, without 2021), and other rungs were similar (56–75%); causal recalibration raised this mainly in Peru. <!-- src: T2_ladder.csv cov_80_nonzero for L4+C* (range 0.614–0.752; TW_S1 0.241); L1–L4+C* outside TW_S1 0.558–0.752; S5_recalibration.csv cov80pos_L4+C* (PE 0.67 → 0.76–0.77; others ≤ 0.03 change) -->
 - Countries. Peru (115 provinces) cannot show equivalence at ±1% (minimum detectable effects 1.01% for new years and 1.53% held out). Taiwan's data are almost all zeros (95 non-zero training targets at the 2019 tuning origin), so its tuning and control selection are nearly uninformative. Case definitions differ (probable in Brazil, total in Colombia, probable and confirmed in Peru, local confirmed in Taiwan), so percentages compare models within a country. <!-- src: T1_primary_family.csv PE_S1 MDE_pct (1.01), PE_S5 (1.53); docs/methods/s1_pipeline.md "Pre-flight findings" (Taiwan 95 non-zero training targets); R2_data_scoring.md (case definitions) -->
 - Covariates and geometry. The land-surface-temperature screen was off in Brazil's within-country runs; population grids exceed Brazil's 2022 census by 4–10%; the S3 buffer uses centroids (0.2–0.4% of training district-folds fall inside it by representative points); quality exclusions use adjacent weeks, though dropping them changes no result. <!-- src: NOTES_FOR_WRITERS.md item 23; docs/features/remote_sensing.md (GHSL +4–10% vs 2022 census); RESOLUTION_LOG.md section C (S3 buffer: 44 BR and 13 CO unit-folds; RA3 no-exclusion) -->
 - Later-dated information. The AlphaEarth annual layers were released on 30 July 2025 by a model trained on data that extend into our test years [@brown2025alphaearth]; population is interpolated towards a 2025 projection; and the district universe ("ever reported a case") uses hindsight, with 565 districts first reporting in 2018 or later (111 Brazilian municipalities first in 2024). Section D lists every such item. <!-- src: R8_literature.md section 4; R10_fact_check.md row 2; docs/data/completeness_v1.md "Other exclusion files" -->
