@@ -135,8 +135,8 @@ Note: Same rows, tests and C\* as Table 2. The reference WIS is a mean over targ
 | Colombia, held-out country | 0.18208 | – | 0.17809 | 0.18352 | C2 |
 | Peru, new years | 0.16194 | 0.16258 | 0.16431 | 0.16537 | C1 |
 | Peru, held-out country | 0.13892 | – | 0.14227 | 0.13997 | C3 |
-| Taiwan, new years | 0.0041143 | 0.0041315 | 0.0043898 | 0.0040175 | C1 |
-| Taiwan, held-out country | 0.0065580 | – | 0.0091207 | 0.0078422 | C3 |
+| Taiwan, new years | 0.00411 | 0.00413 | 0.00439 | 0.00402 | C1 |
+| Taiwan, held-out country | 0.00656 | – | 0.00912 | 0.00784 | C3 |
 | Brazil, new years, without case history | 0.35428 | – | 0.34633 | 0.35963 | C2 |
 | Brazil, held-out states, without case history | 0.36193 | – | 0.35921 | 0.36860 | C2 |
 
@@ -159,8 +159,8 @@ Note: Mean WIS at the 2019 validation origin (trained on 2018 targets and scored
 | Colombia, held-out country | 0.18349 | 0.18367 | 0.18290 | – |
 | Peru, new years | 0.16684 | 0.16664 | 0.16372 | – |
 | Peru, held-out country | 0.14111 | – | 0.14149 | – |
-| Taiwan, new years | 0.0043931 | – | 0.0044552 | – |
-| Taiwan, held-out country | 0.0078206 | – | 0.011081 | – |
+| Taiwan, new years | 0.00439 | – | 0.00446 | – |
+| Taiwan, held-out country | 0.00782 | – | 0.01108 | – |
 | Brazil, new years, without case history | 0.34895 | 0.35076 | – | 0.34722 |
 | Brazil, held-out states, without case history | 0.35977 | 0.36747 | – | – |
 
