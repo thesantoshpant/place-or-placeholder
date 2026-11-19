@@ -8,7 +8,7 @@
 
 Design (docs/methods/split_pipeline.md, "Global scheduler"):
 * Items = one pipeline each (split_pipeline.sh / nohist_pipeline.sh / sensitivity items) in a
-  priority list (tier T1 high .. T5 low, then list order). A pipeline keeps its stage order; in
+  priority list (tier T1 high .. T6 low, then list order; T6 = round-3 runs, 2026-11-19). A pipeline keeps its stage order; in
   scheduled mode (POP_SCHED=1) it does not start workers itself: on entering a run stage it writes
   runs/<item>/current_cfg, waits until every chunk of that config has a .done.json, then runs one
   final assembly pass.
@@ -53,7 +53,7 @@ FULL, FALLBACK, OTHERS_HI, OTHERS_LO = 60, 52, 400, 300  # threads; other users'
 HW_THREADS, HEADROOM, FLOOR = 64, 2, 16  # budget = HW - HEADROOM - others (2026-11-16b)
 TICK = 20
 YOUNG = 300          # s: a process this young holds its full --workers (data loading)
-MIN_MEM_GIB = 12
+MIN_MEM_GIB = 25     # GiB MemAvailable needed to start workers (raised from 12 on 2026-11-19)
 MAX_FAILS = 3        # non-signal failed exits of scheduler-started processes per config
 UID = os.getuid()
 
@@ -71,7 +71,7 @@ SENS_STAGES = {
 class Item:
     id: str
     tier: int
-    kind: str                 # split | nohist | sens | external
+    kind: str                 # split | nohist | sens | external | r3
     pd: str                   # pipeline state dir (runs/...)
     cfg_prefix: str           # configs/<cfg_prefix><stage>.yaml
     stages: list
@@ -79,6 +79,7 @@ class Item:
     blocked: object = None    # () -> reason or None
     session: str = ""
     st: dict = field(default_factory=dict)
+    ref: dict = field(default_factory=dict)   # r3: stage -> (seed-0 run dirs, factor, template cfg)
 
 
 def _sess(name):
@@ -104,6 +105,19 @@ def sens_item(tok, tier, blocked=None):
 
 def _need(path, why):
     return lambda: None if (ROOT / path).exists() else why
+
+
+def r3_items(tier=6) -> list[Item]:
+    """Tier T6 (2026-11-19): round-3 post hoc runs (docs/methods/round3_runs.md), defined in
+    scripts/run/round3_configs.py; EXP-A's configs (runs/queue/r3_expA_configs.txt) are read at
+    every tick and slot in after the CO S1 / CO S2 seed items."""
+    sys.path.insert(0, str(ROOT / "scripts/run"))
+    import round3_configs as R3
+    out = []
+    for d in R3.items():
+        out.append(Item(d["id"], tier, "r3", d["pd"], "", [n for k, n, _ in d["stages"] if k == "run"],
+                        f"bash {ROOT}/scripts/run/r3_pipeline.sh {d['id']} --inside", ref=d["ref"]))
+    return out
 
 
 def items() -> list[Item]:
@@ -133,6 +147,7 @@ def items() -> list[Item]:
         # T5
         split_item("brazil", "s4", 5),
     ]
+    L += r3_items(6)  # T6 round-3 post hoc runs (2026-11-19)
     for it in L:
         if not it.session:
             it.session = f"pop_q_{it.id}"
@@ -377,7 +392,7 @@ def exits_failed(cfg, since):
 
 def launch_workers(cfg, rd, n):
     rd.mkdir(parents=True, exist_ok=True)
-    cmd = (f"cd {ROOT} && source env.sh && python scripts/run/run_experiment.py {cfg} --workers {n} "
+    cmd = (f"cd {ROOT} && source env.sh && nice -n 19 python scripts/run/run_experiment.py {cfg} --workers {n} "
            f"--threads {THREADS} >> {rd}/stdout.sched.log 2>&1; rc=$?; "
            f"echo \"$(date +%s) {cfg} rc=$rc\" >> {SD}/exits.log")
     subprocess.Popen(["setsid", "bash", "-c", cmd], cwd=ROOT, stdin=subprocess.DEVNULL,
@@ -400,7 +415,7 @@ def launch_item(it: Item):
     (pd / ".sched_started").write_text(time.strftime("%F %T\n"))
     env = {k: v for k, v in os.environ.items() if k not in ("TMUX", "TMUX_PANE")}
     subprocess.run(["tmux", "new-session", "-d", "-s", it.session,
-                    f"cd {ROOT} && source env.sh && POP_SCHED=1 {it.cmd} >> {ROOT}/{it.pd}/pipeline.log 2>&1"],
+                    f"cd {ROOT} && source env.sh && POP_SCHED=1 nice -n 19 {it.cmd} >> {ROOT}/{it.pd}/pipeline.log 2>&1"],
                    check=True, env=env)
     log(f"started item {it.id} (tier T{it.tier}) in tmux {it.session}")
     return True
@@ -629,8 +644,77 @@ def _ref_secs():
     return ref
 
 
+_r3_cache: dict = {}
+
+
+def _r3_norm(name):
+    """chunk name -> (normalised name, level): seed -> s0, N-levels -> L-levels (ETA lookups)."""
+    p = name.split("__")
+    p[1] = "L" + p[1][1:] if p[1].startswith("N") else p[1]
+    p = [("s0" if re.fullmatch(r"s\d+", x) else x) for x in p]
+    return "__".join(p), p[1]
+
+
+def _r3_secs(dirs):
+    key = tuple(dirs)
+    if key not in _r3_cache:
+        exact, lvl, allv = {}, {}, []
+        for d in dirs:
+            cd = ROOT / d / "chunks"
+            for f in cd.glob("*.done.json") if cd.exists() else []:
+                try:
+                    sec = json.loads(f.read_text())["seconds"]
+                except (ValueError, KeyError, OSError):
+                    continue
+                n, l = _r3_norm(f.name[:-10])
+                exact[n] = sec
+                lvl.setdefault(l, []).append(sec)
+                allv.append(sec)
+        _r3_cache[key] = (exact, {k: _median(v) for k, v in lvl.items()}, _median(allv))
+    return _r3_cache[key]
+
+
+def _r3_stage_chunks(it, stage, ref):
+    """r3 items: per not-done chunk, its own median per level if any, else the seed-0 run's time
+    of the same chunk (seed / N->L normalised), else that run's level median, else its median,
+    times the stage factor; configs not written yet (C* after selection) use a template config."""
+    dirs, fac, tmpl = it.ref.get(stage, ([], 1.0, None))
+    cfg = f"configs/{stage}.yaml"
+    src = cfg if (ROOT / cfg).exists() else tmpl
+    if not src or not (ROOT / src).exists():
+        return []
+    rd, names = cfg_info(src)
+    done = chunk_state(rd, names)[0] if src == cfg else set()
+    own = {}
+    if src == cfg and (rd / "chunks").exists():
+        for f in (rd / "chunks").glob("*.done.json"):
+            try:
+                own.setdefault(_r3_norm(f.name[:-10])[1], []).append(json.loads(f.read_text())["seconds"])
+            except (ValueError, KeyError, OSError):
+                pass
+    exact, lvl, med = _r3_secs(dirs)
+    if med is None:  # no reference run: the generic estimate (country's L3 chunk x level multiplier)
+        import yaml
+        y = yaml.safe_load((ROOT / src).read_text())
+        c = y["country"].lower()
+        b = ref.get((c, "2019" if y["test_years"] == [2019] else "test"), 600)
+        if y["split"]["name"] == "S5":
+            b = ref.get(("colombia" if c == "brazil" else "brazil", "test"), 900) * 1.3
+        return [b * _mult(n.split("__")[1]) for n in names if n not in done]
+    out = []
+    for n in names:
+        if n in done:
+            continue
+        nn, l = _r3_norm(n)
+        m = _median(own.get(l, []))
+        out.append(m if m else fac * (exact.get(nn) or lvl.get(l) or med))
+    return out
+
+
 def _stage_chunks(it, stage, ref):
     """[(seconds, ...)] estimated for the not-done chunks of one stage."""
+    if it.kind == "r3":
+        return _r3_stage_chunks(it, stage, ref)
     cfg = f"configs/{it.cfg_prefix}{stage}.yaml"
     country = it.id.split("_")[0]
     tok = it.id[len(country) + 1:]

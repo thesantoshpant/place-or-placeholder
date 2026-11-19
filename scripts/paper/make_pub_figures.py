@@ -5,6 +5,8 @@ Reads ONLY the results-kit tables (docs/results/tables/*.csv) and writes
 
     docs/results/figures/pub/Fig1..Fig4.{png,pdf}
     docs/results/figures/pub/FigS1..FigS3.{png,pdf}
+      (FigS1 = feature ladder, FigS2 = per-year gains, FigS3 = embedding similarity, held-out country;
+       this numbering follows paper/v1/S2_supplement_results.md)
     docs/results/figures/pub/CAPTIONS.md
 
 Rerun after the kit is regenerated (no other inputs, no compute):
@@ -47,10 +49,10 @@ COUNTRY_COLOR = {"brazil": "#2a78d6", "colombia": "#eb6834", "peru": "#1baf7a", 
 COUNTRY_NAME = {"brazil": "Brazil", "colombia": "Colombia", "peru": "Peru", "taiwan": "Taiwan"}
 CODE_COUNTRY = {"BR": "brazil", "CO": "colombia", "PE": "peru", "TW": "taiwan"}
 SPLIT_ORDER = ["S1", "S2", "S3", "S4", "S5"]
-SPLIT_NAME = {"S1": "New years", "S2": "Held-out states", "S3": "Held-out blocks",
+# One name per split everywhere (text, tables, figures): triage round 3, A.10.
+SPLIT_NAME = {"S1": "New years", "S2": "Held-out states", "S3": "Held-out regions",
               "S4": "Held-out districts", "S5": "Held-out country"}
-SPLIT_LONG = {"S1": "new years", "S2": "held-out states", "S3": "held-out buffered blocks",
-              "S4": "held-out random districts", "S5": "held-out country"}
+SPLIT_LONG = {k: v.lower() for k, v in SPLIT_NAME.items()}
 SPLIT_MARKER = {"S1": "o", "S2": "s", "S3": "^", "S4": "D", "S5": "v"}
 CONTROL_NAME = {"C1": "pre-2018 case average", "C2": "coordinates", "C3": "shuffled embedding",
                 "C4": "random smooth fields", "C4s": "short-range random fields",
@@ -87,13 +89,18 @@ def read(name: str) -> pd.DataFrame:
 
 
 def fnum(v: float, signed: bool = True, dec: int | None = None) -> str:
-    """2 decimals (1 when |v| >= 10). A signed estimate that rounds to zero prints as 0.00 (no sign);
-    an interval bound keeps its sign (e.g. -0.00) so it shows which side of zero it lies on."""
+    """2 decimals (1 when |v| >= 10). A value that rounds to zero never prints a signed zero:
+    an estimate prints as 0.00; a non-zero interval bound gets one more decimal (e.g. -0.003)
+    so it still shows which side of zero it lies on."""
     if v is None or (isinstance(v, float) and math.isnan(v)):
         return "\u2013"
     d = dec if dec is not None else (1 if abs(v) >= 10 else 2)
-    if signed:
-        s = f"{0:.{d}f}" if round(v, d) == 0 else f"{v:+.{d}f}"
+    if round(v, d) == 0 and not signed and v != 0 and dec is None:
+        d += 1
+    if round(v, d) == 0:
+        s = f"{0:.{d}f}"
+    elif signed:
+        s = f"{v:+.{d}f}"
     else:
         s = f"{v:.{d}f}"
     return s.replace("-", MINUS)
@@ -112,6 +119,8 @@ def fp(p: float) -> str:
         return "<0.001"
     if p < 0.1:
         return f"{p:.3f}"
+    if p >= 0.995:                       # two significant digits, as in the tables (1.0, not 1.00)
+        return "1.0"
     return f"{p:.2f}"
 
 
@@ -354,14 +363,15 @@ def fig1():
     ax.text(gx0 + cw / 2 - 0.07, (yT + yB) / 2, "embedding\ngain", ha="right", va="center", fontsize=7.5,
             color=INK, linespacing=1.05)
     arrow(ax, (gx0 + cw + 0.03, yT), (gx1 - 0.03, yT), lw=0.9, ms=7)
-    ax.text((gx0 + cw + gx1) / 2, yT - 0.05, "identity\ngain", ha="center", va="top", fontsize=7.5,
+    ax.text((gx0 + cw + gx1) / 2, yT - 0.05, "control\ngain", ha="center", va="top", fontsize=7.5,
             color=INK, linespacing=1.05)
     arrow(ax, (gx1 + cw / 2, yT - ch / 2 - 0.03), (gx1 + cw / 2, yB + ch / 2 + 0.03), lw=2.0, ms=10,
           color=INK)
     ax.text(gx1 + cw / 2 - 0.08, (yT + yB) / 2 - 0.05, "excess gain\n(primary)", ha="right", va="center",
             fontsize=7.5, color=INK, fontweight="bold", linespacing=1.05)
     legend = ("C* chosen at the 2019 origin from:\nC1 historical risk, C2 coordinates,\n"
-              "C3 shuffled embedding, C4/C4s random\nsmooth fields, C5 2023 snapshot")
+              "C3 shuffled embedding, C4/C4s random\nsmooth fields, C5 2023 snapshot;\n"
+              "C6 district identifier (no-history arm)")
     ax.text(1.52, yB - ch / 2 - 0.14, legend, fontsize=7, color=INK2, va="top", ha="left", linespacing=1.2)
 
     # ------------------------------------------------------------- Panel B: where models are tested
@@ -425,14 +435,14 @@ def fig1():
     ring = lambda c: max(abs(c[0]), abs(c[1]), abs(c[0] + c[1]))  # noqa: E731
     xo, yo, wbl = place(disc, sx + 0.25, y)
     draw_hexes(ax, disc, xo, yo, Rb, lambda c: "test" if ring(c) <= 1 else ("drop" if ring(c) == 2 else "train"))
-    label(y + 0.06, "S3", "held-out buffered\nblocks", "buffer D (BR 225 km,\nCO 130 km)")
+    label(y + 0.06, "S3", "held-out regions", "compact blocks;\nbuffer D (BR 225 km,\nCO 130 km)")
     # S4: about 1 in 5 districts, scattered
     y = rows_y[3]
     rng = np.random.default_rng(11)
     pick = set(map(tuple, rng.choice(blob, size=round(len(blob) / 5), replace=False)))
     xo, yo, wbl = place(blob, sx + 0.25, y)
     draw_hexes(ax, blob, xo, yo, Rb, lambda c: "test" if c in pick else "train")
-    label(y, "S4", "held-out random\ndistricts")
+    label(y, "S4", "held-out districts", "assigned at random")
     # S5: four country clusters, one dark
     y = rows_y[4]
     shapes = {"BR": hex_blob(2, 2, seed=5), "CO": hex_blob(1, 0, seed=1) + [(2, -1), (1, 1)],
@@ -494,7 +504,7 @@ def fig1():
     ax.text(X(o) + 0.05, yTopLines, "forecast origin\n(end of week o)", fontsize=7, color=INK,
             ha="left", va="top", linespacing=1.05)
     # inputs that end at the origin (labels inside the bars)
-    for yy, lab in ((r1, "case history, weeks o−11 to o"), (r2, "climate, weeks o−11 to o")):
+    for yy, lab in ((r1, "case history: 12 weeks, o−11 to o"), (r2, "climate: 12 weeks, o−11 to o")):
         ax.add_patch(Rectangle((X(o - 12), yy - bar_h / 2), X(o) - X(o - 12), bar_h, fc="#cfcec8", lw=0,
                                zorder=3))
         ax.text(X(o - 12) + 0.06, yy, lab, fontsize=7.5, ha="left", va="center", color=INK, zorder=4)
@@ -522,10 +532,21 @@ def fig1():
     ax.plot([0.12, 1.62], [yAx, yAx], color=MUTED, lw=0.7, linestyle=(0, (1.5, 1.5)), zorder=2)
     for xx in (1.74, 1.82):
         ax.plot([xx - 0.03, xx + 0.03], [yAx - 0.05, yAx + 0.05], color=INK2, lw=0.7)
-    ticks = [(wk - 52 - 0.5, wk) for wk in (41, 45, 49)] + [(wk - 0.5, wk) for wk in (1, 5, 9, 13)]
+    # ticks every 4 weeks, chosen so that the first case-history week (o-11 = week 47 of Y-1) and the
+    # origin week (o = week 6 of Y) are labelled; week k spans (k-1, k] on this axis
+    ticks = [(wk - 52 - 0.5, wk) for wk in (43, 47, 51)] + [(wk - 0.5, wk) for wk in (2, 6, 10, 14)]
     for w, wk in ticks:
         ax.plot([X(w), X(w)], [yAx, yAx - 0.04], color=INK2, lw=0.6)
-        ax.text(X(w), yAx - 0.07, str(wk), fontsize=7, color=INK2, ha="center", va="top")
+        key = wk in (47, 6)
+        ax.text(X(w), yAx - 0.07, str(wk), fontsize=7, color=INK if key else INK2, ha="center", va="top",
+                fontweight="bold" if key else "normal")
+    # guide from the start of the case-history span down to the week axis
+    ax.plot([X(o - 12), X(o - 12)], [r1 - bar_h / 2, yAx], color=INK2, lw=0.6, linestyle=(0, (1.5, 1.5)),
+            zorder=2)
+    ax.text(X(o - 12) - 0.04, r1 + bar_h / 2 + 0.02, "week 47 of Y − 1", fontsize=6.8, color=INK2,
+            ha="right", va="bottom")
+    ax.text(X(o) - 0.04, r1 + bar_h / 2 + 0.02, "week 6 of Y", fontsize=6.8, color=INK2,
+            ha="right", va="bottom")
     ax.text((X(w0) + X(0)) / 2, yAx - 0.22, "year Y − 1 (epidemiological weeks)", fontsize=7.5,
             ha="center", va="top")
     ax.text((X(0) + X(w1)) / 2, yAx - 0.22, "year Y", fontsize=7.5, ha="center", va="top")
@@ -547,10 +568,12 @@ def fig1():
 
 # ============================================================================= Fig 2
 def fig2(t1: pd.DataFrame):
+    """Forest plot: excess gain (filled, primary) and embedding gain (open, co-primary) per cell."""
     rows, ylast = family_rows(t1)
-    pitch = 0.19
+    pitch = 0.30
+    off = 0.19                                   # vertical offset of the two markers (row units)
     n_units = -ylast + 1.0
-    top_m, bot_m = 0.40, 0.78
+    top_m, bot_m = 0.46, 0.92
     H = n_units * pitch + top_m + bot_m
     fig = plt.figure(figsize=(W_FULL, H))
     yl = (ylast - 0.6, 0.6)
@@ -558,62 +581,77 @@ def fig2(t1: pd.DataFrame):
     ay = bot_m
     cells = [r for r in rows if r["kind"] == "cell"]
     avail = [r for r in cells if is_available(r["rec"])]
-    margin = 1.0
-    # outliers go to a broken-axis panel on the left (negative) side
-    out = [r for r in avail if abs(r["rec"]["pct_of_WIS_ref"]) > 5]
-    inn = [r for r in avail if abs(r["rec"]["pct_of_WIS_ref"]) <= 5]
-    lo_in = min([r["rec"]["lo95_pct"] for r in inn] + [-margin])
-    hi_in = max([r["rec"]["hi95_pct"] for r in inn] + [margin])
+    margin, margin2 = 1.0, 0.5
+
+    def ests(rec):
+        return [(rec["pct_of_WIS_ref"], rec["lo95_pct"], rec["hi95_pct"]),
+                (rec["G_emb_pct"], rec["G_emb_lo95_pct"], rec["G_emb_hi95_pct"])]
+
+    # cells with any estimate beyond 5% go to a broken-axis panel on the left (negative) side
+    out = [r for r in avail if max(abs(e[0]) for e in ests(r["rec"]) if np.isfinite(e[0])) > 5]
+    inn = [r for r in avail if r not in out]
+    lo_in = min([e[1] for r in inn for e in ests(r["rec"]) if np.isfinite(e[1])] + [-margin])
+    hi_in = max([e[2] for r in inn for e in ests(r["rec"]) if np.isfinite(e[2])] + [margin])
     xm = (math.floor((lo_in - 0.15) * 2) / 2, math.ceil((hi_in + 0.15) * 2) / 2)
     has_break = len(out) > 0
     x_lab, w_lab = 0.0, 1.50
     x_brk, w_brk = 1.55, 0.72
     x_main = (x_brk + w_brk + 0.12) if has_break else 1.62
-    x_txt = 4.52
-    w_main = x_txt - 0.16 - x_main
+    x_txt = 4.62
+    w_main = x_txt - 0.14 - x_main
     axL = axes_in(fig, x_lab, ay, w_lab, ah); axL.set_ylim(*yl); axL.set_xlim(0, 1)
     draw_row_labels(axL, rows, x_country=0.03, x_cell=0.10)
     axM = axes_in(fig, x_main, ay, w_main, ah); axM.set_ylim(*yl); axM.set_xlim(*xm)
     axM.axvspan(-margin, margin, color=BAND, lw=0, zorder=0)
+    for v in (-margin2, margin2):
+        axM.axvline(v, color=MUTED, lw=0.6, linestyle=(0, (3, 2)), zorder=0.5)
     axM.axvline(0, color=INK2, lw=0.7, zorder=1)
     axM.spines["left"].set_visible(False); axM.set_yticks([])
     axM.set_xticks([t for t in np.arange(math.ceil(xm[0]), math.floor(xm[1]) + 1, 1.0)
                     if not (has_break and t - xm[0] < 0.35)])
-    axM.text(0, yl[1] + 0.25, f"±{margin:g}% equivalence margin", ha="center", va="bottom", fontsize=7,
-             color=MUTED, transform=axM.transData, clip_on=False)
+    axM.text(0, yl[1] + 0.25, f"±{margin:g}% (shaded) and ±{margin2:g}% (dashed)", ha="center", va="bottom",
+             fontsize=7, color=MUTED, transform=axM.transData, clip_on=False)
     axB = None
     if has_break:
-        lo_o = min(r["rec"]["lo95_pct"] for r in out)
-        hi_o = max(r["rec"]["hi95_pct"] for r in out)
+        lo_o = min(e[1] for r in out for e in ests(r["rec"]) if np.isfinite(e[1]))
+        hi_o = max(e[2] for r in out for e in ests(r["rec"]) if np.isfinite(e[2]))
         xb = (math.floor((lo_o - 1.5) / 5) * 5, math.ceil((hi_o + 1.5) / 5) * 5)
         axB = axes_in(fig, x_brk, ay, w_brk, ah); axB.set_ylim(*yl); axB.set_xlim(*xb)
         axB.spines["left"].set_visible(False); axB.set_yticks([])
         span = xb[1] - xb[0]
         step = 10 if span > 18 else 5
         tk = [t for t in np.arange(math.ceil(xb[0] / step) * step, xb[1] + 0.01, step)
-              if xb[0] + 0.15 * span <= t <= xb[1] - 0.15 * span]
+              if xb[0] + 0.12 * span <= t <= xb[1] - 0.12 * span]
+        if len(tk) > 2:                      # narrow panel: keep every other tick so labels do not touch
+            tk = tk[::2]
         axB.set_xticks(tk)
+        axB.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(lambda v, _: f"{v:g}".replace("-", MINUS)))
         break_marks(axB, "right"); break_marks(axM, "left")
     axT = axes_in(fig, x_txt, ay, W_FULL - x_txt - 0.04, ah); axT.set_ylim(*yl); axT.set_xlim(0, 1)
     axT.set_axis_off()
-    axT.text(0.0, yl[1] + 0.25, "Change, % (95% CI)", fontsize=7.5, color=INK2, ha="left", va="bottom",
+    axT.text(0.0, yl[1] + 0.25, "% (95% CI)", fontsize=7.5, color=INK2, ha="left", va="bottom",
              fontweight="bold")
     axT.text(1.0, yl[1] + 0.25, "Holm p", fontsize=7.5, color=INK2, ha="right", va="bottom",
              fontweight="bold")
     for r in cells:
         rec, y, col = r["rec"], r["y"], COUNTRY_COLOR[r["country"]]
         if not is_available(rec):
-            axM.text(xm[0] + 0.08, y, "results pending", fontsize=7.5, color=MUTED, style="italic",
-                     va="center", ha="left")
+            axM.text(0.0, y, "results pending", fontsize=7.5, color=MUTED, style="italic",
+                     va="center", ha="center", bbox=dict(boxstyle="square,pad=0.2", fc=BAND, ec="none"), zorder=6)
             axT.text(0.0, y, "pending", fontsize=7.5, color=MUTED, style="italic", va="center", ha="left")
             continue
-        est, lo, hi = rec["pct_of_WIS_ref"], rec["lo95_pct"], rec["hi95_pct"]
-        sig = bool(rec["Holm_p"] < 0.05)
         target = axB if (has_break and r in out) else axM
-        draw_interval(target, y, est, lo, hi, col, filled=sig, xlim=target.get_xlim())
-        axT.text(0.0, y, fci(est, lo, hi), fontsize=7.5, color=INK, va="center", ha="left")
-        axT.text(1.0, y, fp(rec["Holm_p"]), fontsize=7.5, color=INK if sig else INK2, va="center", ha="right",
-                 fontweight="bold" if sig else "normal")
+        (e1, l1, h1), (e2, l2, h2) = ests(rec)
+        draw_interval(target, y + off, e1, l1, h1, col, filled=True, xlim=target.get_xlim(), ms=4.4)
+        if np.isfinite(e2):
+            draw_interval(target, y - off, e2, l2, h2, col, filled=False, xlim=target.get_xlim(), ms=4.0,
+                          lw=0.8)
+        sig = bool(rec["Holm_p"] < 0.05)
+        axT.text(0.0, y + off, fci(e1, l1, h1), fontsize=7, color=INK, va="center", ha="left")
+        axT.text(1.0, y + off, fp(rec["Holm_p"]), fontsize=7, color=INK if sig else INK2, va="center",
+                 ha="right", fontweight="bold" if sig else "normal")
+        if np.isfinite(e2):
+            axT.text(0.0, y - off, fci(e2, l2, h2), fontsize=7, color=INK2, va="center", ha="left")
     if has_break:
         axB.annotate("\u2190 embeddings hurt", (0, 0), xycoords="axes fraction", xytext=(0, -13),
                      textcoords="offset points", ha="left", va="top", fontsize=7.5, color=MUTED)
@@ -621,13 +659,22 @@ def fig2(t1: pd.DataFrame):
     else:
         x_cues(axM, dy=-13)
     xc = ((x_brk if has_break else x_main) + x_main + w_main) / 2
-    ftext(fig, xc, ay - 0.42, "Reduction in forecast error from embeddings (%)", ha="center", va="top",
-          fontsize=8)
-    sig_key(fig, 0.06, ay - 0.62, "Holm-adjusted p < 0.05", "not significant")
+    ftext(fig, xc, ay - 0.40, "Change in forecast error (% of reference WIS); positive = embeddings help",
+          ha="center", va="top", fontsize=8)
+    # marker key
+    ky = ay - 0.70
+    k1 = axes_in(fig, 0.06, ky - 0.09, 0.12, 0.18); k1.set_axis_off(); k1.set_xlim(0, 1); k1.set_ylim(0, 1)
+    k1.plot(0.5, 0.5, "o", ms=4.4, mfc=INK2, mec=INK2, mew=1.0, clip_on=False)
+    ftext(fig, 0.19, ky, "excess gain, L3 + C* → L4 + C* (primary; Holm p)", va="center", fontsize=7.5,
+          color=INK2)
+    k2 = axes_in(fig, 3.30, ky - 0.09, 0.12, 0.18); k2.set_axis_off(); k2.set_xlim(0, 1); k2.set_ylim(0, 1)
+    k2.plot(0.5, 0.5, "o", ms=4.0, mfc="white", mec=INK2, mew=1.0, clip_on=False)
+    ftext(fig, 3.43, ky, "embedding gain, L3 → L4 (co-primary)", va="center", fontsize=7.5, color=INK2)
     return fig, dict(n_avail=len(avail), n_cells=len(cells),
-                     pending=[f"{COUNTRY_NAME[r['country']]} {r['split']}" for r in cells
-                              if not is_available(r["rec"])],
-                     outliers=[f"{COUNTRY_NAME[r['country']]} {r['split']}" for r in out])
+                     pending=[f"{COUNTRY_NAME[r['country']]} {SPLIT_NAME[r['split']].lower()} ({r['split']})"
+                              for r in cells if not is_available(r["rec"])],
+                     outliers=[f"{COUNTRY_NAME[r['country']]} {SPLIT_NAME[r['split']].lower()} ({r['split']})"
+                               for r in out])
 
 
 # ============================================================================= Fig 3
@@ -639,7 +686,7 @@ def fig3(t1: pd.DataFrame, t5: pd.DataFrame):
     rows, ylast = family_rows(t1)
     s = t5[t5.estimand == "G_excess"]
     pitch = 0.19
-    top_m, bot_m = 0.52, 0.66
+    top_m, bot_m = 0.52, 0.78
     H = (-ylast + 1.0 + 0.2) * pitch + top_m + bot_m
     fig = plt.figure(figsize=(W_FULL, H))
     yl = (ylast - 0.6, 0.6)
@@ -692,19 +739,20 @@ def fig3(t1: pd.DataFrame, t5: pd.DataFrame):
         v = tot.iloc[0] if len(tot) else r["rec"]["pct_of_WIS_ref"]
         axT.text(1.0, r["y"], fnum(v), fontsize=7.5, ha="right", va="center")
     ftext(fig, (xs[0] + xs[-1] + w_p) / 2, ay - 0.36,
-          "Contribution to the reduction in forecast error (percentage points)", ha="center", va="top")
-    sig_key(fig, 0.06, ay - 0.52, "95% CI excludes 0", "includes 0")
+          "Contribution to the change in forecast error (percentage points of reference WIS)", ha="center",
+          va="top")
+    sig_key(fig, 0.06, ay - 0.64, "95% CI excludes 0", "includes 0")
     return fig, dict(xlim=xl)
 
 
 # ============================================================================= Fig 4
 def nohist_label(code: str, cstar: str) -> str:
     cn = CONTROL_NAME.get(cstar, cstar)
-    return {"N3": "Base model (N3)",
-            "N3+C1": "Base + pre-2018 case average (C1)",
-            "N3+C*": f"Base + {cn} ({cstar})",
-            "N4": "Base + embeddings (N4)",
-            "N4+C*": f"Base + embeddings + {cn}"}.get(code, code)
+    return {"N3": "Reference model (N3)",
+            "N3+C1": "Reference + pre-2018 case average (C1)",
+            "N3+C*": f"Reference + {cn} ({cstar})",
+            "N4": "Reference + embeddings (N4)",
+            "N4+C*": f"Reference + embeddings + {cn}"}.get(code, code)
 
 
 def fig4(t6b: pd.DataFrame, t6c: pd.DataFrame, t4: pd.DataFrame):
@@ -721,7 +769,7 @@ def fig4(t6b: pd.DataFrame, t6c: pd.DataFrame, t4: pd.DataFrame):
     offs = {c: (0.0 if not multi else (0.16 if i == 0 else -0.16)) for i, c in enumerate(cells)}
     ladder = ["N3", "N3+C1", "N3+C*", "N4", "N4+C*"]
     gains = [("G_id", f"{CONTROL_NAME.get(cs, cs).capitalize()} alone",
-              "identity gain: N3 → N3 + C*"),
+              "control gain: N3 → N3 + C*"),
              ("G_emb", "Embeddings alone", "embedding gain: N3 → N4"),
              ("G_excess", f"Embeddings beyond {CONTROL_NAME.get(cs, cs)}",
               "excess gain: N3 + C* → N4 + C*")]
@@ -731,9 +779,9 @@ def fig4(t6b: pd.DataFrame, t6c: pd.DataFrame, t4: pd.DataFrame):
     bot, mid, topm = 0.62, 0.72, (0.22 if not multi else 0.40)
     H = bot + hB + mid + hA + topm
     fig = plt.figure(figsize=(W_FULL, H))
-    x_lab, w_lab = 0.0, 2.25
-    x_plot = 2.35
-    w_plot = 2.75 if not multi else 2.45
+    x_lab, w_lab = 0.0, 2.40
+    x_plot = 2.55
+    w_plot = 2.60 if not multi else 2.30
     x_txt = x_plot + w_plot + 0.12
     # ---- A: ladder (mean WIS)
     yA = bot + hB + mid
@@ -768,7 +816,7 @@ def fig4(t6b: pd.DataFrame, t6c: pd.DataFrame, t4: pd.DataFrame):
     axA.xaxis.set_major_locator(matplotlib.ticker.MaxNLocator(4))
     axA.xaxis.set_major_formatter(matplotlib.ticker.FormatStrFormatter("%.3f"))
     axA.xaxis.grid(True, color=GRID, lw=0.5); axA.set_axisbelow(True)
-    axA.set_xlabel("Forecast error (mean WIS on log cases; lower is better)", labelpad=3)
+    axA.set_xlabel("Forecast error (mean WIS over rows, log(1 + cases); lower is better)", labelpad=3)
     ftext(fig, 0.05, yA + hA + 0.05, "A", fontsize=9.5, fontweight="bold", va="bottom")
     # ---- B: gains
     yB = bot
@@ -789,10 +837,13 @@ def fig4(t6b: pd.DataFrame, t6c: pd.DataFrame, t4: pd.DataFrame):
     xlB = (math.floor(lo - 0.3), math.ceil(hi + 0.3))
     axB.set_xlim(*xlB)
     axB.axvspan(-1, 1, color=BAND, lw=0, zorder=0)
+    for v in (-0.5, 0.5):
+        axB.axvline(v, color=MUTED, lw=0.6, linestyle=(0, (3, 2)), zorder=0.5)
     axB.axvline(0, color=INK2, lw=0.7, zorder=1)
     axB.spines["left"].set_visible(False); axB.set_yticks([])
     axB.set_xticks(np.arange(xlB[0], xlB[1] + 0.01, 1.0 if xlB[1] - xlB[0] <= 10 else 2.0))
-    axB.text(0, ylB[1] + 0.1, "±1% margin", ha="center", va="bottom", fontsize=7, color=MUTED)
+    axB.text(0, ylB[1] + 0.1, "±1% (shaded), ±0.5% (dashed)", ha="center", va="bottom", fontsize=7,
+             color=MUTED)
     axT.text(0.0, ylB[1] + 0.1, "% (95% CI)", fontsize=7.5, color=INK2, fontweight="bold", va="bottom")
     for i, (est, name, sub) in enumerate(gains):
         y = -i * gp
@@ -811,7 +862,8 @@ def fig4(t6b: pd.DataFrame, t6c: pd.DataFrame, t4: pd.DataFrame):
                 txt = f"{split_of[c]}  {txt}"
             axT.text(0.0, y + offs[c], txt, fontsize=7.5, va="center", ha="left")
     x_cues(axB, left="\u2190 worse", right="better \u2192", dy=-13)
-    axB.set_xlabel("Reduction in forecast error (% of the base model's error)", labelpad=17)
+    axB.set_xlabel("Change in forecast error (% of reference WIS, weeks weighted equally); positive = better",
+                   labelpad=17)
     ftext(fig, 0.05, yB + hB + 0.05, "B", fontsize=9.5, fontweight="bold", va="bottom")
     if multi:
         fig.canvas.draw()
@@ -844,8 +896,8 @@ def fig4(t6b: pd.DataFrame, t6c: pd.DataFrame, t4: pd.DataFrame):
     return fig, dict(cells=cells, cstar=cstar, takeaway=take)
 
 
-# ============================================================================= Fig S1
-def figS1(s7: pd.DataFrame, s7b: pd.DataFrame):
+# ============================================================================= Fig S3 (similarity)
+def fig_similarity(s7: pd.DataFrame, s7b: pd.DataFrame):
     cells = [f"{k}_S5" for k in ("BR", "CO", "PE", "TW") if f"{k}_S5" in set(s7b.cell)]
     n = len(cells)
     H = 2.55
@@ -882,7 +934,7 @@ def figS1(s7: pd.DataFrame, s7b: pd.DataFrame):
                         xycoords="axes fraction", xytext=(0, 4), textcoords="offset points", fontsize=7,
                         color=INK2, ha="left", va="bottom")
         if i == 0:
-            ax.set_ylabel("Reduction in forecast error\nfrom embeddings (%)", labelpad=3)
+            ax.set_ylabel("Excess gain\n(% of reference WIS)", labelpad=3)
     ftext(fig, (left + W_FULL - right) / 2, 0.18,
           "Embedding similarity to the closest training district (cosine; mean of each fifth of districts)",
           ha="center", va="bottom")
@@ -958,14 +1010,14 @@ def figS2(s8: pd.DataFrame):
         ax.set_xticklabels(labels, fontsize=7.5, linespacing=1.15)
         ax.tick_params(axis="x", length=0)
         ax.yaxis.grid(True, color=GRID, lw=0.5); ax.set_axisbelow(True)
-        ax.text(0.0, 1.03, COUNTRY_NAME[c], transform=ax.transAxes, fontsize=8, fontweight="bold",
-                ha="left", va="bottom")
+        ax.text(0.0, 1.03, COUNTRY_NAME[c] + (" (2021 included)" if c == "taiwan" else ""),
+                transform=ax.transAxes, fontsize=8, fontweight="bold", ha="left", va="bottom")
         if i % 2 == 0:
-            ax.set_ylabel("Reduction in forecast error\nfrom embeddings (%)", labelpad=3)
+            ax.set_ylabel("Excess gain\n(% of that year's reference WIS)", labelpad=3)
     # split key, entries placed by measured width
     fig.canvas.draw()
     rend = fig.canvas.get_renderer()
-    x, yk = left, H - 0.17
+    x, yk = 0.30, H - 0.17
     for sp in SPLIT_ORDER:
         if sp not in set(d.split):
             continue
@@ -977,14 +1029,14 @@ def figS2(s8: pd.DataFrame):
     return fig, {}
 
 
-# ============================================================================= Fig S3
-LADDER_ROWS = [("L0", "L0 seasonal naive"), ("L1", "L1 case history (reference)"),
+# ============================================================================= Fig S1 (ladder)
+LADDER_ROWS = [("L0", "L0 seasonal naive"), ("L1", "L1 case history (= 0)"),
                ("L2", "L2 + weekly climate"), ("L3", "L3 + remote sensing, population"),
                ("L4", "L4 + embeddings"), ("L3+C*", "L3 + location control C*"),
                ("L4+C*", "L4 + location control C*")]
 
 
-def figS3(t2: pd.DataFrame):
+def fig_ladder(t2: pd.DataFrame):
     cells = [f"{k}_S1" for k in ("BR", "CO", "PE", "TW") if f"{k}_S1" in set(t2.cell)]
     col_w = "WIS pooled h{1,4}"
     n = len(cells)
@@ -1035,95 +1087,134 @@ def figS3(t2: pd.DataFrame):
                             textcoords="offset points", ha="left" if v < xl[0] else "right", va="center",
                             fontsize=7, color=INK2, zorder=6,
                             bbox=dict(boxstyle="square,pad=0.15", fc="white", ec="none"))
-        ax.text(0.0, 1.0 + 0.06 / ah, COUNTRY_NAME[country], transform=ax.transAxes, fontsize=8,
+        ax.text(0.0, 1.0 + 0.06 / ah, COUNTRY_NAME[country] + ("\n(without 2021)" if country == "taiwan" else ""),
+                transform=ax.transAxes, fontsize=8,
                 fontweight="bold", ha="left", va="bottom")
         x_cues(ax, left="← worse", right="better →", dy=-13, size=7)
     ftext(fig, w_lab + 0.06 + (W_FULL - w_lab - 0.06) / 2, ay - 0.34,
-          "Reduction in forecast error relative to L1 (%)", ha="center", va="top")
+          "Reduction in mean WIS over rows relative to L1 (%)", ha="center", va="top")
     n_rows = {c: int(t2[t2.cell == c].n_rows.iloc[0]) for c in cells}
     return fig, dict(cells=cells, n_rows=n_rows)
 
 
 # ============================================================================= captions
 def captions(meta: dict, t1: pd.DataFrame) -> str:
+    """Captions that describe exactly what the current script draws (regenerated on every full run)."""
     m2 = meta["fig2"]
     n_av, n_c = m2["n_avail"], m2["n_cells"]
-    pend = (f" Cells not yet available: {', '.join(m2['pending'])}." if m2["pending"] else "")
-    outl = (f" {', '.join(m2['outliers'])} is drawn on its own scale at left (axis break)."
-            if m2["outliers"] else "")
-    s3_note = ""
-    for c, n in (meta.get("figS3") or {}).get("n_rows", {}).items():
-        r1 = t1[t1.cell == c]
-        if len(r1) and np.isfinite(r1.n_rows.iloc[0]) and int(r1.n_rows.iloc[0]) != n:
-            s3_note += (f" {COUNTRY_NAME[CODE_COUNTRY[c[:2]]]}: the ladder table covers {n:,} rows, "
-                        f"not the {int(r1.n_rows.iloc[0]):,} of the primary cell (Fig 2).")
+    pend = (f" Results not yet available: {', '.join(m2['pending'])}." if m2["pending"] else "")
+    outl = ""
+    for name in m2["outliers"]:
+        code = name.split("(")[-1].rstrip(")")
+        cty = [k for k, v in COUNTRY_NAME.items() if name.startswith(v)][0]
+        r = t1[(t1.country == cty) & (t1.split == code)]
+        if len(r):
+            q = r.iloc[0]
+            outl += (f" {name.replace(' held-out', ', held-out')} is drawn on its own scale in the left panel after an axis break: excess gain "
+                     f"{fnum(q.pct_of_WIS_ref)}% (absolute {fnum(q.G_excess, True, 4)} log-WIS) and "
+                     f"embedding gain {fnum(q.G_emb_pct)}% (absolute {fnum(q.G_emb, True, 4)}).")
     holm_m = int(t1.n_family_available.dropna().iloc[0]) if "n_family_available" in t1 else n_av
-    holm_note = (f"Holm's correction is over the {holm_m} available cells; the final family has {n_c}"
-                 if holm_m < n_c else f"Holm's correction is over all {n_c} cells")
+    holm_note = (f"Holm adjustment over the {holm_m} available cells, final family {n_c}"
+                 if holm_m < n_c else f"Holm adjustment over all {n_c} cells")
+    tw = t1[t1.country == "taiwan"]
+    tw_note = (" Taiwan cells include test year 2021." if len(tw) and tw.test_years.astype(str).str.contains("2021").all()
+               else "")
     m4 = meta["fig4"]
     cs = m4["cstar"].get("BR_S1_nohist", "C*")
     cname = CONTROL_NAME.get(cs, cs)
     take = m4.get("takeaway", "")
     s2_note = ("" if "BR_S2_nohist" in m4["cells"] else
-               " Brazil S2 (the arm's headline split) is not yet in the kit tables; the figure adds it "
-               "automatically when it appears.")
+               " Only Brazil, new years (S1) is drawn; Brazil, held-out states (S2), is added on rerun once "
+               "its results are released.")
+    ms1 = meta.get("figS1") or {}
+    s1_note = ""
+    for c, n in ms1.get("n_rows", {}).items():
+        r1 = t1[t1.cell == c]
+        if len(r1) and np.isfinite(r1.n_rows.iloc[0]) and int(r1.n_rows.iloc[0]) != n:
+            s1_note += (f" The {COUNTRY_NAME[CODE_COUNTRY[c[:2]]]} panel uses {n:,} rows without test year "
+                        f"2021 (the L0–L2 runs have no 2021 forecasts), not the {int(r1.n_rows.iloc[0]):,} "
+                        f"rows of the primary cell, and its L2 model was tuned separately, so its L2 point is "
+                        f"not comparable with the other rungs.")
+    split_key = ("S1, new years; S2, held-out states; S3, held-out regions; S4, held-out districts; "
+                 "S5, held-out country")
     lines = [
-        "# Figure captions (suggested)",
+        "# Figure captions",
         "",
-        "Generated by `scripts/paper/make_pub_figures.py` from the results-kit tables; cell counts, the selected "
-        "control and pending notes update on rerun. WIS = weighted interval score on log(1 + cases); lower is "
-        "better.",
+        "Generated by `scripts/paper/make_pub_figures.py` from the results-kit tables "
+        "(`docs/results/tables/*.csv`); cell counts, the selected control, Holm denominators and pending notes "
+        "update on rerun. These captions describe exactly what is drawn. WIS = weighted interval score on "
+        "log(1 + cases); lower is better. Reference WIS = WIS of the reference model L3 (N3 without case "
+        "history) on the same rows.",
         "",
         "**Fig 1. Study design and information timing.** Each comparison changes one block of inputs while "
-        "the model, rows and configuration stay fixed; primary scores use only forecasts whose inputs and "
-        "training labels end at the origin. (A) The feature ladder L0–L4 and the four models behind the "
-        "three gains: the embedding gain (L3 to L4), the identity gain (L3 to L3 + C*) and the primary excess "
-        "gain (L3 + C* to L4 + C*); the location control C* is chosen at the 2019 origin. (B) The five "
-        "evaluation splits, drawn on generic clusters of hexagons standing for districts (light: training, "
-        "dark: test, dashed: dropped buffer). (C) What one forecast at origin o may use: case and climate "
-        "inputs up to week o, remote sensing from the last three complete months, yearly inputs from the year "
-        "before the target's epidemiological year, and training targets up to the end of the previous year. "
-        "Targets in the first h weeks of a year (origin in the previous year) are dropped from primary "
-        "scoring.",
+        "the model type, scored rows and configuration stay fixed; primary scores use only forecasts whose "
+        "inputs and training labels end at the origin. (A) What is compared: the ladder L0–L4 and, from the "
+        "reference model L3, the 2 × 2 grid behind the three gains: the embedding gain (L3 to L4), the control "
+        "gain (L3 to L3 + C*) and the excess gain (L3 + C* to L4 + C*; primary). The location control C* is "
+        "chosen at the 2019 origin from C1 historical risk, C2 coordinates, C3 shuffled embedding, C4/C4s "
+        "random smooth fields and C5 2023 snapshot; C6 (district identifier) is a candidate only in the "
+        "analysis without case history. (B) Where models are tested, drawn on generic clusters of hexagons "
+        "standing for districts (light: training; dark: test; dashed: dropped buffer): " + split_key + ". "
+        "S2–S4 were run in Brazil and Colombia, S1 and S5 in all four countries; held-out districts keep "
+        "their own lagged cases. (C) Information timing for one forecast. The example origin o is the end "
+        "of epidemiological week 6 of year Y, so the 12-week case-history and climate windows (o − 11 to o) "
+        "run from week 47 of year Y − 1 to week 6 of year Y (bold tick labels; a 52-week year is drawn). "
+        "Remote sensing uses the last three complete months before the month of o; yearly inputs come from "
+        "the year before the target's epidemiological year; training targets end in the last week of Y − 1. "
+        "Targets in the first h weeks of Y (origin in Y − 1; hatched) are dropped from primary scoring. "
+        "Horizons h are 1 to 4 weeks; primary estimates pool horizons 1 and 4.",
         "",
-        f"**Fig 2. Excess gain from AlphaEarth embeddings in each country and evaluation split.** Points show "
-        f"the reduction in mean WIS when the embeddings are added to a model that already has the "
-        f"validation-selected location control (L3 + C* to L4 + C*), as a percentage of WIS(L3); positive "
-        f"values mean the embeddings improved forecasts. Horizons 1 and 4 weeks pooled; lines are 95% "
-        f"confidence intervals from Diebold–Mariano tests with an EWC variance estimator and the HLN "
-        f"correction. Filled points: Holm-adjusted p < 0.05; {holm_note}. The grey band marks the ±1% "
-        f"equivalence margin.{outl}{pend} S1 new years; S2 held-out states; S3 held-out buffered blocks; "
-        f"S4 held-out random districts; S5 held-out country.",
+        f"**Fig 2. Excess and embedding gains from AlphaEarth embeddings in each country and split.** For each "
+        f"cell, the filled marker is the excess gain (L3 + C* to L4 + C*; primary) and the open marker, drawn "
+        f"just below it, is the embedding gain (L3 to L4; co-primary), both as a percentage of the reference "
+        f"WIS (weeks weighted equally; origin-year rows; horizons 1 and 4 pooled). Positive values mean that "
+        f"the embeddings improve the forecast. Lines are 95% confidence intervals from Diebold–Mariano tests "
+        f"with the EWC variance and the HLN correction. The shaded band is the ±1% equivalence margin and the "
+        f"dashed lines mark ±0.5%. The right-hand columns give each gain with its 95% CI (embedding gain in "
+        f"grey) and the Holm-adjusted p value of the excess gain ({holm_note}; bold: p < 0.05).{outl}"
+        f"{tw_note}{pend} {split_key}.",
         "",
-        "**Fig 3. Where the excess gain comes from.** The excess gain of Fig 2 split additively into "
-        "contributions from three kinds of target weeks: weeks with cases, zeros listed by the source "
-        "(recorded zeros, Brazil 2020–2021 only) and weeks we filled with zero; the three contributions "
-        "sum to the total at right. Values are percentage points of WIS(L3), horizons 1 and 4 pooled, with "
-        "95% confidence intervals (filled: interval excludes 0). Strata depend on the outcome and are "
-        "descriptive. Off-scale values are printed beside an arrow at the panel edge.",
+        "**Fig 3. Contributions of three types of target week to the excess gain.** For each cell, the excess "
+        "gain of Fig 2 is split additively into contributions from weeks with cases, zero weeks listed by the "
+        "source (recorded zeros; Brazil 2020–2021 only) and zero weeks filled by us, each in percentage points "
+        "of the cell's reference WIS, with 95% confidence intervals (unadjusted; filled marker: interval "
+        "excludes 0). The three contributions add up exactly to the total printed in the right-hand column "
+        "(no total marker is drawn). Interval ends beyond the axis are cut with an arrowhead; an estimate "
+        "beyond the axis is drawn as an arrow at the panel edge with its value printed beside it (Taiwan, "
+        "held-out country, zero-filled weeks). The strata are defined by the outcome and are "
+        "descriptive." + tw_note + " " + split_key + ".",
         "",
-        f"**Fig 4. Forecasting without case history (Brazil, exploratory arm).** Models use climate, remote "
-        f"sensing and population only (N3), plus a location input. (A) Mean WIS for each model, horizons 1 and "
-        f"4 pooled; C* is {cs} ({cname}), chosen at the 2019 origin, and C1 (the district's pre-2018 case "
-        f"average) is a separate static-history rung. (B) Gains as a percentage of the base model's WIS, with "
-        f"95% confidence intervals (filled: interval excludes 0); the grey band marks ±1%.{take}{s2_note}",
+        f"**Fig 4. Forecasting without case history (Brazil, new years; exploratory).** Models use season, "
+        f"climate, remote sensing and population only (reference model N3), plus a location input. "
+        f"(A) Mean WIS over rows for each model, horizons 1 and 4 pooled (seed 0; the same rows in every "
+        f"model). C* is {cs} ({cname}), chosen at the 2019 origin; C1 (pre-2018 case average, static history) "
+        f"is a separate rung, not a candidate. (B) Control gain (N3 to N3 + C*), embedding gain (N3 to N4) and "
+        f"excess gain (N3 + C* to N4 + C*) as a percentage of the reference WIS with weeks weighted equally, "
+        f"so panel B percentages use a slightly different denominator from the row means in panel A; 95% "
+        f"confidence intervals (filled marker: interval excludes 0). The shaded band is ±1% and the dashed "
+        f"lines ±0.5%.{take}{s2_note}",
         "",
-        "**Fig S1. Embedding similarity and the excess gain when a whole country is held out (S5).** Districts "
-        "of the held-out country are split into fifths by the cosine similarity between their AlphaEarth "
-        "embedding and that of the most similar training district. Points show each fifth's excess gain as a "
-        "percentage of the country's overall WIS(L3), with 95% confidence intervals; ρ is the "
-        "district-level Spearman correlation between similarity and gain. Vertical scales differ between "
-        "panels.",
+        "**Fig S1. Model ladder in the new-years split (S1), by country.** Reduction in mean WIS over rows "
+        "relative to L1 (case history only; open marker at 0), horizons 1 and 4 pooled, for L0 to L4 and for "
+        "L3 and L4 with the selected location control (C* = C1, historical risk, in every country). Values "
+        "beyond a panel are drawn as an arrow with their value (the seasonal naive L0 everywhere). Panels "
+        f"have their own scales.{s1_note}",
         "",
-        "**Fig S2. Excess gain by test year.** Each point is one country × split × test year, as a "
-        "percentage of that year's WIS(L3), horizons 1 and 4 pooled, with 95% confidence intervals (filled: "
-        "interval excludes 0); marker shape gives the split. Shaded years are COVID-era reporting. Intervals "
-        "running past the panel are cut with an arrowhead; in Taiwan 2021 there were no local cases, so WIS(L3) "
-        "is tiny and percentages are very large. Vertical scales differ between panels.",
+        "**Fig S2. Excess gain by test year.** Each point is one cell and test year, as a percentage of that "
+        "year's reference WIS (weeks weighted equally), horizons 1 and 4 pooled, with 95% confidence intervals "
+        "(unadjusted; filled marker: interval excludes 0); marker shape gives the split. Shaded years are "
+        "the COVID-19 pandemic years 2020–2021 (in the Taiwan panel only 2020 is shaded, and 2021 is labelled "
+        "\"no local cases\"). Intervals running past a panel are cut with an arrowhead. "
+        "Taiwan includes 2021, when there were no local cases, so its reference WIS is tiny and its "
+        "percentages are very large (absolute values in Table S30). Panels have their own scales.",
         "",
-        "**Fig S3. The feature ladder in the new-years split (S1).** Reduction in mean WIS relative to L1 (case "
-        "history only), horizons 1 and 4 pooled, for each level and for L3/L4 with the validation-selected "
-        f"location control. Points beyond the panel are drawn as arrows with their value.{s3_note}",
+        "**Fig S3. Embedding similarity and the excess gain when a whole country is held out (S5).** The "
+        "districts of the held-out country are split into fifths by the maximum cosine similarity between "
+        "their renormalised AlphaEarth embedding (year y − 1) and those of the training districts. Points "
+        "show each fifth's mean similarity and its excess gain as a percentage of the cell's overall "
+        "reference WIS, with 95% confidence intervals; ρ is the district-level Spearman correlation between "
+        "similarity and excess gain (naive p values in Table S39). Panels have their own vertical scales. "
+        "Exploratory.",
         "",
     ]
     return "\n".join(lines)
@@ -1157,9 +1248,9 @@ def main():
     run("Fig3", lambda: fig3(t1, read("T5_strata")))
     meta["fig4"] = run("Fig4", lambda: fig4(read("T6b_nohist_estimands"), read("T6c_nohist_ladder"),
                                             read("T4_cstar_selection"))) or {"cells": [], "cstar": {}}
-    run("FigS1", lambda: figS1(read("S7_embedding_distance"), read("S7b_embedding_distance_bins")))
+    meta["figS1"] = run("FigS1", lambda: fig_ladder(read("T2_ladder"))) or {}
     run("FigS2", lambda: figS2(read("S8_per_year")))
-    meta["figS3"] = run("FigS3", lambda: figS3(read("T2_ladder"))) or {}
+    run("FigS3", lambda: fig_similarity(read("S7_embedding_distance"), read("S7b_embedding_distance_bins")))
     if want is None:
         (OUT / "CAPTIONS.md").write_text(captions(meta, t1))
         made.append(OUT / "CAPTIONS.md")
@@ -1171,10 +1262,11 @@ def fig2_meta_only(t1):
     rows, _ = family_rows(t1)
     cells = [r for r in rows if r["kind"] == "cell"]
     avail = [r for r in cells if is_available(r["rec"])]
+    nm = lambda r: f"{COUNTRY_NAME[r['country']]} {SPLIT_NAME[r['split']].lower()} ({r['split']})"  # noqa: E731
     return dict(n_avail=len(avail), n_cells=len(cells),
-                pending=[f"{COUNTRY_NAME[r['country']]} {r['split']}" for r in cells if not is_available(r["rec"])],
-                outliers=[f"{COUNTRY_NAME[r['country']]} {r['split']}" for r in avail
-                          if abs(r["rec"]["pct_of_WIS_ref"]) > 5])
+                pending=[nm(r) for r in cells if not is_available(r["rec"])],
+                outliers=[nm(r) for r in avail
+                          if max(abs(r["rec"]["pct_of_WIS_ref"]), abs(r["rec"].get("G_emb_pct", 0) or 0)) > 5])
 
 
 if __name__ == "__main__":

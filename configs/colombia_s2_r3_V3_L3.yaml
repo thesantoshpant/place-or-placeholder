@@ -1,0 +1,58 @@
+# Round-3 EXP-A representation variant (exploratory; docs/methods/round3_variants.md).
+# colombia_s2 V3 role L3: level L3+V3. Copy of configs/colombia_s2_L3_Cstar.yaml except exp_name, runs, horizons {1,4},
+# seed 0, threads 4.
+exp_name: colombia_s2_r3_V3_L3
+country: COLOMBIA
+panel: data/processed/panel_weekly_v1.parquet
+split:
+  name: S2
+  folds: all
+test_years:
+- 2020
+- 2021
+- 2022
+tune_year: 2019
+horizons:
+- 1
+- 4
+quantiles:
+- 0.1
+- 0.2
+- 0.3
+- 0.4
+- 0.5
+- 0.6
+- 0.7
+- 0.8
+- 0.9
+coverage_levels:
+- 0.4
+- 0.8
+exclude_flag_gap: true
+seeds:
+- 0
+threads: 4
+features:
+  climate_lag_vars:
+  - tmean
+  - precip
+  - rh
+  yearly_ref: target
+  remote_sensing:
+    lst_screen: true
+  alphaearth:
+    weights: w
+    normalize: true
+  control_kw:
+    C1:
+      c1_period: auto
+    C4:
+      range_km: 705.11
+    C4s:
+      range_km: 130.0
+runs:
+- model: lgbm
+  level: L3+V3
+  name: lgbm-L3+V3
+  seeded: false
+  params_from: runs/colombia_s1_baselines/tuning_lgbm-L1.json

@@ -424,3 +424,10 @@ LEVELS = {"L0": _l0, "L1": _l1, "L2": _l2, "L3": _l3, "L4": _l4,
           **{f"L4+{c}": _l4c(c) for c in CONTROLS},
           **NOHIST_LEVELS}
 NO_LOCATION_LEVELS = {"L0", "L1", "L2"}  # history + climate: no location columns allowed
+
+
+# Round-3 representation variants (post hoc, exploratory; pop.features.variants,
+# docs/methods/round3_variants.md). Additive only: new level names; the levels above are unchanged.
+from pop.features.variants import VARIANT_LEVELS as _VARIANT_LEVELS  # noqa: E402
+assert not set(_VARIANT_LEVELS) & set(LEVELS), "variant levels must not shadow existing levels"
+LEVELS.update(_VARIANT_LEVELS)
