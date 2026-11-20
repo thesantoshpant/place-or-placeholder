@@ -208,9 +208,12 @@ def ladder_rungs(cell: dict) -> tuple[list, list]:
     lab = cell.get("role_labels") or {"L3": "L3", "L4": "L4", "L3C": "L3+C*", "L4C": "L4+C*"}
     rungs, notes = [], []
     for e in cell.get("ladder", []):
-        st = C.run_state(e["dir"], e.get("marker"))
+        dirs = list(e.get("dirs") or [e["dir"]])   # `dirs`: manifest ladder_runs (final round)
+        sts = [C.run_state(d, e.get("marker") if i == 0 else None) for i, d in enumerate(dirs)]
+        st = "complete" if all(s == "complete" for s in sts) else \
+            "; ".join(s for s in sts if s != "complete")
         if st == "complete":
-            rungs.append((e["label"], [e["dir"]], e.get("run")))
+            rungs.append((e["label"], dirs, e.get("run")))
         elif not e.get("optional"):
             notes.append(f"{e['label']} ({Path(e['dir']).name}): {st}")
     for r in C.ROLES:

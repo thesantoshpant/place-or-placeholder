@@ -1036,6 +1036,17 @@ LADDER_ROWS = [("L0", "L0 seasonal naive"), ("L1", "L1 case history (= 0)"),
                ("L4+C*", "L4 + location control C*")]
 
 
+def _tw_ladder_no2021(t2: pd.DataFrame) -> bool:
+    """True when the TW S1 ladder rows differ from the primary cell (i.e. 2021 missing from L0-L2)."""
+    try:
+        t1 = read("T1_primary_family")
+        a = t2[t2.cell == "TW_S1"].n_rows.max()
+        b = t1[t1.cell == "TW_S1"].n_rows.max()
+        return bool(np.isfinite(a) and np.isfinite(b) and int(a) != int(b))
+    except Exception:
+        return True
+
+
 def fig_ladder(t2: pd.DataFrame):
     cells = [f"{k}_S1" for k in ("BR", "CO", "PE", "TW") if f"{k}_S1" in set(t2.cell)]
     col_w = "WIS pooled h{1,4}"
@@ -1087,7 +1098,8 @@ def fig_ladder(t2: pd.DataFrame):
                             textcoords="offset points", ha="left" if v < xl[0] else "right", va="center",
                             fontsize=7, color=INK2, zorder=6,
                             bbox=dict(boxstyle="square,pad=0.15", fc="white", ec="none"))
-        ax.text(0.0, 1.0 + 0.06 / ah, COUNTRY_NAME[country] + ("\n(without 2021)" if country == "taiwan" else ""),
+        ax.text(0.0, 1.0 + 0.06 / ah, COUNTRY_NAME[country] + ("\n(without 2021)" if country == "taiwan"
+                                                               and _tw_ladder_no2021(t2) else ""),
                 transform=ax.transAxes, fontsize=8,
                 fontweight="bold", ha="left", va="bottom")
         x_cues(ax, left="← worse", right="better →", dy=-13, size=7)
@@ -1098,6 +1110,9 @@ def fig_ladder(t2: pd.DataFrame):
 
 
 # ============================================================================= captions
+FIGS4_CAPTION = "**Fig S4. How well district dengue burden can be predicted from embeddings, coordinates and static covariates in states not used for fitting.** Bars show the out-of-fold R² of a small LightGBM predicting each district's mean log(1 + weekly cases) over 2014 to 2019, under five-fold cross-validation that holds out whole states; whiskers are 95% CIs from 1,000 state-cluster bootstrap resamples of the out-of-fold predictions. Grey bars use no embeddings: coordinates with spherical harmonics (G, light), the L3 static covariates (S, mid) and both (G + S, dark); purple bars use the 2018 AlphaEarth embeddings, alone (E, solid) or added to coordinates and static covariates (G + S + E, hatched). The axis is cut at −0.5; whiskers that run below it end in an arrowhead (Peru G, and all of Taiwan, whose bootstrap is unstable because resamples without Kaohsiung and Tainan have almost no variance). Exploratory and cross-sectional; ridge regression results and the added R² with CIs are in Table S50."
+
+
 def captions(meta: dict, t1: pd.DataFrame) -> str:
     """Captions that describe exactly what the current script draws (regenerated on every full run)."""
     m2 = meta["fig2"]
@@ -1126,6 +1141,8 @@ def captions(meta: dict, t1: pd.DataFrame) -> str:
     s2_note = ("" if "BR_S2_nohist" in m4["cells"] else
                " Only Brazil, new years (S1) is drawn; Brazil, held-out states (S2), is added on rerun once "
                "its results are released.")
+    fig4_splits = ("new years (S1) and held-out states (S2)" if "BR_S2_nohist" in m4["cells"]
+                   else "new years")
     ms1 = meta.get("figS1") or {}
     s1_note = ""
     for c, n in ms1.get("n_rows", {}).items():
@@ -1184,7 +1201,7 @@ def captions(meta: dict, t1: pd.DataFrame) -> str:
         "held-out country, zero-filled weeks). The strata are defined by the outcome and are "
         "descriptive." + tw_note + " " + split_key + ".",
         "",
-        f"**Fig 4. Forecasting without case history (Brazil, new years; exploratory).** Models use season, "
+        f"**Fig 4. Forecasting without case history (Brazil, {fig4_splits}; exploratory).** Models use season, "
         f"climate, remote sensing and population only (reference model N3), plus a location input. "
         f"(A) Mean WIS over rows for each model, horizons 1 and 4 pooled (seed 0; the same rows in every "
         f"model). C* is {cs} ({cname}), chosen at the 2019 origin; C1 (pre-2018 case average, static history) "
@@ -1215,6 +1232,8 @@ def captions(meta: dict, t1: pd.DataFrame) -> str:
         "reference WIS, with 95% confidence intervals; ρ is the district-level Spearman correlation between "
         "similarity and excess gain (naive p values in Table S39). Panels have their own vertical scales. "
         "Exploratory.",
+        "",
+        FIGS4_CAPTION,   # Fig S4 is drawn by scripts/analysis/info_probe.py; caption kept here
         "",
     ]
     return "\n".join(lines)

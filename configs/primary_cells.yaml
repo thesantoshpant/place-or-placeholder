@@ -234,6 +234,12 @@ cells:
         L4: runs/taiwan_s1_tw2021_L4
         L3C: runs/taiwan_s1_tw2021_L3_Cstar
         L4C: runs/taiwan_s1_tw2021_L4_Cstar
+    ladder_runs:   # final round (additive, 2026-11-20): with-2021 L0-L2 rungs for T2 and S1_baselines
+      # (round 3 EXP-B S2 runs; L2 = the shared-parameter run, as in S1_baselines; replaces the
+      # per-level tuned runs/taiwan_s1_L2 in T2). Read by rk_cells/rk_compute/review_more.
+      L0: [runs/taiwan_s1_baselines, runs/taiwan_s1_r3_tw2021_baselines]
+      L1: [runs/taiwan_s1_baselines, runs/taiwan_s1_r3_tw2021_baselines]
+      L2: [runs/taiwan_s1_shared_L2, runs/taiwan_s1_r3_tw2021_L2]
     extra_seed_runs:   # round 3 (EXP-B S1): seeds 1, 2 at h{1,4}, test years incl. 2021
       L3: [runs/taiwan_s1_r3_seed1_L3, runs/taiwan_s1_r3_seed2_L3]
       L4: [runs/taiwan_s1_r3_seed1_L4, runs/taiwan_s1_r3_seed2_L4]

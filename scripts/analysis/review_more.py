@@ -501,9 +501,12 @@ def run_baselines(cell, g) -> pd.DataFrame:
     if c == "taiwan" and Path("runs/taiwan_s1_shared_L2/scores.parquet").exists():
         l2, l2_lab = "runs/taiwan_s1_shared_L2", "LightGBM L2"
     cand.append((l2_lab, l2, "lgbm-L2"))
+    lr = cell.get("ladder_runs") or {}          # final round: manifest ladder_runs (TW S1 + 2021)
+    over = {f"runs/{c}_s1_baselines": lr.get("L1") or lr.get("L0"), l2: lr.get("L2")}
     for lab, d, run in cand:
-        if has_label(d, run):
-            rungs.append((lab, [d], run))
+        ds = list(over.get(d) or [d])
+        if all(has_label(x, run) for x in ds):
+            rungs.append((lab, ds, run))
         else:
             missing.append(lab)
     for r in ("L3", "L4", "L3C", "L4C"):

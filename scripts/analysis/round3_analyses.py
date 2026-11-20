@@ -606,8 +606,9 @@ def run_a5(cells, parts):
             if len(pr):
                 r = pr.iloc[0]
                 add(cid, f"rule-v1 C* ({v1})", r.G_excess_pct, r.G_excess_pct_lo95, r.G_excess_pct_hi95,
-                    r.G_excess_p, "fixed-control panel run (RE); Taiwan panel excludes 2021" if c["country"] == "taiwan"
-                    else "fixed-control panel run (RE)")
+                    r.G_excess_p, ("fixed-control panel run (RE); Taiwan panel "
+                    + ("incl. 2021" if "2021" in str(r.get("source", "")) else "excludes 2021"))
+                    if c["country"] == "taiwan" else "fixed-control panel run (RE)")
             else:
                 add(cid, f"rule-v1 C* ({v1})", np.nan, np.nan, np.nan, np.nan,
                     "no valid run (pre-fix C4 runs were invalidated)" if v1.startswith("C4") else "no run")

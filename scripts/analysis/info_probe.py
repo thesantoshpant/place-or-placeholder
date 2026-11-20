@@ -349,38 +349,57 @@ def best_model(R):
 
 
 def make_figure(R):
-    import os
+    """Fig S4: LightGBM only, T1, grouped-state CV. Greys for the non-embedding sets,
+    one accent for the sets that contain AlphaEarth; CIs clipped at the axis limits are
+    drawn to the limit and marked with an arrowhead. No title inside the image."""
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
-    sets = ["G", "S", "E", "G+S", "G+S+E"]
-    labels = {"G": "Coordinates (G)", "S": "Static covariates (S)", "E": "AlphaEarth (E)",
-              "G+S": "G + S", "G+S+E": "G + S + E"}
-    cols = {"G": "#4C78A8", "S": "#F58518", "E": "#54A24B", "G+S": "#8E6C8A", "G+S+E": "#2F2F2F"}
-    r = R[(R.quantity == "R2") & (R.target == "T1") & (R.scheme == "grouped_state")]
-    fig, axes = plt.subplots(1, 2, figsize=(9.5, 3.9), sharey=True, dpi=300)
-    for ax, mod, ttl in zip(axes, ("ridge", "lgbm"), ("Ridge regression", "LightGBM")):
-        rr = r[r.model == mod]
-        w = 0.15
-        for j, s in enumerate(sets):
-            q = rr[rr.fset == s].set_index("country").reindex(COUNTRIES)
-            x = np.arange(4) + (j - 2) * w
-            ax.bar(x, q.estimate, w * 0.92, color=cols[s], label=labels[s])
-            ax.errorbar(x, q.estimate, yerr=[q.estimate - q.lo, q.hi - q.estimate], fmt="none",
-                        ecolor="#555555", elinewidth=0.8, capsize=1.5)
-        ax.axhline(0, color="black", lw=0.6)
-        ax.set_xticks(np.arange(4), [c.title() for c in COUNTRIES], fontsize=9)
-        ax.set_title(ttl, fontsize=10, loc="left")
-        ax.spines[["top", "right"]].set_visible(False)
-        ax.tick_params(labelsize=9)
-    lo = r.lo.min()
-    axes[0].set_ylim(max(-0.6, min(-0.05, lo - 0.02)), 1.0)
-    axes[0].set_ylabel("Out-of-fold $R^2$ (grouped-state CV)", fontsize=9)
-    h, l = axes[0].get_legend_handles_labels()
-    fig.legend(h, l, fontsize=8.5, frameon=False, loc="lower center", ncol=5, bbox_to_anchor=(0.5, -0.02))
-    fig.tight_layout(rect=(0, 0.07, 1, 1))
+    sets = ["G", "S", "G+S", "E", "G+S+E"]
+    labels = {"G": "Coordinates (G)", "S": "Static covariates (S)", "G+S": "G + S",
+              "E": "AlphaEarth embeddings (E)", "G+S+E": "G + S + E"}
+    ACC = "#6a3d9a"  # accent (not used for any country in Figs 2-3)
+    face = {"G": "#d4d3cd", "S": "#9c9b95", "G+S": "#5b5a55", "E": ACC, "G+S+E": "white"}
+    edge = {"G": "#d4d3cd", "S": "#9c9b95", "G+S": "#5b5a55", "E": ACC, "G+S+E": ACC}
+    hatch = {"G+S+E": "////"}
+    YLO, YHI = -0.5, 1.0
+    plt.rcParams.update({"font.family": "DejaVu Sans", "hatch.color": ACC, "hatch.linewidth": 0.6})
+    r = R[(R.quantity == "R2") & (R.target == "T1") & (R.scheme == "grouped_state") & (R.model == "lgbm")]
+    fig, ax = plt.subplots(figsize=(7.2, 3.6), dpi=300)
+    w = 0.16
+    for j, s in enumerate(sets):
+        q = r[r.fset == s].set_index("country").reindex(COUNTRIES)
+        x = np.arange(4) + (j - 2) * w
+        est = q.estimate.to_numpy(float)
+        ax.bar(x, np.clip(est, YLO, YHI), w * 0.86, color=face[s], edgecolor=edge[s], lw=0.8,
+               hatch=hatch.get(s), label=labels[s], zorder=2)
+        for xi, e, lo, hi in zip(x, est, q.lo.to_numpy(float), q.hi.to_numpy(float)):
+            lo_c, hi_c = max(lo, YLO), min(hi, YHI)
+            ax.plot([xi, xi], [lo_c, hi_c], color="#2b2a27", lw=0.8, zorder=3)
+            if lo < YLO:
+                ax.plot(xi, YLO + 0.012, marker="v", ms=3.6, color="#2b2a27", zorder=4, clip_on=False)
+            else:
+                ax.plot([xi - 0.025, xi + 0.025], [lo, lo], color="#2b2a27", lw=0.8, zorder=3)
+            if hi > YHI:
+                ax.plot(xi, YHI - 0.012, marker="^", ms=3.6, color="#2b2a27", zorder=4, clip_on=False)
+            else:
+                ax.plot([xi - 0.025, xi + 0.025], [hi, hi], color="#2b2a27", lw=0.8, zorder=3)
+    ax.axhline(0, color="#0b0b0b", lw=0.6, zorder=1)
+    ax.set_ylim(YLO, YHI)
+    ax.set_yticks(np.arange(-0.5, 1.01, 0.25))
+    ax.yaxis.grid(True, color="#e1e0d9", lw=0.5, zorder=0)
+    ax.set_axisbelow(True)
+    ax.set_xticks(np.arange(4), [c.title() for c in COUNTRIES], fontsize=9)
+    ax.set_ylabel("Out-of-fold $R^2$, held-out states", fontsize=9)
+    ax.spines[["top", "right"]].set_visible(False)
+    ax.tick_params(labelsize=8.5)
+    h, l = ax.get_legend_handles_labels()
+    fig.legend(h, l, fontsize=8, frameon=False, loc="lower center", ncol=5, bbox_to_anchor=(0.5, -0.01),
+               handlelength=1.4, columnspacing=1.2)
+    fig.tight_layout(rect=(0, 0.08, 1, 1))
     OUT_FIG.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(OUT_FIG, dpi=300, bbox_inches="tight")
+    fig.savefig(OUT_FIG.with_suffix(".pdf"), bbox_inches="tight")
     plt.close(fig)
 
 

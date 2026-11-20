@@ -463,8 +463,8 @@ def main(argv=None) -> int:
                       f"T2. Ladder: mean log1p WIS per horizon, pooled over the primary horizons "
                       f"{hlab} and (S1, secondary) over {slab.replace('pooled_', '')}; 40%/80% "
                       f"interval coverage (pooled {hlab}; cov_80_nonzero = rows with cases > 0); "
-                      "rows scored by every rung of the cell (origin-year rows; Taiwan 2021 drops out "
-                      "of the TW S1 ladder because L0-L2 have no 2021 runs)",
+                      "rows scored by every rung of the cell (origin-year rows; the TW S1 L0-L2 rungs "
+                      "include the 2021 runs via the manifest key ladder_runs, L2 = shared parameters)",
                       4, tex_cols=["cell", "label"] + hcols + ["cov_40", "cov_80", "cov_80_nonzero"])
         made["T2"] = "T2_ladder"
 

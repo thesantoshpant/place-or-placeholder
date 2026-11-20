@@ -42,6 +42,12 @@ HORIZONS = [1, 4]
 COUNTRIES = ["brazil", "colombia", "peru", "taiwan"]
 CONTROLS = ["C1", "C2", "C3", "C6"]
 MARKER = "<!-- interpretation below is hand-written; the script keeps it -->"
+# Taiwan S1 test year 2021 runs (final round): (role, control) -> dir
+TW2021 = {**{(r, k): {"L3": "runs/taiwan_s1_tw2021_L3", "L4": "runs/taiwan_s1_tw2021_L4"}[r]
+             for r in ("L3", "L4") for k in ("C1", "C2", "C3", "C6")},
+          **{("L3C", "C1"): "runs/taiwan_s1_tw2021_L3_Cstar", ("L4C", "C1"): "runs/taiwan_s1_tw2021_L4_Cstar"},
+          **{(r, k): f"runs/taiwan_s1_r3_tw2021_panel_{r[:2]}_{k}" for r in ("L3C", "L4C")
+             for k in ("C2", "C3", "C6")}}
 
 
 def base_dirs(c: str) -> dict:
@@ -68,6 +74,8 @@ def control_dirs(c: str, k: str, b: dict) -> tuple[str, str, str]:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default="docs/results/review")
+    ap.add_argument("--no-tw2021", action="store_true",
+                    help="Taiwan without test year 2021 (the pre-round-3 panel)")
     ap.add_argument("--legacy", action="store_true",
                     help="v1 exclusions and no row filter (pre-kit-v3 primary)")
     add_exclusion_args(ap)
@@ -86,9 +94,15 @@ def main() -> None:
         for k in CONTROLS:
             d3, d4, src = control_dirs(c, k, b)
             roles = {"L3": [b["L3"]], "L4": [b["L4"]], "L3C": [d3], "L4C": [d4]}
+            if c == "taiwan" and not a.no_tw2021:   # final round: Taiwan incl. test year 2021 (row 25)
+                roles = {r: v + [TW2021[(r, k)]] for r, v in roles.items()}
+                src += " + 2021 run"
+                miss21 = [d for d in (x for v in roles.values() for x in v) if not run_complete(d)]
+                if miss21:
+                    raise SystemExit(f"taiwan {k}: 2021 runs incomplete: {miss21}")
             base = {"country": c, "split": "S1", "control": k, "source": src,
-                    "runs": "; ".join(f"{r}={v[0]}" for r, v in roles.items())}
-            miss = [r for r, v in roles.items() if not run_complete(v[0])]
+                    "runs": "; ".join(f"{r}={'+'.join(v)}" for r, v in roles.items())}
+            miss = [r for r, v in roles.items() if not all(run_complete(x) for x in v)]
             if miss:
                 rows.append({**base, "status": "pending", "missing": ",".join(miss)})
                 print(f"{c} {k}: pending ({','.join(miss)})", flush=True)

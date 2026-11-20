@@ -149,6 +149,20 @@ def _apply_extra_seed_runs(roles: dict, spec: dict | None) -> None:
                 roles[r]["markers"].append(None)
 
 
+def _apply_ladder_runs(cell: dict, spec: dict | None) -> None:
+    """Final round (additive): manifest key `ladder_runs: {L0|L1|L2: [dirs]}` replaces the run
+    dirs of those extra ladder rungs (e.g. Taiwan S1: base + 2021 runs, so the ladder and the S1
+    baselines table cover the same test years as the primary cell). Applied to the primary cell
+    only (the `<id>_no<years>` copy has no ladder). review_more.run_baselines reads the same key."""
+    if not spec:
+        return
+    cell["ladder_runs"] = {k: ([v] if isinstance(v, str) else list(v)) for k, v in spec.items()}
+    for e in cell.get("ladder", []):
+        if e["label"] in cell["ladder_runs"]:
+            e["dirs"] = cell["ladder_runs"][e["label"]]
+            e["dir"] = e["dirs"][0]
+
+
 def add_years_state(add: dict | None) -> tuple[str, dict]:
     """('none' | 'complete' | 'pending', role states) of a cell's `add_test_years` runs."""
     if not add:
@@ -217,6 +231,7 @@ def build_registry(manifest: str = "configs/primary_cells.yaml") -> list[dict]:
             else:
                 base["flags"].append(f"{yrs} pending (base test years only)")
         _apply_extra_seed_runs(roles, c.get("extra_seed_runs"))
+        _apply_ladder_runs(base, c.get("ladder_runs"))
         cells.append(base)
     by = {c["id"]: c for c in cells}
 
