@@ -66,6 +66,11 @@ L2_DIR = {"brazil": "runs/brazil_s1_L2", "colombia": "runs/colombia_s1_L2",
           "peru": "runs/peru_s1_L2", "taiwan": "runs/taiwan_s1_shared_L2"}
 L2_NOTE = {"brazil": "L2 params = L1 (127/100)", "colombia": "L2 per-level params = L1 params",
            "peru": "L2 per-level params = L1 params", "taiwan": "shared-param L2 run (taiwan_s1_shared_L2)"}
+# Extra test-year runs for the A1 L1/L2 rungs (``--a1-tw2021``; round-3 EXP-B S2: Taiwan 2021).
+# Empty by default, so A1 is unchanged unless the flag is given.
+A1_EXTRA: dict[str, dict[str, list[str]]] = {}
+A1_EXTRA_TW2021 = {"taiwan": {"L1": ["runs/taiwan_s1_r3_tw2021_baselines"],
+                              "L2": ["runs/taiwan_s1_r3_tw2021_L2"]}}
 PERLEVEL = {"PE_S1": {"L3": ["runs/peru_s1_L3"], "L4": ["runs/peru_s1_L4"],
                       "L3C": ["runs/peru_s1_L3_Cstar"], "L4C": ["runs/peru_s1_L4_Cstar"]},
             "TW_S1": {"L3": ["runs/taiwan_s1_L3"], "L4": ["runs/taiwan_s1_L4"],
@@ -185,9 +190,11 @@ def kit_extra(cid, name):
 def a1_cell(cell):
     country = cell["country"]
     base = f"runs/{country}_s1_baselines"
+    ex = A1_EXTRA.get(country, {})
     LABEL_FILTER.clear()
-    LABEL_FILTER[Path(base).name] = "lgbm-L1"
-    roles = {"L3": [base], "L4": [L2_DIR[country]],
+    for d in [base] + ex.get("L1", []):
+        LABEL_FILTER[Path(d).name] = "lgbm-L1"
+    roles = {"L3": [base] + ex.get("L1", []), "L4": [L2_DIR[country]] + ex.get("L2", []),
              "L3C": roles_of(cell)["L3"], "L4C": roles_of(cell)["L4"]}
     try:
         g, info = load_v3(roles)
@@ -219,7 +226,9 @@ def run_a1(cells, force):
     for c in cells:
         if c["split"] != "S1":
             continue
-        dirs = sum(roles_of(c).values(), []) + [f"runs/{c['country']}_s1_baselines", L2_DIR[c["country"]]]
+        ex = A1_EXTRA.get(c["country"], {})
+        dirs = (sum(roles_of(c).values(), []) + [f"runs/{c['country']}_s1_baselines", L2_DIR[c["country"]]]
+                + ex.get("L1", []) + ex.get("L2", []))
         log(f"A1 {c['id']}")
         df = cached(c["id"], "A1", fp(dirs), lambda: a1_cell(c), force)
         gx = T1.loc[c["id"]]
@@ -230,7 +239,10 @@ def run_a1(cells, force):
         df["margin1_over_L1L3_gain"] = 1.0 / tot.pct_of_WIS_L3
         df["margin05_over_L1L3_gain"] = 0.5 / tot.pct_of_WIS_L3
         note = f"L1 = runs/{c['country']}_s1_baselines (lgbm-L1); {L2_NOTE[c['country']]}; L3/L4 = primary runs, seed-averaged"
-        if c["country"] == "taiwan":
+        if c["country"] == "taiwan" and ex:
+            note += ("; Taiwan 2021 INCLUDED (L1/L2 2021 runs " + ", ".join(ex.get("L1", []) + ex.get("L2", []))
+                     + ", round-3 EXP-B S2)")
+        elif c["country"] == "taiwan":
             note += ("; Taiwan 2021 NOT included (L1/L2 with 2021 do not exist yet; EXP-B runs pending); "
                      "the primary G_excess columns include 2021")
             nx = t1_no2021("TW_S1")
@@ -703,6 +715,8 @@ def main(argv=None):
     ap.add_argument("--exclude", default=",".join(BLINDED))
     ap.add_argument("--force", action="store_true")
     ap.add_argument("--reps", type=int, default=2000, help="IAAFT replications (A8)")
+    ap.add_argument("--a1-tw2021", action="store_true",
+                    help="A1: append the Taiwan 2021 L1/L2 runs (round-3 EXP-B S2)")
     a = ap.parse_args(argv)
     os.chdir(ROOT)
     which = [w.strip() for w in a.only.split(",") if w.strip()]
@@ -712,6 +726,8 @@ def main(argv=None):
     meta = {"cells": [c["id"] for c in cells], "skipped": skipped, "which": which,
             "generated": time.strftime("%Y-%m-%d %H:%M:%S %Z")}
     if "A1" in which:
+        if a.a1_tw2021:
+            A1_EXTRA.update(A1_EXTRA_TW2021)
         run_a1(cells, a.force)
     if "A2" in which:
         run_a2(cells)

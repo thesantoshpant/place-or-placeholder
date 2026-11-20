@@ -19,6 +19,14 @@
 #       "<year> pending". The base-runs-only set is always reported as a sensitivity cell.
 # runs: role -> run dir, or a list of dirs (extra-seed / extra-year runs are concatenated; rows
 # are told apart by `seed` and `test_year`). Row 22: Brazil S1 uses seeds 0, 1, 2 at h{1,4}.
+# Round 3 (docs/methods/round3_runs.md, decision S1): every cell with seeds 0-2 uses them (mean over
+# seeds common to both roles of an estimand): BR S5, CO S1-S4, PE S1, TW S1 (all four roles) and
+# PE S5, TW S5 (L3+C*, L4+C* only -> G_excess from seeds 0-2; G_emb and G_id stay seed 0).
+# The seed-0-only manifest is configs/primary_cells_v3_seed0.yaml (sensitivity).
+# extra_seed_runs (Taiwan only): extra-seed run dirs appended to the PRIMARY cell after
+# add_test_years (rk_cells._apply_extra_seed_runs); they are not added to the <id>_no2021
+# sensitivity cell, because these runs already contain test year 2021. primary_family.py
+# ignores this key and fails on unequal seed sets (PE/TW S5); it is the v2 tool.
 # Every estimand uses only the seeds common to both of its roles. For S1 the cells use the
 # shared-params rule (runs/<c>_s1_shared); when `plan` is given, a stage marked "reuse:<dir>"
 # in that plan.json replaces the FIRST listed dir. A cell is available only when every listed
@@ -80,10 +88,18 @@ cells:
     plan: runs/brazil_s5/plan.json
     family: primary
     runs:
-      L3: runs/brazil_s5_L3
-      L4: runs/brazil_s5_L4
-      L3C: runs/brazil_s5_L3_Cstar
-      L4C: runs/brazil_s5_L4_Cstar
+      L3: [runs/brazil_s5_L3,
+           runs/brazil_s5_r3_seed1_L3,
+           runs/brazil_s5_r3_seed2_L3]
+      L4: [runs/brazil_s5_L4,
+           runs/brazil_s5_r3_seed1_L4,
+           runs/brazil_s5_r3_seed2_L4]
+      L3C: [runs/brazil_s5_L3_Cstar,
+            runs/brazil_s5_r3_seed1_L3_Cstar,
+            runs/brazil_s5_r3_seed2_L3_Cstar]
+      L4C: [runs/brazil_s5_L4_Cstar,
+            runs/brazil_s5_r3_seed1_L4_Cstar,
+            runs/brazil_s5_r3_seed2_L4_Cstar]
   - country: colombia
     split: S1
     arm: history
@@ -91,40 +107,72 @@ cells:
     family: primary
     secondary_pooling: true
     runs:
-      L3: runs/colombia_s1_shared_L3
-      L4: runs/colombia_s1_shared_L4
-      L3C: runs/colombia_s1_shared_L3_Cstar
-      L4C: runs/colombia_s1_shared_L4_Cstar
+      L3: [runs/colombia_s1_shared_L3,
+           runs/colombia_s1_r3_seed1_L3,
+           runs/colombia_s1_r3_seed2_L3]
+      L4: [runs/colombia_s1_shared_L4,
+           runs/colombia_s1_r3_seed1_L4,
+           runs/colombia_s1_r3_seed2_L4]
+      L3C: [runs/colombia_s1_shared_L3_Cstar,
+            runs/colombia_s1_r3_seed1_L3_Cstar,
+            runs/colombia_s1_r3_seed2_L3_Cstar]
+      L4C: [runs/colombia_s1_shared_L4_Cstar,
+            runs/colombia_s1_r3_seed1_L4_Cstar,
+            runs/colombia_s1_r3_seed2_L4_Cstar]
   - country: colombia
     split: S2
     arm: history
     plan: runs/colombia_s2/plan.json
     family: primary
     runs:
-      L3: runs/colombia_s2_L3
-      L4: runs/colombia_s2_L4
-      L3C: runs/colombia_s2_L3_Cstar
-      L4C: runs/colombia_s2_L4_Cstar
+      L3: [runs/colombia_s2_L3,
+           runs/colombia_s2_r3_seed1_L3,
+           runs/colombia_s2_r3_seed2_L3]
+      L4: [runs/colombia_s2_L4,
+           runs/colombia_s2_r3_seed1_L4,
+           runs/colombia_s2_r3_seed2_L4]
+      L3C: [runs/colombia_s2_L3_Cstar,
+            runs/colombia_s2_r3_seed1_L3_Cstar,
+            runs/colombia_s2_r3_seed2_L3_Cstar]
+      L4C: [runs/colombia_s2_L4_Cstar,
+            runs/colombia_s2_r3_seed1_L4_Cstar,
+            runs/colombia_s2_r3_seed2_L4_Cstar]
   - country: colombia
     split: S3
     arm: history
     plan: runs/colombia_s3/plan.json
     family: primary
     runs:
-      L3: runs/colombia_s3_L3
-      L4: runs/colombia_s3_L4
-      L3C: runs/colombia_s3_L3_Cstar
-      L4C: runs/colombia_s3_L4_Cstar
+      L3: [runs/colombia_s3_L3,
+           runs/colombia_s3_r3_seed1_L3,
+           runs/colombia_s3_r3_seed2_L3]
+      L4: [runs/colombia_s3_L4,
+           runs/colombia_s3_r3_seed1_L4,
+           runs/colombia_s3_r3_seed2_L4]
+      L3C: [runs/colombia_s3_L3_Cstar,
+            runs/colombia_s3_r3_seed1_L3_Cstar,
+            runs/colombia_s3_r3_seed2_L3_Cstar]
+      L4C: [runs/colombia_s3_L4_Cstar,
+            runs/colombia_s3_r3_seed1_L4_Cstar,
+            runs/colombia_s3_r3_seed2_L4_Cstar]
   - country: colombia
     split: S4
     arm: history
     plan: runs/colombia_s4/plan.json
     family: primary
     runs:
-      L3: runs/colombia_s4_L3
-      L4: runs/colombia_s4_L4
-      L3C: runs/colombia_s4_L3_Cstar
-      L4C: runs/colombia_s4_L4_Cstar
+      L3: [runs/colombia_s4_L3,
+           runs/colombia_s4_r3_seed1_L3,
+           runs/colombia_s4_r3_seed2_L3]
+      L4: [runs/colombia_s4_L4,
+           runs/colombia_s4_r3_seed1_L4,
+           runs/colombia_s4_r3_seed2_L4]
+      L3C: [runs/colombia_s4_L3_Cstar,
+            runs/colombia_s4_r3_seed1_L3_Cstar,
+            runs/colombia_s4_r3_seed2_L3_Cstar]
+      L4C: [runs/colombia_s4_L4_Cstar,
+            runs/colombia_s4_r3_seed1_L4_Cstar,
+            runs/colombia_s4_r3_seed2_L4_Cstar]
   - country: colombia
     split: S5
     arm: history
@@ -142,10 +190,18 @@ cells:
     family: primary
     secondary_pooling: true
     runs:
-      L3: runs/peru_s1_shared_L3
-      L4: runs/peru_s1_shared_L4
-      L3C: runs/peru_s1_shared_L3_Cstar
-      L4C: runs/peru_s1_shared_L4_Cstar
+      L3: [runs/peru_s1_shared_L3,
+           runs/peru_s1_r3_seed1_L3,
+           runs/peru_s1_r3_seed2_L3]
+      L4: [runs/peru_s1_shared_L4,
+           runs/peru_s1_r3_seed1_L4,
+           runs/peru_s1_r3_seed2_L4]
+      L3C: [runs/peru_s1_shared_L3_Cstar,
+            runs/peru_s1_r3_seed1_L3_Cstar,
+            runs/peru_s1_r3_seed2_L3_Cstar]
+      L4C: [runs/peru_s1_shared_L4_Cstar,
+            runs/peru_s1_r3_seed1_L4_Cstar,
+            runs/peru_s1_r3_seed2_L4_Cstar]
   - country: peru
     split: S5
     arm: history
@@ -154,8 +210,12 @@ cells:
     runs:
       L3: runs/peru_s5_L3
       L4: runs/peru_s5_L4
-      L3C: runs/peru_s5_L3_Cstar
-      L4C: runs/peru_s5_L4_Cstar
+      L3C: [runs/peru_s5_L3_Cstar,
+            runs/peru_s5_r3_seed1_L3_Cstar,
+            runs/peru_s5_r3_seed2_L3_Cstar]
+      L4C: [runs/peru_s5_L4_Cstar,
+            runs/peru_s5_r3_seed1_L4_Cstar,
+            runs/peru_s5_r3_seed2_L4_Cstar]
   - country: taiwan
     split: S1
     arm: history
@@ -174,6 +234,11 @@ cells:
         L4: runs/taiwan_s1_tw2021_L4
         L3C: runs/taiwan_s1_tw2021_L3_Cstar
         L4C: runs/taiwan_s1_tw2021_L4_Cstar
+    extra_seed_runs:   # round 3 (EXP-B S1): seeds 1, 2 at h{1,4}, test years incl. 2021
+      L3: [runs/taiwan_s1_r3_seed1_L3, runs/taiwan_s1_r3_seed2_L3]
+      L4: [runs/taiwan_s1_r3_seed1_L4, runs/taiwan_s1_r3_seed2_L4]
+      L3C: [runs/taiwan_s1_r3_seed1_L3_Cstar, runs/taiwan_s1_r3_seed2_L3_Cstar]
+      L4C: [runs/taiwan_s1_r3_seed1_L4_Cstar, runs/taiwan_s1_r3_seed2_L4_Cstar]
     note: "family member (row 25); thin data; 2021 = all-zero year (0 local cases); C* from rule v2 (row 19)"
   - country: taiwan
     split: S5
@@ -192,3 +257,6 @@ cells:
         L4: runs/taiwan_s5_tw2021_L4
         L3C: runs/taiwan_s5_tw2021_L3_Cstar
         L4C: runs/taiwan_s5_tw2021_L4_Cstar
+    extra_seed_runs:   # round 3 (EXP-B S1): seeds 1, 2 at h{1,4}, test years incl. 2021
+      L3C: [runs/taiwan_s5_r3_seed1_L3_Cstar, runs/taiwan_s5_r3_seed2_L3_Cstar]
+      L4C: [runs/taiwan_s5_r3_seed1_L4_Cstar, runs/taiwan_s5_r3_seed2_L4_Cstar]

@@ -137,6 +137,18 @@ def _roles_from(spec: dict, plan: dict, pdir: Path | None) -> dict:
     return roles
 
 
+def _apply_extra_seed_runs(roles: dict, spec: dict | None) -> None:
+    """Round 3 (additive): manifest key `extra_seed_runs: {role: dir | [dirs]}` = extra-seed runs
+    that already span every test year (incl. `add_test_years`). Appended to the primary cell's
+    roles only, after the add_test_years runs, so the `<id>_no<years>` sensitivity copy keeps
+    its old test-year set. Seed handling is the kit's usual common-seed rule per estimand."""
+    for r, v in (spec or {}).items():
+        for d in ([v] if isinstance(v, str) else list(v)):
+            if d not in roles[r]["dirs"]:
+                roles[r]["dirs"].append(d)
+                roles[r]["markers"].append(None)
+
+
 def add_years_state(add: dict | None) -> tuple[str, dict]:
     """('none' | 'complete' | 'pending', role states) of a cell's `add_test_years` runs."""
     if not add:
@@ -204,6 +216,7 @@ def build_registry(manifest: str = "configs/primary_cells.yaml") -> list[dict]:
                 base["desc"] += f"; test years incl. {yrs}"
             else:
                 base["flags"].append(f"{yrs} pending (base test years only)")
+        _apply_extra_seed_runs(roles, c.get("extra_seed_runs"))
         cells.append(base)
     by = {c["id"]: c for c in cells}
 
