@@ -144,3 +144,39 @@ None was rejected. No separate Lowe et al. climate-lag paper was added (the exis
 
 - Search for `PENDING` and `REVISIT` in the six files. The abstract, 3.2–3.4, Table 2 and 4.1 change if seed-averaged estimates replace seed-0 values (D49).
 - Recount the abstract after the fill (limit 300).
+
+## v1d fill pass (2026-11-20)
+
+Files: 00_front.md, 01_introduction.md, 02_methods.md, 03_results.md, 05_discussion.md (06_declarations.md unchanged). Word counts (comments, equations, tables, captions, table notes and headings excluded): abstract 300 (labels included); main text 6,299 (Introduction 785, Methods 2,553, Results 1,782, Discussion 1,179), down from 6,961.
+
+### Filled (round 3; sources in `<!-- src: -->` comments)
+- R3-A1 positive control: Results 3.1 (Brazil climate +0.57%, RS/pop +0.52%, all non-case +1.09%; Colombia RS/pop only; Peru and Taiwan none, Taiwan with 2021); margin anchor in 3.3 (±1% = 0.92× Brazil's L1→L3 gain, 2.3× Colombia, 5.8× Peru); Discussion 4.1 scope limit; abstract.
+- R3-A2 "no control" rule: 3.2 (CO S2 Holm p 0.001) and 3.3 (Colombia within-country Holm p 0.001–0.046, TW S5 0.004, BR S5 not significant).
+- R3-A3: 3.5 per-year paragraph rewritten to "no detectable trend" (smallest scaled p 0.096; none excluding 2020–2021; COVID caveat); 4.5 limitation rewritten.
+- R3-A4: 3.3, 4.1, 4.7 and abstract (B = 4 + Holm: 6 at ±1%, 0 at ±0.5%; four of the six are also losses).
+- R3-A5: Methods 2.12 (Table S43 no longer pending) and a new Results 3.4 paragraph (PE S1 sign flip under per-level tuning; TW S1 nominal loss fragile; PE S5 nominal with B = 4 or all rows; BR S3 nominal under exclusions v1).
+- R3-A6: 3.5 (zero-week widening 12/13; case-week coverage toward nominal only PE S5; Colombian loss persists in case district-years; TW S5 −17.3% → −3.4%); 4.2.
+- R3-A7: 3.7 (stability; own next-year match 57/84/94/69%).
+- R3-A8: 3.3 (BR S1 drops out of ±1% after IAAFT calibration) and 4.5 (size 14–18% in four cells; conservative in loss cells).
+- R3-E1 information probe: new 3.9 paragraph; Methods 2.13 design sentence; Abstract Findings and Interpretation; Discussion 4.1 ("real place information, but redundant") and 4.7; MOSAIKS link in 4.4.
+- R3-C variants: 3.9 and 4.2 (no representation helps; V1/V2 shrink the loss, a dimensionality cost; V3 static does not remove it; V4 does not substitute).
+- R3-C seeds: 3.4 (three-seed means, same six Holm-significant losses, seed SD, PE S1 nominal); abstract "seed choice"; 2.12 adds D49 to the post-result changes that alter primary numbers (now eight).
+- R3-C tuning: 3.9 and 4.2 ("separate tuning chose the shared configuration").
+- R3-C Taiwan 2021: 3.1 baselines and coverage, 3.6 control panel (all Taiwan values now with 2021; "without 2021" caveats removed).
+- R3-C Colombia S2 without case history: 3.8, 4.3, abstract, conclusions ("results differ between countries; exploratory"); Methods 2.11 (D51).
+
+### Left pending (blinded until the final kit)
+BR S4; BR S2 without case history; BR S1 C3/C6 panel; final Holm over 14; Table 2 and Figure 2 values (every Table 2 row, the Figure 2 caption, abstract T1 values and seed-0 T1 values in 3.2–3.4, 4.1, 4.6 and 4.7 carry `<!-- REVISIT final kit (3-seed, m=14) -->`). Also still pending: total core-hours (Methods 2.4; no total in the round-3 docs). The BR S1 yref/delay sensitivities are not cited in the main text.
+
+### Cut
+- Methods: 2.5 condensed; the worst-case 14th-cell Holm sentence in 2.10 removed (it used seed-0 p values); 2.11–2.13 rewritten and shortened; small cuts throughout.
+- Results: zero-share sentence (duplicated Table 1); coverage-change sentence (now covered by R3-A6); Tables S21–S23 pointer; per-model zero-stratum paragraph; 2019 control-selection sentences in 3.6; Taiwan 2021 denominator sentence moved into the Table 2 note; repeated robustness wording in 3.2.
+- Discussion: 4.1 compressed; 4.2 rewritten around the new mechanism evidence (larger-tree paragraph and Peru similarity correlation dropped); 4.4–4.7 shortened; unit-length rescaling limitation dropped (remains in Supplementary Methods, section I).
+- Introduction: pre-specification sentence moved out (it is in 2.12); four research questions condensed.
+
+### Claims changed by the new results
+- Brazil new years is no longer described as equivalent without qualification: after IAAFT calibration its CI crosses +1%.
+- "Year-to-year noise may add to this" (4.2) was replaced: the static variant did not remove the loss, so noise is not the explanation.
+- "The excess gain rose with each added training year" (4.5) became "no detectable trend".
+- The no-history conclusion now says the two countries disagreed; the Brazilian coordinate pattern did not replicate in Colombia.
+- Peru new years becomes a nominal (not Holm-significant) loss under three seeds, and changes sign under per-level tuning.

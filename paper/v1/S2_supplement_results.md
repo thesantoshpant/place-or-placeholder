@@ -10,44 +10,42 @@ The reference WIS and every gain (Table 2 and Tables S21, S24 to S34, S36, S37 a
 
 **Table S17. Forecast error of the baseline and ladder models in the new-years split (row mean).**
 
-<!-- src: S1_baselines.csv, rows with pooled_over = 1,4; columns wis_log, rel_wis_vs_L0, cov_80, cov_80_nonzero; n_rows per country -->
-| Model | Brazil | Colombia | Peru | Taiwan (without 2021) |
+<!-- src: S1_baselines.csv, rows with pooled_over = 1,4; columns wis_log, rel_wis_vs_L0, cov_80, cov_80_nonzero; n_rows per country; Taiwan column from docs/results/review/R3_C_tw2021_ladder.csv pooled rows (wis_log, rel_wis_vs_L0, cov_80, cov_80_nonzero; 141,645 rows) --> <!-- REVISIT final kit -->
+| Model | Brazil | Colombia | Peru | Taiwan |
 |---|---|---|---|---|
-| L0, seasonal naive | 0.4695 (1.00) | 0.3272 (1.00) | 0.6596 (1.00) | 0.0922 (1.00) |
-| Negative binomial regression (L1 inputs) | 0.2185 (0.47) | 0.1426 (0.44) | 0.3232 (0.49) | 0.0594 (0.64) |
+| L0, seasonal naive | 0.4695 (1.00) | 0.3272 (1.00) | 0.6596 (1.00) | 0.0743 (1.00) |
+| Negative binomial regression (L1 inputs) | 0.2185 (0.47) | 0.1426 (0.44) | 0.3232 (0.49) | 0.0475 (0.64) |
 | TimesFM 2.5, zero-shot | 0.1928 (0.41) | not run | not run | not run |
-| LightGBM L1, case history | 0.1700 (0.36) | 0.1226 (0.37) | 0.2442 (0.37) | 0.0394 (0.43) |
-| LightGBM L2, + climate | 0.1690 (0.36) | 0.1224 (0.37) | 0.2431 (0.37) | tuned separately only (row below) |
-| LightGBM L3, + remote sensing and population | 0.1681 (0.36) | 0.1220 (0.37) | 0.2438 (0.37) | 0.0398 (0.43) |
-| LightGBM L4, + embeddings | 0.1677 (0.36) | 0.1225 (0.37) | 0.2462 (0.37) | 0.0402 (0.44) |
-| LightGBM L3 + C\* | 0.1680 (0.36) | 0.1221 (0.37) | 0.2445 (0.37) | 0.0400 (0.43) |
-| LightGBM L4 + C\* | 0.1676 (0.36) | 0.1226 (0.37) | 0.2462 (0.37) | 0.0402 (0.44) |
-| LightGBM L2, tuned separately | – | – | – | 0.0477 (0.52) |
-| Rows scored | 2,703,183 | 319,930 | 45,754 | 113,430 |
+| LightGBM L1, case history | 0.1700 (0.36) | 0.1226 (0.37) | 0.2442 (0.37) | 0.0316 (0.43) |
+| LightGBM L2, + climate | 0.1690 (0.36) | 0.1224 (0.37) | 0.2431 (0.37) | 0.0319 (0.43) |
+| LightGBM L3, + remote sensing and population | 0.1681 (0.36) | 0.1220 (0.37) | 0.2438 (0.37) | 0.0319 (0.43) |
+| LightGBM L4, + embeddings | 0.1677 (0.36) | 0.1225 (0.37) | 0.2462 (0.37) | 0.0323 (0.43) |
+| LightGBM L3 + C\* | 0.1680 (0.36) | 0.1221 (0.37) | 0.2445 (0.37) | 0.0321 (0.43) |
+| LightGBM L4 + C\* | 0.1676 (0.36) | 0.1226 (0.37) | 0.2462 (0.37) | 0.0323 (0.43) |
+| Rows scored | 2,703,183 | 319,930 | 45,754 | 141,645 |
 
-Note: Mean WIS over rows, with the relative WIS against the seasonal naive baseline (L0) in parentheses. Every model is scored on the same rows (last row). TimesFM was run for Brazil only. C\* is historical risk (C1) in all four countries. Brazil averages three seeds for L3, L4, L3 + C\* and L4 + C\*. Taiwan excludes 2021, because the baseline runs have no 2021 forecasts. Taiwan's L2 model was tuned separately and is not comparable with the other Taiwan rows. The step from L0 to L1 changes both the inputs and the method.
+Note: Mean WIS over rows, with the relative WIS against the seasonal naive baseline (L0) in parentheses. Every model is scored on the same rows (last row). TimesFM was run for Brazil only. C\* is historical risk (C1) in all four countries. Brazil averages three seeds for L3, L4, L3 + C\* and L4 + C\*; the other countries use seed 0. Taiwan includes test year 2021 and its L2 uses the shared configuration (Table S53; the earlier Taiwan values without 2021 used a separately tuned L2). The step from L0 to L1 changes both the inputs and the method.
 
 **Table S18. Coverage of 80% prediction intervals in the new-years split.**
 
-<!-- src: S1_baselines.csv, rows with pooled_over = 1,4; columns wis_log, rel_wis_vs_L0, cov_80, cov_80_nonzero; n_rows per country -->
-| Model | Brazil | Colombia | Peru | Taiwan (without 2021) |
+<!-- src: S1_baselines.csv, rows with pooled_over = 1,4; columns wis_log, rel_wis_vs_L0, cov_80, cov_80_nonzero; n_rows per country; Taiwan column from docs/results/review/R3_C_tw2021_ladder.csv pooled rows (wis_log, rel_wis_vs_L0, cov_80, cov_80_nonzero; 141,645 rows) --> <!-- REVISIT final kit -->
+| Model | Brazil | Colombia | Peru | Taiwan |
 |---|---|---|---|---|
-| L0, seasonal naive | 0.77 / 0.40 | 0.81 / 0.53 | 0.73 / 0.47 | 0.94 / 0.00 |
-| Negative binomial regression (L1 inputs) | 0.94 / 0.77 | 0.96 / 0.81 | 0.93 / 0.84 | 0.98 / 0.42 |
+| L0, seasonal naive | 0.77 / 0.40 | 0.81 / 0.53 | 0.73 / 0.47 | 0.95 / 0.00 |
+| Negative binomial regression (L1 inputs) | 0.94 / 0.77 | 0.96 / 0.81 | 0.93 / 0.84 | 0.99 / 0.42 |
 | TimesFM 2.5, zero-shot | 0.82 / 0.60 | not run | not run | not run |
 | LightGBM L1, case history | 0.91 / 0.68 | 0.93 / 0.72 | 0.84 / 0.70 | 0.98 / 0.24 |
-| LightGBM L2, + climate | 0.90 / 0.68 | 0.93 / 0.72 | 0.83 / 0.68 | tuned separately only (row below) |
+| LightGBM L2, + climate | 0.90 / 0.68 | 0.93 / 0.72 | 0.83 / 0.68 | 0.98 / 0.23 |
 | LightGBM L3, + remote sensing and population | 0.90 / 0.67 | 0.93 / 0.72 | 0.83 / 0.68 | 0.98 / 0.25 |
 | LightGBM L4, + embeddings | 0.90 / 0.67 | 0.93 / 0.71 | 0.83 / 0.68 | 0.98 / 0.24 |
 | LightGBM L3 + C\* | 0.90 / 0.66 | 0.93 / 0.71 | 0.83 / 0.67 | 0.98 / 0.24 |
 | LightGBM L4 + C\* | 0.90 / 0.66 | 0.93 / 0.71 | 0.83 / 0.67 | 0.98 / 0.24 |
-| LightGBM L2, tuned separately | – | – | – | 0.97 / 0.03 |
 
 Note: Share of observations inside the 80% interval, over all rows / over rows with at least one case. Models, rows and seeds as in Table S17.
 
 **Table S19. Mean forecast error along the model ladder in each cell (row mean).**
 
-<!-- src: T2_ladder.csv, column `WIS pooled h{1,4}` per cell and label; cov_80 and cov_80_nonzero of L4+C*; n_rows -->
+<!-- src: T2_ladder.csv, column `WIS pooled h{1,4}` per cell and label; cov_80 and cov_80_nonzero of L4+C*; n_rows; Taiwan new-years row from docs/results/review/R3_C_tw2021_ladder.csv pooled rows (141,645 rows) --> <!-- REVISIT final kit -->
 | Cell | C\* | L0 | L1 | L2 | L3 | L4 |
 |---|---|---|---|---|---|---|
 | Brazil, new years | C1 | 0.4695 | 0.1700 | 0.1690 | 0.1681 | 0.1677 |
@@ -62,16 +60,16 @@ Note: Share of observations inside the 80% interval, over all rows / over rows w
 | Colombia, held-out country | C2 | – | – | – | 0.1238 | 0.1239 |
 | Peru, new years | C1 | 0.6596 | 0.2442 | 0.2431 | 0.2438 | 0.2462 |
 | Peru, held-out country | C3 | – | – | – | 0.2383 | 0.2367 |
-| Taiwan, new years (ladder without 2021) | C1 | 0.0922 | 0.0394 | 0.0477 (per-level tuned) | 0.0398 | 0.0402 |
+| Taiwan, new years | C1 | 0.0743 | 0.0316 | 0.0319 | 0.0319 | 0.0323 |
 | Taiwan, held-out country | C3 | – | – | – | 0.0205 | 0.0250 |
 | Brazil, new years, per-level tuning (sensitivity) | C1 | 0.4695 | 0.1700 | 0.1690 | 0.1714 | 0.1710 |
-| Taiwan, new years, Brazil parameters (sensitivity) | C1 | – | – | – | 0.0398 | 0.0402 |
+| Taiwan, new years, Brazil parameters (sensitivity, without 2021) | C1 | – | – | – | 0.0398 | 0.0402 |
 
-Note: Mean WIS over rows (lower is better), on rows common to every model. L0 to L2 were run in the new-years split only. Brazil, new years, averages three seeds. The Taiwan new-years ladder excludes 2021 (its L0 to L2 runs have no 2021 forecasts; Table 2 includes 2021), and its L2 model was tuned separately. Sensitivity rows: Brazil, new years, with each model tuned separately (L3 and L4 at 31 leaves, as in the original protocol, with the earlier control selection); Taiwan, new years, with Brazil's configuration and C\* (without 2021).
+Note: Mean WIS over rows (lower is better), on rows common to every model. L0 to L2 were run in the new-years split only. Brazil, new years, averages three seeds; other cells use seed 0. Taiwan, new years, includes 2021 and uses the shared configuration for L2 (Table S53). Sensitivity rows: Brazil, new years, with each model tuned separately (L3 and L4 at 31 leaves, as in the original protocol, with the earlier control selection); Taiwan, new years, with Brazil's configuration and C\* (without 2021).
 
 **Table S20. Forecast error with the location control, and interval coverage, in each cell (row mean).**
 
-<!-- src: T2_ladder.csv, column `WIS pooled h{1,4}` per cell and label; cov_80 and cov_80_nonzero of L4+C*; n_rows -->
+<!-- src: T2_ladder.csv, column `WIS pooled h{1,4}` per cell and label; cov_80 and cov_80_nonzero of L4+C*; n_rows; Taiwan new-years row from docs/results/review/R3_C_tw2021_ladder.csv pooled rows (141,645 rows) --> <!-- REVISIT final kit -->
 | Cell | L3 + C\* | L4 + C\* | 80% coverage of L4 + C\*, all rows / cases > 0 | Rows |
 |---|---|---|---|---|
 | Brazil, new years | 0.1680 | 0.1676 | 0.90 / 0.66 | 2,703,183 |
@@ -86,10 +84,10 @@ Note: Mean WIS over rows (lower is better), on rows common to every model. L0 to
 | Colombia, held-out country | 0.1249 | 0.1246 | 0.94 / 0.75 | 319,930 |
 | Peru, new years | 0.2445 | 0.2462 | 0.83 / 0.67 | 45,754 |
 | Peru, held-out country | 0.2394 | 0.2371 | 0.84 / 0.67 | 45,754 |
-| Taiwan, new years (ladder without 2021) | 0.0400 | 0.0402 | 0.98 / 0.24 | 113,430 |
+| Taiwan, new years | 0.0321 | 0.0323 | 0.98 / 0.24 | 141,645 |
 | Taiwan, held-out country | 0.0212 | 0.0248 | 0.99 / 0.61 | 141,645 |
 | Brazil, new years, per-level tuning (sensitivity) | 0.1714 | 0.1710 | 0.90 / 0.68 | 2,703,183 |
-| Taiwan, new years, Brazil parameters (sensitivity) | 0.0401 | 0.0403 | 0.98 / 0.24 | 113,430 |
+| Taiwan, new years, Brazil parameters (sensitivity, without 2021) | 0.0401 | 0.0403 | 0.98 / 0.24 | 113,430 |
 
 Note: Mean WIS over rows. Rows and seeds as in Table S19.
 
@@ -97,7 +95,7 @@ Note: Mean WIS over rows. Rows and seeds as in Table S19.
 
 **Table S21. Reference error, embedding gain and control gain in each cell.**
 
-<!-- src: T1_primary_family.csv WIS_L3 per cell (moved from main Table 2) -->
+<!-- src: T1_primary_family.csv WIS_L3 per cell (moved from main Table 2) --> <!-- REVISIT final kit -->
 <!-- src: T1_primary_family.csv, one row per cell: test_years; n_rows; n_seeds; WIS_L4C; G_emb_pct, G_emb_lo95_pct, G_emb_hi95_pct; G_id_pct, G_id_lo95_pct, G_id_hi95_pct; DM_p; TOST_p_Holm. Values moved unchanged from draft v1 Table 2, which the number verifier checked cell by cell against T1. -->
 | Cell | Reference WIS (L3) | WIS of L4 + C\* | Embedding gain, % (95% CI) | Control gain, % (95% CI) | DM p, excess gain | Holm TOST p (±1%) |
 |---|---|---|---|---|---|---|
@@ -168,7 +166,7 @@ Note: As Table S22. C4 and C4s are means over three seeds.
 
 **Table S24. Equivalence of the excess gain at margins of ±0.5%, ±1% and ±2% of the reference WIS.**
 
-<!-- src: T1b_margin_sensitivity.csv per cell and margin_pct: G_excess_pct, lo90_pct, hi90_pct, within_unadjusted, within_Holm, near_margin -->
+<!-- src: T1b_margin_sensitivity.csv per cell and margin_pct: G_excess_pct, lo90_pct, hi90_pct, within_unadjusted, within_Holm, near_margin --> <!-- REVISIT final kit -->
 | Cell | Excess gain, % (90% CI) | ±0.5%: unadjusted / Holm | ±1%: unadjusted / Holm | ±2%: unadjusted / Holm |
 |---|---|---|---|---|
 | Brazil, new years | +0.23 (−0.23 to 0.69) | no / no | yes / yes | yes / yes |
@@ -193,7 +191,7 @@ Note: The excess gain is shown with its 90% CI. A cell lies within the margin wh
 
 **Table S25. Excess gain at horizons 1 and 4 separately.**
 
-<!-- src: T3_estimands.csv rows test_year = pooled, estimand = G_excess, horizon 1 / 4 (pct_of_ref, lo95_pct, hi95_pct, p); S1 secondary pooling from T1_primary_family.csv sec_pct, sec_lo95_pct, sec_hi95_pct, sec_DM_p, sec_years -->
+<!-- src: T3_estimands.csv rows test_year = pooled, estimand = G_excess, horizon 1 / 4 (pct_of_ref, lo95_pct, hi95_pct, p); S1 secondary pooling from T1_primary_family.csv sec_pct, sec_lo95_pct, sec_hi95_pct, sec_DM_p, sec_years --> <!-- REVISIT final kit -->
 | Cell | Horizon 1: % (95% CI); p | Horizon 4: % (95% CI); p | Horizons 1 to 4, new years only: % (95% CI); p; years |
 |---|---|---|---|
 | Brazil, new years | +0.11 (−0.14 to 0.36), 0.36 | +0.32 (−0.48 to 1.13), 0.40 | +0.25 (−0.33 to 0.82), 0.38; 2020–24 |
@@ -215,7 +213,7 @@ Note: The new-years cells also show the secondary pooling over horizons 1 to 4, 
 
 **Table S26. Excess gain under more cautious statistical tests.**
 
-<!-- src: T1_primary_family.csv per cell: pct_of_WIS_ref, lo95_pct, hi95_pct, DM_p, Holm_p_available; B4_lo95_pct, B4_hi95_pct, B4_p, B4_Holm_p; p_iaaft, p_iaaft_Holm; delta_lo95_pct, delta_hi95_pct; case_pct, case_p; all rows = unfiltered_pct, unfiltered_p; v1 exclusions = exclv1_pct, exclv1_p for Brazil -->
+<!-- src: T1_primary_family.csv per cell: pct_of_WIS_ref, lo95_pct, hi95_pct, DM_p, Holm_p_available; B4_lo95_pct, B4_hi95_pct, B4_p, B4_Holm_p; p_iaaft, p_iaaft_Holm; delta_lo95_pct, delta_hi95_pct; case_pct, case_p; all rows = unfiltered_pct, unfiltered_p; v1 exclusions = exclv1_pct, exclv1_p for Brazil --> <!-- REVISIT final kit -->
 | Cell | Excess gain, % (95% CI) | p / Holm p | B = 4: 95% CI | B = 4: p / Holm p | Surrogate-calibrated p / Holm p | 95% CI, reference WIS estimated |
 |---|---|---|---|---|---|---|
 | Brazil, new years | +0.23 (−0.33 to 0.79) | 0.39 / 0.80 | −0.53 to 1.00 | 0.45 / 1.0 | 0.51 / 1.0 | −0.28 to 0.75 |
@@ -237,7 +235,7 @@ Note: Primary test as in Table 2, with Holm adjustment over the 13 completed cel
 
 **Table S27. Excess gain on the case scale, on all rows and without the Espírito Santo exclusion.**
 
-<!-- src: T1_primary_family.csv per cell: pct_of_WIS_ref, lo95_pct, hi95_pct, DM_p, Holm_p_available; B4_lo95_pct, B4_hi95_pct, B4_p, B4_Holm_p; p_iaaft, p_iaaft_Holm; delta_lo95_pct, delta_hi95_pct; case_pct, case_p; all rows = unfiltered_pct, unfiltered_p; v1 exclusions = exclv1_pct, exclv1_p for Brazil -->
+<!-- src: T1_primary_family.csv per cell: pct_of_WIS_ref, lo95_pct, hi95_pct, DM_p, Holm_p_available; B4_lo95_pct, B4_hi95_pct, B4_p, B4_Holm_p; p_iaaft, p_iaaft_Holm; delta_lo95_pct, delta_hi95_pct; case_pct, case_p; all rows = unfiltered_pct, unfiltered_p; v1 exclusions = exclv1_pct, exclv1_p for Brazil --> <!-- REVISIT final kit -->
 | Cell | Case scale, % | Case scale, p | All rows, % | All rows, p | Earlier exclusions, % | Earlier exclusions, p |
 |---|---|---|---|---|---|---|
 | Brazil, new years | −0.03 | 0.92 | +0.26 | 0.39 | +0.23 | 0.40 |
@@ -261,7 +259,7 @@ Note: Case scale: excess gain in the WIS of raw case counts, as a percentage of 
 
 **Table S28. Additive contributions of three types of target week to the excess gain.**
 
-<!-- src: T5_strata.csv, estimand = G_excess, per cell and stratum: row_share; pct_of_ref, lo95_pct, hi95_pct (stratum estimate, % of the stratum's own WIS(L3)); contrib_pct, contrib_lo95_pct, contrib_hi95_pct, contrib_p (additive contribution, % of the cell's WIS(L3)); total_pct -->
+<!-- src: T5_strata.csv, estimand = G_excess, per cell and stratum: row_share; pct_of_ref, lo95_pct, hi95_pct (stratum estimate, % of the stratum's own WIS(L3)); contrib_pct, contrib_lo95_pct, contrib_hi95_pct, contrib_p (additive contribution, % of the cell's WIS(L3)); total_pct --> <!-- REVISIT final kit -->
 | Cell | Total, % | Weeks with cases, % (95% CI) | Recorded zeros, % (95% CI) | Zero-filled weeks, % (95% CI) |
 |---|---|---|---|---|
 | Brazil, new years | +0.23 | +0.46 (−0.16 to 1.07) | −0.02 (−0.16 to 0.12) | −0.20 (−0.33 to −0.08) |
@@ -287,7 +285,7 @@ Note: Each contribution is a percentage of the cell's reference WIS, and the thr
 
 **Table S29. Excess gain within each type of target week.**
 
-<!-- src: T5_strata.csv, estimand = G_excess, per cell and stratum: row_share; pct_of_ref, lo95_pct, hi95_pct (stratum estimate, % of the stratum's own WIS(L3)); contrib_pct, contrib_lo95_pct, contrib_hi95_pct, contrib_p (additive contribution, % of the cell's WIS(L3)); total_pct -->
+<!-- src: T5_strata.csv, estimand = G_excess, per cell and stratum: row_share; pct_of_ref, lo95_pct, hi95_pct (stratum estimate, % of the stratum's own WIS(L3)); contrib_pct, contrib_lo95_pct, contrib_hi95_pct, contrib_p (additive contribution, % of the cell's WIS(L3)); total_pct --> <!-- REVISIT final kit -->
 | Cell | Cases > 0: share | Cases > 0: % (95% CI) | Recorded zeros: share | Recorded zeros: % (95% CI) | Zero-filled: share | Zero-filled: % (95% CI) |
 |---|---|---|---|---|---|---|
 | Brazil, new years | 27% | +0.30 (−0.16 to 0.76) | 21% | −0.27 (−2.74 to 2.20) | 52% | −1.67 (−2.65 to −0.69) |
@@ -313,7 +311,7 @@ Note: Share is the share of rows. Each estimate is a percentage of that stratum'
 
 **Table S30. Excess gain by test year.**
 
-<!-- src: S8_per_year.csv, estimand = G_excess, per cell and test_year: pct_of_ref, lo95_pct, hi95_pct, p (* = p < 0.05, unadjusted); estimate (absolute, shown ×10^-4 in brackets) for Taiwan -->
+<!-- src: S8_per_year.csv, estimand = G_excess, per cell and test_year: pct_of_ref, lo95_pct, hi95_pct, p (* = p < 0.05, unadjusted); estimate (absolute, shown ×10^-4 in brackets) for Taiwan --> <!-- REVISIT final kit -->
 | Cell | 2020 | 2021 | 2022 | 2023 | 2024 |
 |---|---|---|---|---|---|
 | Brazil, new years | −0.22 | −0.67* | +0.12 | +0.42 | +0.88 |
@@ -337,7 +335,7 @@ In all four completed Brazilian cells the excess gain was lowest in 2021 (−0.6
 
 **Table S31. Upper quantiles of the forecasts on rows with zero cases.**
 
-<!-- src: S6_q90_mechanism.csv per cell: zero_row_share; dq90_log, dq90_log_lo95, dq90_log_hi95, dq90_log_p; dq90_case, dq90_case_lo95, dq90_case_hi95; G_zero_contrib, G_zero_contrib_lo95, G_zero_contrib_hi95 (×10^4); upper_share_of_zero; q90_share_of_zero -->
+<!-- src: S6_q90_mechanism.csv per cell: zero_row_share; dq90_log, dq90_log_lo95, dq90_log_hi95, dq90_log_p; dq90_case, dq90_case_lo95, dq90_case_hi95; G_zero_contrib, G_zero_contrib_lo95, G_zero_contrib_hi95 (×10^4); upper_share_of_zero; q90_share_of_zero --> <!-- REVISIT final kit -->
 | Cell | Zero-case share of rows | Δq0.9, log(1 + cases) (95% CI); p | Δq0.9, cases (95% CI) | Zero-row contribution, log-WIS × 10⁻⁴ (95% CI) | Share from quantiles above the median | Share from q0.9 alone |
 |---|---|---|---|---|---|---|
 | Brazil, new years | 73% | +0.006 (0.001 to 0.011); 0.029 | +0.003 (−0.008 to 0.014) | −3.8 (−7.3 to −0.2) | 0.77 | 0.24 |
@@ -363,7 +361,7 @@ The analyses in Tables S32 to S35 are exploratory and unadjusted for multiplicit
 
 **Table S32. Excess gain on outbreak and non-outbreak weeks.**
 
-<!-- src: S3_outbreak.csv per cell: stratum outbreak / non_outbreak (row_share, pct_of_ref, lo95_pct, hi95_pct, p, n_weeks) and outbreak_minus_non (p) -->
+<!-- src: S3_outbreak.csv per cell: stratum outbreak / non_outbreak (row_share, pct_of_ref, lo95_pct, hi95_pct, p, n_weeks) and outbreak_minus_non (p) --> <!-- REVISIT final kit -->
 | Cell | Outbreak share of rows | Outbreak weeks: % (95% CI); p | Other weeks: % (95% CI); p | Difference, p |
 |---|---|---|---|---|
 | Brazil, new years | 8.2% | +0.08 (−0.77 to 0.92); 0.85 | +0.01 (−0.19 to 0.20); 0.94 | 0.85 |
@@ -385,7 +383,7 @@ Note: An outbreak week has cases at least max(5, the district's 90th percentile 
 
 **Table S33. Excess gain weighted by population or by past cases.**
 
-<!-- src: S4_weighted.csv, estimand G_excess, per cell and weights (unweighted, population, pre_cases_plus1): pct_of_ref, lo95_pct, hi95_pct, p -->
+<!-- src: S4_weighted.csv, estimand G_excess, per cell and weights (unweighted, population, pre_cases_plus1): pct_of_ref, lo95_pct, hi95_pct, p --> <!-- REVISIT final kit -->
 | Cell | Unweighted: % (95% CI); p | Population-weighted: % (95% CI); p | Weighted by 2013 to 2017 mean weekly cases + 1: % (95% CI); p |
 |---|---|---|---|
 | Brazil, new years | +0.23 (−0.33 to 0.79); 0.39 | +0.03 (−0.40 to 0.46); 0.88 | −0.13 (−0.53 to 0.27); 0.51 |
@@ -407,7 +405,7 @@ Note: Within each horizon and week, rows are weighted by the district's populati
 
 **Table S34. Excess gain after causal recalibration of the quantiles.**
 
-<!-- src: S5_recalibration.csv per cell, years and calibration: pct_of_ref, p; cov80pos_L4+C* -->
+<!-- src: S5_recalibration.csv per cell, years and calibration: pct_of_ref, p; cov80pos_L4+C* --> <!-- REVISIT final kit -->
 | Cell | Raw: %; p | Global shift: %; p | Mondrian shift: %; p | Mondrian, from second test year: %; p | 80% coverage of L4 + C\*, cases > 0: raw → Mondrian |
 |---|---|---|---|---|---|
 | Brazil, new years | +0.23; 0.39 | +0.23; 0.39 | +0.24; 0.36 | +0.33; 0.29 | 0.66 → 0.69 |
@@ -452,7 +450,7 @@ Note: Excess gain as a percentage of the stratum's own reference WIS; an asteris
 
 **Table S36. Control and excess gains with each fixed location control in the new-years split.**
 
-<!-- src: S2_control_panel.csv per country and control: G_id_pct, G_id_pct_lo95, G_id_pct_hi95, G_id_p; G_excess_pct, G_excess_pct_lo95, G_excess_pct_hi95, G_excess_p; G_emb_pct, G_emb_pct_lo95, G_emb_pct_hi95, G_emb_p; status -->
+<!-- src: Taiwan rows from docs/results/review/R3_C_tw2021_panel.csv (G_id_pct, G_id_pct_lo95, G_id_pct_hi95, G_id_p, G_excess_pct, G_excess_pct_lo95, G_excess_pct_hi95, G_excess_p, G_emb_pct, G_emb_p); other rows S2_control_panel.csv per country and control: G_id_pct, G_id_pct_lo95, G_id_pct_hi95, G_id_p; G_excess_pct, G_excess_pct_lo95, G_excess_pct_hi95, G_excess_p; G_emb_pct, G_emb_pct_lo95, G_emb_pct_hi95, G_emb_p; status -->
 | Country | Control | Control gain with this control, % (95% CI); p | Excess gain with this control, % (95% CI); p |
 |---|---|---|---|
 | Brazil | C1 | +0.02 (−0.15 to 0.20); 0.77 | +0.25 (−0.32 to 0.81); 0.37 |
@@ -467,20 +465,20 @@ Note: Excess gain as a percentage of the stratum's own reference WIS; an asteris
 | Peru | C2 | −0.31 (−0.73 to 0.11); 0.13 | −0.86 (−1.57 to −0.14); 0.022 |
 | Peru | C3 | −0.76 (−1.48 to −0.04); 0.040 | −0.37 (−0.80 to 0.05); 0.081 |
 | Peru | C6 | −6.28 (−9.87 to −2.69); 0.0023 | −0.29 (−1.53 to 0.96); 0.63 |
-| Taiwan | C1 | −0.63 (−1.69 to 0.44); 0.23 | −0.44 (−1.01 to 0.14); 0.12 |
-| Taiwan | C2 | −0.35 (−0.75 to 0.04); 0.075 | −0.77 (−1.88 to 0.34); 0.16 |
-| Taiwan | C3 | −0.59 (−1.30 to 0.12); 0.094 | −0.54 (−1.31 to 0.23); 0.15 |
-| Taiwan | C6 | −2.20 (−5.54 to 1.15); 0.18 | −0.42 (−1.08 to 0.23); 0.18 |
+| Taiwan | C1 | −0.63 (−1.68 to 0.43); 0.22 | −0.60 (−1.20 to −0.003); 0.049 |
+| Taiwan | C2 | −0.36 (−0.76 to 0.03); 0.070 | −0.94 (−2.03 to 0.15); 0.087 |
+| Taiwan | C3 | −0.58 (−1.29 to 0.12); 0.097 | −0.68 (−1.45 to 0.09); 0.079 |
+| Taiwan | C6 | −2.29 (−5.59 to 1.02); 0.16 | −0.52 (−1.16 to 0.13); 0.11 |
 | Brazil | none (embedding gain, L3 vs L4) | – | +0.29 (−0.27 to 0.84); 0.29 |
 | Colombia | none (embedding gain, L3 vs L4) | – | −0.36 (−0.58 to −0.13); 0.0052 |
 | Peru | none (embedding gain, L3 vs L4) | – | −0.94 (−1.70 to −0.18); 0.020 |
-| Taiwan | none (embedding gain, L3 vs L4) | – | −0.94 (−1.85 to −0.03); 0.043 |
+| Taiwan | none (embedding gain, L3 vs L4) | – | −1.06 (−1.96 to −0.16); 0.024 |
 
-Note: Each row replaces C\* by one fixed control: C1, historical risk (district mean log(1 + cases) in the years before 2018); C2, coordinates (spherical harmonics); C3, a fixed other district's AlphaEarth series; C6, district identifier (categorical). The control gain compares L3 with L3 + Ck, and the excess gain compares L3 + Ck with L4 + Ck. The last four rows give the embedding gain without a control. Seed 0 only, so Brazil's C1 row differs slightly from the three-seed value in Table 2. The panel is scored on the same primary rows as Table 2, but the Taiwan rows exclude 2021, because the panel reuses runs made before 2021 was added; Taiwan values are comparable within the panel, not with Table 2. No adjustment for multiplicity. <!-- src: S2_control_panel.csv scoring = v3_excl_v2_origin_year; RE_summary.md caveats -->
+Note: Each row replaces C\* by one fixed control: C1, historical risk (district mean log(1 + cases) in the years before 2018); C2, coordinates (spherical harmonics); C3, a fixed other district's AlphaEarth series; C6, district identifier (categorical). The control gain compares L3 with L3 + Ck, and the excess gain compares L3 + Ck with L4 + Ck. The last four rows give the embedding gain without a control. Seed 0 only, so Brazil's C1 row differs slightly from the three-seed value in Table 2. The panel is scored on the same primary rows as Table 2; Taiwan includes 2021 (141,645 rows; the values without 2021 are in Table S53). No adjustment for multiplicity. <!-- src: S2_control_panel.csv scoring = v3_excl_v2_origin_year; RE_summary.md caveats -->
 
 **Table S37. Sensitivity analyses of the embedding, control and excess gains.**
 
-<!-- src: T6a_sensitivities.csv per variant and estimand: variant_pct, variant_lo95_pct, variant_hi95_pct, variant_p, variant_status; primary_pct; variant_years -->
+<!-- src: T6a_sensitivities.csv per variant and estimand: variant_pct, variant_lo95_pct, variant_hi95_pct, variant_p, variant_status; primary_pct; variant_years --> <!-- REVISIT final kit -->
 | Variant | Gain | Variant: % (95% CI); p | Primary cell, % |
 |---|---|---|---|
 | Brazil, new years, yearly inputs keyed to the origin year (strictly causal) | embedding | pending <!-- PENDING: sensitivities yref/delay2 --> | +0.26 (seed 0: +0.29) |
@@ -524,7 +522,7 @@ Note: Mean WIS on log(1 + cases) on the 2021 rows, where every target is zero (T
 
 **Table S39. Correlation between a held-out district's gain and its embedding similarity to the training districts.**
 
-<!-- src: S7_embedding_distance.csv, distance = cos_max: spearman_rho, p_naive, n_units per cell and estimand -->
+<!-- src: S7_embedding_distance.csv, distance = cos_max: spearman_rho, p_naive, n_units per cell and estimand --> <!-- REVISIT final kit -->
 | Cell | Districts | Spearman ρ, excess gain vs similarity (naive p) | Spearman ρ, embedding gain vs similarity (naive p) |
 |---|---|---|---|
 | Brazil, held-out states | 5,439 | +0.04 (0.0018) | +0.07 (<0.001) |
@@ -541,7 +539,7 @@ Note: Similarity is the maximum cosine similarity between a held-out district's 
 
 **Table S40. Excess gain by similarity quintile in the held-out-country split.**
 
-<!-- src: S7b_embedding_distance_bins.csv, cells BR_S5, CO_S5, PE_S5, TW_S5, per bin: cos_max_lo, cos_max_hi, n_units, zero_share, wis_L3, G_excess, G_excess_lo95, G_excess_hi95 (×10^4), G_excess_share_units_neg -->
+<!-- src: S7b_embedding_distance_bins.csv, cells BR_S5, CO_S5, PE_S5, TW_S5, per bin: cos_max_lo, cos_max_hi, n_units, zero_share, wis_L3, G_excess, G_excess_lo95, G_excess_hi95 (×10^4), G_excess_share_units_neg --> <!-- REVISIT final kit -->
 | Cell | Similarity quintile (maximum cosine) | Districts | Reference WIS (L3) | Excess gain, log-WIS × 10⁻⁴ (95% CI) | Districts harmed |
 |---|---|---|---|---|---|
 | Brazil, held-out country | Q1 (0.43–0.67) | 1088 | 0.1035 | −14.0 (−14.8 to −13.2) | 90% |
@@ -600,92 +598,348 @@ Note: N3 is L3 and N4 is L4 without the 21 case-derived inputs. The selected con
 
 ## G. Post hoc analyses added after the third review round
 
-The analyses in this section were specified after all 13 completed cells of the primary family had been read, in response to referee reports, and before any of them was scored (deviation rows 39 to 52, Supplementary Methods Table S14). They reuse the primary scoring (week-weighted, origin-year rows, primary exclusions, horizons 1 and 4) unless stated. None enters the Holm family of Table 2; each is exploratory. Results are [pending]. <!-- PENDING: round-3 analyses (scripts/analysis/round3_analyses.py -> docs/results/review/R3_*; EXP-A/EXP-B runs) -->
+The analyses in this section were specified after all 13 completed cells of the primary family had been read, in response to referee reports, and before any of them was scored (deviation rows 39 to 53, Supplementary Methods Table S14; specification commit 8001a92). They reuse the primary scoring (week-weighted, origin-year rows, primary exclusions, horizons 1 and 4) unless stated. Unless a table says otherwise they use seed 0 in every cell except Brazil, new years (three seeds), so their reference values are the seed-0 values of the primary family; Table S52 gives the three-seed values that become primary (row 53). None enters the Holm family of Table 2; each is exploratory. Brazil, held-out districts (S4) is still blinded and is missing from every table in this section. <!-- src: docs/results/review/R3_summary.md header (13 cells, BR S4 excluded; load check exact vs T1); R3_C_summary.md header (specification commits) --> <!-- PENDING: BR S4 rows of Tables S43 to S48 after unblinding --> <!-- REVISIT final kit -->
 
 ### G1. As planned and as reported
 
-**Table S43. Primary family under the protocol as planned and as reported.**
+**Table S43. Excess gain under the protocol as planned and as reported.**
 
-For each cell, the excess gain and the embedding gain are recomputed with one reporting choice switched back to its planned or earlier form, holding the others at their reported values: per-level tuning where those runs exist (Brazil, new years); all rows instead of origin-year rows (D24); the earlier exclusions (Brazil, D34); the control chosen by selection rule v1 where it was recorded (D19); a single seed (seed 0) instead of seeds 0 to 2 (D22, row 49); Taiwan without 2021 (D25); and, for the new-years cells, horizons 1 to 4 pooled instead of 1 and 4 (D21). Columns: cell; reported estimate; each switched estimate with its 95% CI; whether the Table 2 label changes. Values: [pending]. <!-- PENDING: R3-A5 (R3_A5_as_planned.csv) -->
+Each column switches one reporting choice back to its planned or earlier form and holds the others at their reported values. Entries are the excess gain, % of reference WIS; p.
+
+<!-- src: R3_A5_planned_vs_reported.csv (G_excess_pct, p per cell and variant); R3_C_seeds.csv / R3_C_summary.md section 3 (seeds 0–2); R3_C_tw2021_panel.csv C3 row (Taiwan rule-v1 C3 with 2021) -->
+| Cell | C\* | Reported | All rows (row 24) | Exclusions v1 (row 34) | B = 4 variance | Seeds 0–2 (row 53) | Other planned settings |
+|---|---|---|---|---|---|---|---|
+| Brazil, new years (S1) | C1 | +0.23; 0.39 | +0.26; 0.39 | +0.23; 0.40 | +0.23; 0.45 | (reported) | seed 0 +0.25; 0.37. Horizons 1 to 4 +0.25; 0.38. Per-level tuning +0.25; 0.11 |
+| Brazil, held-out states (S2) | C1 | 0.00; 1.0 | +0.03; 0.89 | −0.01; 0.94 | 0.00; 1.0 | not run | – |
+| Brazil, held-out regions (S3) | C1 | −0.16; 0.090 | −0.10; 0.40 | **−0.19; 0.045** | −0.16; 0.26 | not run | – |
+| Brazil, held-out districts (S4) | [pending] <!-- PENDING: BR S4 --> | | | | | | |
+| Brazil, held-out country (S5) | C3 | −0.60; <0.001 | −0.62; <0.001 | −0.61; <0.001 | −0.60; 0.0021 | −0.68; <0.001 | rule v1 (C4): no valid run |
+| Colombia, new years (S1) | C1 | −0.39; 0.0011 | −0.39; <0.001 | = reported | −0.39; 0.0072 | −0.42; 0.0012 | Horizons 1 to 4 −0.39; 0.0023 |
+| Colombia, held-out states (S2) | C1 | −0.47; <0.001 | −0.48; <0.001 | = reported | −0.47; 0.0023 | −0.52; <0.001 | – |
+| Colombia, held-out regions (S3) | C1 | −0.65; 0.0033 | −0.68; 0.0027 | = reported | −0.65; 0.0084 | −0.68; 0.0030 | – |
+| Colombia, held-out districts (S4) | C1 | −0.43; 0.0028 | −0.44; 0.0018 | = reported | −0.43; 0.016 | −0.45; 0.0017 | – |
+| Colombia, held-out country (S5) | C2 | +0.22; 0.27 | +0.18; 0.33 | = reported | +0.22; 0.49 | not run | rule v1: same control |
+| Peru, new years (S1) | C1 | −0.70; 0.056 | −0.62; 0.094 | = reported | −0.70; 0.16 | −0.82; 0.022 | Horizons 1 to 4 −0.63; 0.077. **Per-level tuning +0.65; 0.24** |
+| Peru, held-out country (S5) | C3 | +0.96; 0.079 | **+1.01; 0.046** | = reported | **+0.96; 0.023** | +0.93; 0.088 | – |
+| Taiwan, new years (S1) | C1 | −0.60; 0.049 | −0.55; 0.076 | = reported | −0.60; 0.10 | −0.71; 0.042 | Without 2021 −0.44; 0.12. Horizons 1 to 4 −0.38; 0.14. Per-level tuning −0.14; 0.23. Rule v1 (C3) −0.68; 0.079 |
+| Taiwan, held-out country (S5) | C3 | −17.30; 0.0017 | −17.62; 0.0011 | = reported | −17.30; 0.016 | −18.29; 0.0039 | Without 2021 −11.16; <0.001 |
+
+Note: "Reported" is the primary estimate before seed averaging (seed 0; Brazil, new years, three seeds), as in Table 2 of the draft read by the referees. <!-- REVISIT final kit: Table 2 becomes the three-seed value; swap the "Reported" and "Seeds 0–2" columns then --> Bold marks an entry whose conclusion differs from the reported one. "= reported": the earlier exclusions differ from the primary ones only in Brazil (Espírito Santo), so the estimate is identical. "not run": these cells have seed 0 only. The rule-v1 control was the same as the rule-v2 control wherever it was recorded (Brazil and Peru, new years; Colombia, held-out country), so the rule-v1 entries are identical to the reported ones; it was not recorded for most held-out-place cells. Brazil held out chose C4 under rule v1, and those runs were discarded after the C4 fix (row 18). Taiwan's rule-v1 C3 value is from the fixed control panel with 2021 (Table S36). The p values in the seeds column are from the multi-seed estimator (Table S52). <!-- src: R3_A5_planned_vs_reported.csv notes ("identical to primary", "rule-v1 choice not recorded", "no valid run (pre-fix C4 runs were invalidated)"); R3_C_tw2021_panel.csv C3 G_excess_pct −0.68, p 0.079 -->
+
+The broad conclusions survive every switch: Brazil, new years, stays between +0.23% and +0.26% and non-significant, Brazil's held-out states stay at zero, and the losses in Brazil held out and in Colombia's four splits stay negative with p ≤ 0.016 under every planned setting, including the cautious variance. <!-- src: R3_A5_planned_vs_reported.csv; R3_summary.md A5 "Stable across every variant" --> Four estimates change their reading. In Peru, new years, the sign flips under per-level tuning (−0.70% to +0.65%, 95% CI −0.49 to 1.79), the same capacity confound that first appeared in Brazil. <!-- src: R3_A5_planned_vs_reported.csv PE_S1 per-level tuning 0.654, lo −0.486, hi 1.794, p 0.237 --> The nominal loss in Taiwan, new years (p = 0.049) is lost under almost every planned setting: per-level tuning (−0.14%, p = 0.23), all rows (p = 0.076), the B = 4 variance (p = 0.10), horizons 1 to 4 (p = 0.14) and the test years without 2021 (p = 0.12). <!-- src: R3_A5_planned_vs_reported.csv TW_S1 rows --> Peru held out becomes a nominally significant gain under the B = 4 variance (+0.96%, 95% CI 0.22 to 1.70; p = 0.023) or on all rows (+1.01%, 0.02 to 2.00; p = 0.046); it is not significant after Holm adjustment in either case. <!-- src: R3_A5_planned_vs_reported.csv PE_S5 B=4 lo 0.2215 hi 1.6993 p 0.0226; all rows 1.0084 lo 0.0183 hi 1.9986 p 0.0464 --> Brazil's held-out regions become a nominally significant loss under the earlier exclusions, which keep Espírito Santo's false zeros (−0.19%, 95% CI −0.37 to −0.005; p = 0.045). <!-- src: R3_A5_planned_vs_reported.csv BR_S3 exclusions v1 −0.188, lo −0.371, hi −0.0051, p 0.0446 --> Two further switches are covered elsewhere: including Taiwan's 2021 (row 25) moved the Taiwan held-out estimate from −11.16% to −17.30%, and the "no control" rule removes the Brazil held-out loss (Table S45).
 
 ### G2. Positive controls along the ladder (margin anchor)
 
 **Table S44. Gains from adding climate, remote sensing and both, and the embedding gain, in the new-years split.**
 
-For every new-years cell, the gains L1 → L2 (weekly climate), L2 → L3 (remote sensing and population), L1 → L3 and L3 → L4 (embeddings), each with DM/EWC + HLN 95% CIs and p values, on shared-configuration runs, and each cell's excess gain as a fraction of its L1 → L3 gain. These covariate blocks are established dengue drivers, so their gains show how large an effect of a useful input is in this design and anchor the ±1% margin; ±0.5% is reported alongside. Taiwan uses the runs with 2021 where they exist (row 50) and is flagged otherwise. Values: [pending]. <!-- PENDING: R3-A1 (R3_A1_ladder_gains.csv); Taiwan L1/L2 with 2021 from EXP-B S2 -->
+<!-- src: R3_A1_positive_control.csv (pct_of_WIS_L3, lo95_pct, hi95_pct, p per cell and increment; G_excess_primary_pct; margin1_over_L1L3_gain, margin05_over_L1L3_gain); Taiwan with 2021 (141,645 rows) -->
+| Cell | Climate, L1 → L2 | Remote sensing and population, L2 → L3 | All non-case covariates, L1 → L3 | Embeddings, L3 → L4 | Excess gain | ±1% (±0.5%) as a multiple of the L1 → L3 gain |
+|---|---|---|---|---|---|---|
+| Brazil | **+0.57 (0.03 to 1.12); 0.041** | **+0.52 (0.18 to 0.86); 0.0053** | **+1.09 (0.44 to 1.74); 0.0026** | +0.26 (−0.31 to 0.82); 0.35 | +0.23 | 0.92 (0.46) |
+| Colombia | +0.14 (−0.14 to 0.42); 0.29 | **+0.30 (0.01 to 0.59); 0.041** | +0.44 (−0.06 to 0.95); 0.080 | −0.36 (−0.58 to −0.13); 0.0052 | −0.39 | 2.25 (1.12) |
+| Peru | +0.44 (−1.48 to 2.37); 0.63 | −0.27 (−1.04 to 0.50); 0.46 | +0.17 (−1.84 to 2.19); 0.85 | −0.94 (−1.70 to −0.18); 0.020 | −0.70 | 5.76 (2.88) |
+| Taiwan (with 2021) | −1.10 (−2.60 to 0.40); 0.14 | +0.05 (−0.58 to 0.68); 0.88 | −1.06 (−2.69 to 0.58); 0.19 | −1.06 (−1.96 to −0.16); 0.024 | −0.60 | not defined (L1 → L3 gain negative) |
+
+Note: Gains in % of WIS(L3) (95% CI); p, unadjusted, on shared-configuration runs; L3 and L4 average three seeds in Brazil, one elsewhere. Bold marks a covariate step whose CI excludes zero. The excess gain is the primary estimate before seed averaging (Table S43). Without 2021, Taiwan's steps were −0.93% (p = 0.21), +0.06% (p = 0.85), −0.87% (p = 0.28) and −0.94% (p = 0.043). <!-- src: R3_A1_positive_control_no2021.csv TW_S1; R3_C_summary.md section 5 positive-control table --> <!-- REVISIT final kit: excess gain column to three-seed values -->
+
+The design can detect an established covariate block, but only in Brazil and, for one step, in Colombia. In Brazil, climate (+0.57%), remote sensing and population (+0.52%) and both together (+1.09%) each improved the forecast; in Colombia only remote sensing and population did (+0.30%, p = 0.041). In Peru and Taiwan no covariate step was detectable, and Taiwan's point estimates were negative, so the null embedding results there say little about whether useful information would have been detected. None of these p values is adjusted, and the two p = 0.041 results would not survive adjustment over the 16 tests. The ±1% margin equals 0.92 times Brazil's whole non-case covariate gain, 2.25 times Colombia's and 5.76 times Peru's. A difference within ±1% therefore does not exclude an embedding effect as large as everything that climate, remote sensing and population add to case history. Brazil's excess gain (+0.23%) is of the size of its climate gain. <!-- src: R3_A1_positive_control.csv; R3_summary.md A1 answers -->
 
 ### G3. "No control" selection rule
 
 **Table S45. Primary family when "no control" is allowed at the 2019 selection.**
 
-Under this sensitivity rule, C\* is "none" in a cell when no candidate control beat the reference model L3 at the 2019 origin by more than two standard errors (same SE as rule v2, Table S22); such cells then contribute their embedding gain (L3 → L4) instead of the excess gain. Columns: cell; C\* under rule v2 and under this rule; flags "C\* beat L3 at 2019" and "control-gain CI below zero"; estimate, 95% CI and p; Holm-adjusted p over the available cells. Values: [pending]. <!-- PENDING: R3-A2 (R3_A2_nocontrol_rule.csv) -->
+<!-- src: R3_A2_nocontrol_rule.csv (rule_noctrl_Cstar, estimand_used, est_pct, lo95_pct, hi95_pct, p, Holm_p, Holm_p_primary, Cstar_beat_L3_2019, G_id_CI_below_0); R3_summary.md A2 table -->
+| Cell | C\* under rule v2 → this rule | Estimand under this rule | % (95% CI) | p | Holm p (13 cells) | Primary excess gain (Holm p) | Control-gain CI below 0 |
+|---|---|---|---|---|---|---|---|
+| Brazil, new years (S1) | C1 → C1 | excess | +0.23 (−0.33 to 0.79) | 0.39 | 1.0 | +0.23 (0.80) | no |
+| Brazil, held-out states (S2) | C1 → none | embedding | −0.02 (−0.34 to 0.30) | 0.88 | 1.0 | 0.00 (1.0) | no |
+| Brazil, held-out regions (S3) | C1 → none | embedding | −0.13 (−0.35 to 0.09) | 0.21 | 1.0 | −0.16 (0.39) | no |
+| Brazil, held-out districts (S4) | [pending] <!-- PENDING: BR S4 --> | | | | | | |
+| Brazil, held-out country (S5) | C3 → none | embedding | −0.34 (−1.24 to 0.56) | 0.44 | 1.0 | **−0.60 (<0.001)** | no |
+| Colombia, new years (S1) | C1 → none | embedding | **−0.36 (−0.58 to −0.13)** | 0.0052 | **0.046** | −0.39 (0.012) | no |
+| Colombia, held-out states (S2) | C1 → none | embedding | **−0.59 (−0.80 to −0.37)** | <0.001 | **0.0010** | −0.47 (0.0068) | yes |
+| Colombia, held-out regions (S3) | C1 → none | embedding | **−0.83 (−1.14 to −0.52)** | <0.001 | **0.0013** | −0.65 (0.026) | yes |
+| Colombia, held-out districts (S4) | C1 → none | embedding | **−0.52 (−0.75 to −0.28)** | <0.001 | **0.0053** | −0.43 (0.025) | yes |
+| Colombia, held-out country (S5) | C2 → C2 | excess | +0.22 (−0.19 to 0.63) | 0.27 | 1.0 | +0.22 (0.80) | yes |
+| Peru, new years (S1) | C1 → none | embedding | −0.94 (−1.70 to −0.18) | 0.020 | 0.16 | −0.70 (0.34) | no |
+| Peru, held-out country (S5) | C3 → none | embedding | +0.68 (−0.59 to 1.96) | 0.27 | 1.0 | +0.96 (0.39) | yes |
+| Taiwan, new years (S1) | C1 → none | embedding | −1.06 (−1.96 to −0.16) | 0.024 | 0.17 | −0.60 (0.34) | no |
+| Taiwan, held-out country (S5) | C3 → none | embedding | **−21.60 (−31.82 to −11.39)** | <0.001 | **0.0041** | −17.30 (0.017) | yes |
+
+Note: Under this rule C\* is "none" unless a candidate beat L3 at the 2019 origin by more than two standard errors (the seed-noise SE of rule v2); cells without a control then contribute the embedding gain (L3 → L4). Only Brazil, new years (C1) and Colombia held out (C2) keep a control. Holm adjustment over the 13 available cells (final m = 14 [pending]). <!-- PENDING: final Holm m=14 --> Bold marks Holm p < 0.05. The last column marks cells where the selected control on its own made L3 worse (control-gain 95% CI below zero). Seed 0, except Brazil, new years. <!-- REVISIT final kit -->
+
+No cell shows a gain under either rule. The Brazil held-out loss exists only beside the dimension-matched noise control C3: without a control the embedding gain there is −0.34% (p = 0.44). The Colombian losses are larger without a control and remain significant after Holm adjustment, so they do not depend on the control choice. Under this rule the Holm-significant losses are Colombia's four splits and Taiwan held out. In six cells (Colombia's held-out states, regions, districts and country, Peru held out and Taiwan held out) the selected control itself made the reference model worse. <!-- src: R3_A2_nocontrol_rule.csv; R3_summary.md A2 interpretation; TRIAGE_round3.md Addendum 1 -->
 
 ### G4. Trend over test years
 
-**Table S46. Per-year excess and embedding gains, with a trend test.**
+**Table S46. Trend of the excess gain with the length of the training window, and Brazil's 2023 to 2024 test years.**
 
-Excess and embedding gains by test year for every cell (the excess gain is also in Table S30), and a post hoc trend test: a weighted regression of the yearly gain on the length of the training window (number of training years, 2 to 6), weights equal to the inverse squared standard error. Test years 2020 and 2021 coincide with COVID-19 reporting changes, so a trend cannot be separated from a pandemic effect. For the Brazilian cells, a DM test on 2023 and 2024 only is also reported. Values: [pending]. <!-- PENDING: R3-A3 (R3_A3_per_year_trend.csv) -->
+<!-- src: R3_A3_trend.csv (slope, p_known_z, p_scaled_t; estimand G_excess; years all and excluding 2020–21); R3_summary.md A3 trend table and 2023–24 DM table; per-year estimates in R3_A3_per_year.csv -->
+| Cell | Slope, percentage points per extra training year | p, per-year SEs as given | p, SEs scaled for over-dispersion | Slope without 2020 and 2021 (scaled p) |
+|---|---|---|---|---|
+| Brazil, new years (S1) | +0.24 | 0.0034 | 0.12 | +0.34 (0.39) |
+| Brazil, held-out states (S2) | +0.28 | <0.001 | 0.096 | +0.28 (0.31) |
+| Brazil, held-out regions (S3) | +0.06 | 0.037 | 0.37 | +0.04 (0.69) |
+| Brazil, held-out country (S5) | +0.22 | 0.0010 | 0.26 | +0.21 (0.36) |
+| Colombia, new years (S1) | +0.17 | 0.024 | 0.26 | – |
+| Colombia, held-out states (S2) | +0.14 | 0.065 | 0.32 | – |
+| Colombia, held-out regions (S3) | +0.10 | 0.54 | 0.65 | – |
+| Colombia, held-out districts (S4) | +0.25 | 0.0024 | 0.20 | – |
+| Colombia, held-out country (S5) | −0.12 | 0.26 | 0.79 | – |
+| Peru, new years (S1) | +0.52 | 0.096 | 0.24 | – |
+| Peru, held-out country (S5) | −0.28 | 0.54 | 0.60 | – |
+| Taiwan, new years (S1) | +3.10 | 0.12 | 0.39 | −1.70 (0.70) |
+| Taiwan, held-out country (S5) | +5.81 | 0.081 | 0.63 | −15.54 (0.57) |
+
+<!-- src: R3_summary.md A3 "DM test on 2023–24 only, Brazil" table -->
+| Brazil cell, test years 2023 and 2024 only | Excess gain, % (95% CI); p (B = 4 p) | Embedding gain, % (95% CI); p |
+|---|---|---|
+| New years (S1) | +0.69 (−0.40 to 1.78); 0.18 (0.23) | +0.68 (−0.45 to 1.81); 0.20 |
+| Held-out states (S2) | +0.37 (−0.20 to 0.94); 0.17 (0.23) | +0.31 (−0.28 to 0.90); 0.26 |
+| Held-out regions (S3) | +0.03 (−0.18 to 0.24); 0.74 (0.74) | +0.11 (−0.23 to 0.44); 0.48 |
+| Held-out country (S5) | −0.33 (−0.64 to −0.01); 0.043 (0.049) | +0.04 (−1.68 to 1.77); 0.95 |
+
+Note: Weighted least-squares regression of each cell's yearly excess gain (Table S30) on the number of training years, weights the inverse squared standard error, 3 to 5 points per cell. "Scaled" inflates the standard errors by the residual over-dispersion. Training-window length and the COVID-19 years 2020 and 2021 are fully confounded. Taiwan's yearly percentages are unstable, because the reference WIS is tiny in years with few cases. Post hoc. The yearly embedding gains behave in the same way. <!-- src: R3_summary.md A3 "What was computed" and "G_emb behaves the same way" -->
+
+There was no detectable trend once the standard errors allowed for over-dispersion: with the per-year standard errors taken at face value, 6 of 13 cells had a positive slope with p < 0.05, but after scaling none did (smallest p = 0.096), and none did after dropping 2020 and 2021. The positive point estimates come mainly from losses in 2021, the COVID-affected year with the second-shortest training window. In Brazil's two most recent test years no cell showed a significant gain (largest +0.69%, p = 0.18). The windows are short and COVID-affected, so the data cannot show whether the embeddings would help with longer training histories. <!-- src: R3_summary.md A3 answers; R3_A3_trend.csv -->
 
 ### G5. Equivalence under alternative margins and variance estimators
 
-**Table S47. Equivalence of the excess gain at ±0.5%, ±1% and ±2% with the EWC and the B = 4 standard errors.**
+**Table S47. Equivalence of the excess gain at ±0.5%, ±1% and ±2% with the EWC and the B = 4 standard errors, and with IAAFT calibration.**
 
-TOST at each margin, using the primary EWC standard error and the more cautious EWC standard error with B = 4 cosine terms (Table S26), unadjusted and Holm-adjusted; the table marks which cells remain equivalent under each combination. This extends Table S24. Values: [pending]. <!-- PENDING: R3-A4 (R3_A4_equivalence.csv) -->
+<!-- src: R3_A4_equivalence.csv (estimand G_excess; lo90_pct, hi90_pct per se_variant; equivalent_unadj, equivalent_Holm per margin); R3_A8_iaaft_equivalence.csv (size_nominal5 EWC/B=4, cal_lo90_pct, cal_hi90_pct, equivalent_1pct_calibrated) -->
+| Cell | 90% CI, EWC | 90% CI, B = 4 | Equivalent at ±0.5% | at ±1% | at ±2% | IAAFT size of the 5% test, EWC / B = 4 | IAAFT-calibrated 90% CI; equivalent at ±1% |
+|---|---|---|---|---|---|---|---|
+| Brazil, new years (S1) | −0.23 to 0.69 | −0.36 to 0.82 | – | a b c | a b c d | 18.4% / 12.5% | −0.62 to 1.08; no |
+| Brazil, held-out states (S2) | −0.28 to 0.28 | −0.43 to 0.43 | a b c | a b c d | a b c d | 14.0% / 5.0% | −0.38 to 0.38; yes |
+| Brazil, held-out regions (S3) | −0.31 to −0.01 | −0.41 to 0.10 | a b c | a b c d | a b c d | 15.2% / 5.0% | −0.37 to 0.05; yes |
+| Brazil, held-out districts (S4) | [pending] <!-- PENDING: BR S4 --> | | | | | | |
+| Brazil, held-out country (S5) | −0.80 to −0.40 | −0.78 to −0.42 | – | a b c d | a b c d | 0.9% / 3.7% | −0.75 to −0.45; yes |
+| Colombia, new years (S1) | −0.55 to −0.23 | −0.55 to −0.22 | – | a b c d | a b c d | 5.7% / 3.4% | −0.55 to −0.22; yes |
+| Colombia, held-out states (S2) | −0.65 to −0.29 | −0.62 to −0.33 | – | a b c d | a b c d | 1.1% / 2.0% | −0.60 to −0.34; yes |
+| Colombia, held-out regions (S3) | −0.97 to −0.34 | −0.94 to −0.37 | – | a c | a b c d | 0.6% / 1.5% | −0.85 to −0.45; yes |
+| Colombia, held-out districts (S4) | −0.64 to −0.23 | −0.66 to −0.20 | – | a b c d | a b c d | 6.8% / 3.3% | −0.66 to −0.21; yes |
+| Colombia, held-out country (S5) | −0.12 to 0.55 | −0.39 to 0.83 | – | a b c | a b c d | 15.8% / 6.8% | −0.27 to 0.71; yes |
+| Peru, new years (S1) | −1.29 to −0.11 | −1.56 to 0.16 | – | – | a b c d | not run | – |
+| Peru, held-out country (S5) | 0.07 to 1.85 | 0.39 to 1.53 | – | – | a c d | not run | – |
+| Taiwan, new years (S1) | −1.09 to −0.11 | −1.21 to 0.01 | – | – | a b c d | not run | – |
+| Taiwan, held-out country (S5) | −25.31 to −9.28 | −26.52 to −8.07 | – | – | – | not run | – |
+| Cells equivalent (a / b / c / d) | | | 2 / 2 / 2 / 0 | 9 / 8 / 9 / 6 | 12 / 11 / 12 / 12 | | 8 of 9 at ±1% |
+
+Note: TOST on 90% CIs, % of reference WIS. Letters list the variants under which a cell is equivalent: a, EWC, unadjusted; b, EWC, Holm over 13 cells; c, B = 4, unadjusted; d, B = 4, Holm. The IAAFT columns use 2,000 surrogates of each cell's weekly loss-difference series under the null and were run only for the nine cells equivalent at ±1% under a (no Holm adjustment). Seed 0, except Brazil, new years. <!-- src: R3_A4_equivalence.csv counts; R3_summary.md A4 count table and A8 --> <!-- REVISIT final kit: Holm over 14 and three-seed values --> <!-- PENDING: final Holm m=14 -->
+
+Equivalence depends on both the margin and the variance estimator. At ±1%, nine cells are equivalent with the primary variance and no adjustment, eight after Holm adjustment and six with the B = 4 variance and Holm adjustment (Brazil's held-out states, regions and country, and Colombia's new years, held-out states and held-out districts). Four of these six are significantly negative, so "equivalent" there means a loss smaller than 1%, not the absence of an effect. At ±0.5% no cell is equivalent with the B = 4 variance and Holm adjustment. Calibrated against IAAFT surrogates, the primary test is oversized in four cells (14% to 18% at a nominal 5% in Brazil's new years, held-out states and held-out regions and Colombia held out), and Brazil, new years, the one cell with a positive point estimate, is no longer equivalent at ±1% (calibrated 90% CI −0.62 to 1.08); neither a gain nor equivalence is established there. In the cells with clear losses the test is conservative (size ≤ 6.8%). <!-- src: R3_summary.md A4 and A8 interpretation; R3_A8_iaaft_equivalence.csv -->
 
 ### G6. Outcome-agnostic checks
 
-**Table S48. Coverage and interval width on weeks with and without cases, and Colombian district-years with cases.**
+**Table S48. Colombian district-years with cases, and change in coverage and interval width on weeks with and without cases.**
 
-The strata of Tables S28 and S29 are defined by the outcome and can reward forecasts that are biased towards zero (the forecaster's dilemma). Two checks avoid conditioning on the target week: (a) in Colombia, the excess gain restricted to district-years with at least one reported case, a condition on the district-year rather than the week; (b) in every cell, the change from L3 + C\* to L4 + C\* in 80% interval coverage and in mean 80% interval width, separately on weeks with cases and on zero weeks, to show whether the embeddings move coverage on case weeks towards the nominal 80%. Values: [pending]. <!-- PENDING: R3-A6 (R3_A6_outcome_agnostic.csv) -->
+Panel A. Excess and embedding gains on district-years with at least one reported case in that test year (a condition on the district-year, not on the week).
+
+<!-- src: R3_A6_outcome_agnostic.csv analysis "a: unit-years with >=1 case"; R3_summary.md A6(a) table -->
+| Cell | Rows kept | Excess gain, % (95% CI); p | Primary excess gain | Embedding gain, % (95% CI); p |
+|---|---|---|---|---|
+| Colombia, new years (S1) | 71% | **−0.30 (−0.48 to −0.12); 0.0043** | −0.39 | **−0.25 (−0.46 to −0.04); 0.023** |
+| Colombia, held-out states (S2) | 71% | **−0.28 (−0.48 to −0.08); 0.010** | −0.47 | **−0.39 (−0.57 to −0.20); <0.001** |
+| Colombia, held-out regions (S3) | 71% | −0.30 (−0.66 to 0.06); 0.092 | −0.65 | **−0.47 (−0.76 to −0.17); 0.0052** |
+| Colombia, held-out districts (S4) | 71% | **−0.28 (−0.49 to −0.06); 0.016** | −0.43 | **−0.37 (−0.58 to −0.17); 0.0022** |
+| Colombia, held-out country (S5) | 71% | +0.28 (−0.08 to 0.65); 0.12 | +0.22 | 0.00 (−0.31 to 0.31); 0.99 |
+| Brazil, held-out country (S5) | 81% | **−0.37 (−0.61 to −0.13); 0.0049** | −0.60 | −0.07 (−0.90 to 0.75); 0.85 |
+| Peru, held-out country (S5) | 76% | +1.04 (−0.09 to 2.17); 0.068 | +0.96 | +0.78 (−0.51 to 2.08); 0.21 |
+| Taiwan, held-out country (S5) | 19% | **−3.36 (−4.70 to −2.02); <0.001** | −17.30 | **−5.11 (−7.17 to −3.05); <0.001** |
+
+Note: % of the reference WIS on the kept rows. Brazil's new years, held-out states and held-out regions stay within ±0.25% and are not significant; Peru, new years, −0.65% (p = 0.069); Taiwan, new years, −0.63% (p = 0.23). Rows kept are shares of each country's primary rows. Bold: CI excludes zero. <!-- src: R3_summary.md A6(a) text below table -->
+
+Panel B. Change from L3 + C\* to L4 + C\* in 80% interval coverage on weeks with cases, and in mean 80% interval width (log(1 + cases) scale) on weeks with and without cases.
+
+<!-- src: R3_A6_outcome_agnostic.csv analysis "b: coverage/width L4+C* minus L3+C*"; R3_summary.md A6(b) table -->
+| Cell | Coverage on case weeks, L3 + C\* | Change in coverage on case weeks, pp (p) | Change in width, zero weeks | Change in width, case weeks |
+|---|---|---|---|---|
+| Brazil, new years (S1) | 0.66 | −0.2 (0.31) | **+0.006 (+1.8%)** | −0.004 |
+| Brazil, held-out states (S2) | 0.66 | **−0.5 (0.011)** | **+0.010 (+2.9%)** | **−0.008** |
+| Brazil, held-out regions (S3) | 0.66 | +0.2 (0.088) | **+0.027 (+7.9%)** | +0.003 |
+| Brazil, held-out districts (S4) | [pending] <!-- PENDING: BR S4 --> | | | |
+| Brazil, held-out country (S5) | 0.63 | +0.7 (0.11) | **+0.043 (+9.7%)** | **+0.023** |
+| Colombia, new years (S1) | 0.71 | 0.0 (0.95) | **+0.017 (+5.3%)** | 0.000 |
+| Colombia, held-out states (S2) | 0.71 | −0.8 (0.15) | **+0.019 (+5.9%)** | −0.014 |
+| Colombia, held-out regions (S3) | 0.71 | **−0.9 (0.013)** | **+0.025 (+7.2%)** | **−0.011** |
+| Colombia, held-out districts (S4) | 0.71 | −0.5 (0.33) | **+0.017 (+5.3%)** | −0.006 |
+| Colombia, held-out country (S5) | 0.75 | +0.2 (0.29) | **+0.007 (+2.2%)** | −0.007 |
+| Peru, new years (S1) | 0.67 | +0.6 (0.082) | **+0.036 (+14%)** | **+0.016** |
+| Peru, held-out country (S5) | 0.65 | **+2.4 (<0.001)** | **+0.017 (+6.6%)** | **+0.053** |
+| Taiwan, new years (S1) | 0.24 | −1.6 (0.43) | +0.002 | −0.007 |
+| Taiwan, held-out country (S5) | 0.57 | +3.0 (0.21) | **+0.099 (+61%)** | **+0.077** |
+
+Note: Week-weighted differences, L4 + C\* minus L3 + C\*. Bold: 95% CI excludes zero. Percentages in brackets are relative to the zero-week width of L3 + C\*. Zero weeks are already over-covered (about 96% to 100%). Seed 0, except Brazil, new years. <!-- src: R3_summary.md A6(b) note and answer -->
+
+The Colombian losses are not only an artefact of zero weeks: on district-years with at least one case the excess gain is still about −0.3% and significant in the new-years, held-out-states and held-out-districts splits, and the embedding gain is significantly negative in all four within-country splits. The loss shrinks by a third to a half on these rows, so part of it sits in district-years without cases. With Taiwan held out, the loss falls from −17.3% to −3.4% on district-years with cases, so most of it lies in district-years with no local case. <!-- src: Panel A; R3_summary.md A6(a) answer --> Outcome-agnostically, the embeddings widened the 80% intervals on zero weeks in 12 of 13 cells (by about 2% to 14%, and by 61% with Taiwan held out), where intervals were already over-covered, and they moved coverage on case weeks significantly towards the nominal 80% in only one cell (Peru held out, +2.4 percentage points). They moved it significantly away in two cells (Brazil's held-out states and Colombia's held-out regions). The embeddings thus raised upper forecast quantiles where nothing happened, without fixing the under-coverage in epidemic weeks. <!-- src: Panel B; R3_summary.md A6(b) answer and interpretation -->
 
 ### G7. Stability of the embeddings
 
 **Table S49. Year-to-year similarity of a district's embedding compared with similarity between districts.**
 
-Per country, the cosine similarity between a district's renormalised AlphaEarth vectors in consecutive years (within-district), against the similarity between different districts in the same year, for nearest neighbours and for random pairs. A within-district similarity close to 1 and well above the between-district values means that the yearly embedding acts largely as a fixed district signature. Values: [pending]. <!-- PENDING: R3-A7 (R3_A7_embedding_stability.csv) -->
+<!-- src: R3_A7_embedding_stability.csv (median per country and metric); R3_summary.md A7 table -->
+| Country | Same district, consecutive years | Same district, first vs last year | Five nearest neighbouring districts, same year | Random district pairs | Next-year vector is the district's own nearest match | Next-year similarity above all five neighbours |
+|---|---|---|---|---|---|---|
+| Brazil | 0.982 | 0.958 | 0.974 | 0.70 | 57% | 87% |
+| Colombia | 0.976 | 0.940 | 0.931 | 0.64 | 84% | 95% |
+| Peru | 0.985 | 0.973 | 0.912 | 0.49 | 94% | 98% |
+| Taiwan | 0.978 | 0.972 | 0.971 | 0.88 | 69% | 89% |
+
+Note: Median cosine similarity of the renormalised population-weighted district means of the AlphaEarth embeddings, 2017 to the last extracted year. The last two columns are shares of district-year pairs. <!-- src: R3_A7_embedding_stability.csv -->
+
+In Brazil and Taiwan a district's embedding changes from year to year by about as much as it differs from its neighbours (median 0.982 vs 0.974 in Brazil, 0.978 vs 0.971 in Taiwan), and the next-year vector is the district's own nearest match only 57% and 69% of the time. In Colombia and Peru the embedding identifies a district well (84% and 94%). Year-to-year drift was therefore a candidate explanation for small losses in Brazil and Taiwan, but it does not explain Colombia, where identification is strong and the losses are clearest; the causal static variant V3 (Table S51) did not remove the losses either. <!-- src: R3_summary.md A7 interpretation; R3_C_summary.md section 1 V3 reading -->
 
 ### G8. Information probe
 
-**Table S50. Cross-sectional prediction of district dengue burden from embeddings, coordinates and remote-sensing covariates.**
+**Table S50. Cross-sectional prediction of district dengue burden from embeddings, coordinates and static covariates.**
 
-A probe of whether the embeddings carry information about dengue at all, separately from whether that information helps a weekly forecast that already has case history. Targets per district: mean log incidence in 2018 to 2019 and in 2020 to 2024, and the share of weeks with cases. Predictors: the embeddings (all 64 columns and principal-component reductions), coordinates with spherical harmonics, the L3 static covariates, and their combinations. Models: ridge regression and a small LightGBM, assessed by spatial-block cross-validation within country and by leaving one country out. Values: [pending]; Figure S4. <!-- PENDING: R3-E1 information probe (docs/results/review/R3_E1_*) -->
+<!-- src: docs/results/review/R3_E1_info_probe.md, sections T1 and T2 (grouped-state CV; LightGBM and ridge rows); R3_E1_info_probe.csv -->
+| Country (districts) | G | S | E | G + S | G + S + E | Added by E over G + S, T1 (95% CI) | Added by E over G + S, T2 (95% CI) | Ridge: added by E over G + S, T1 (95% CI) |
+|---|---|---|---|---|---|---|---|---|
+| Brazil (5,517) | 0.06 | 0.65 | 0.49 | 0.71 | 0.72 | +0.010 (−0.002 to 0.025) | +0.009 (−0.010 to 0.046) | +0.169 (−0.050 to 0.724) |
+| Colombia (1,070) | −0.17 | 0.66 | 0.52 | 0.71 | 0.72 | +0.010 (−0.018 to 0.042) | −0.006 (−0.024 to 0.019) | +0.423 (0.015 to 1.444) |
+| Peru (115) | −0.16 | 0.43 | 0.24 | 0.45 | 0.38 | −0.071 (−0.267 to 0.070) | −0.015 (−0.140 to 0.097) | +0.299 (−0.123 to 0.917) |
+| Taiwan (285) | −0.38 | 0.55 | 0.45 | 0.33 | 0.40 | +0.070 (−8.20 to 0.399) | −0.104 (−1.02 to 0.047) | −0.205 (−20.1 to 3.10) |
+
+Note: Out-of-fold R² of a small LightGBM (31 leaves, 200 rounds) predicting T1, the mean log(1 + weekly cases) of 2014 to 2019, under cross-validation that holds out whole states (five folds, the held-out-states rule). G, coordinates with spherical harmonics (the C2 features); S, 2017 to 2018 means of the L3 static covariates and log population 2018; E, the 2018 AlphaEarth embedding (64 dimensions, renormalised). T2 is the mean log(1 + weekly cases) over the test years. 95% CIs from 1,000 state-cluster bootstrap resamples of the fixed out-of-fold predictions, so they ignore refit variability; Taiwan's are unstable because resamples without Kaohsiung and Tainan have almost no variance. The ridge column is shown for completeness only: ridge on the 82 coordinate columns extrapolates badly to held-out states (R² of G alone −0.20 to −0.44 for T1), so its added R² mostly reflects ridge failing on G + S, not information in E. Cross-sectional associations; S and E overlap the T1 period, T2 does not. <!-- src: R3_E1_info_probe.md Design, Interpretation and Caveats sections; ridge G R² T1 BR −0.44, CO −0.20, PE −0.10, TW −0.44 -->
+
+The embeddings do carry information about district dengue burden. Alone, they explained 0.49, 0.52, 0.24 and 0.45 of the between-district variance of T1 in held-out states of Brazil, Colombia, Peru and Taiwan, close to the static covariates (0.43 to 0.66) and far above coordinates alone (−0.38 to 0.06). But that information duplicates what coordinates and the static covariates already provide: added to both, the embeddings raised R² by at most about 0.01 in Brazil and Colombia, with CIs including zero, and the PCA-8 reduction gave the same result; in Peru and Taiwan the added R² was negative or near zero with wide CIs. Leaving a whole country out, the embeddings transferred weakly or not at all (T1 R² −0.34, 0.28, 0.27 and below zero for Brazil, Colombia, Peru and Taiwan held out). So the embeddings encode environmental information relevant to dengue burden, but it duplicates what coordinates and standard static covariates already provide, even before case history is added. <!-- src: R3_E1_info_probe.md T1 LightGBM rows, T1 LOCO column, Interpretation items 1–3 -->
 
 ### G9. Representation variants
 
-**Table S51. Excess and embedding gains with four alternative representations of the embeddings.**
+**Table S51. Embedding and excess gains with alternative representations of the embeddings.**
 
-Four post hoc representations replace the 64 embedding columns: V1, an embedding-space risk encoding (cosine nearest neighbours, k = 5, inverse-dissimilarity weights, the mean pre-training-years log(1 + cases) of training districts, excluding the district itself and, in held-out states and regions, using the same matched leave-out as C1), the embedding analogue of C1, as a single column; V2, the first 8 principal components, fitted on training districts' embeddings for each origin and fold; V3, a causal static embedding, the renormalised mean of the 2017 and 2018 vectors, the same in every year; V4, substitution, the embeddings in place of the L3 remote-sensing and population block (L2 + embeddings). Cells: V1 to V3 as L3 + V and L3 + C\* + V in Colombia (new years, held-out states), Peru (new years), Taiwan (new years, with 2021) and Brazil (held-out states; V1 and V2 only); V4 in the four non-Brazilian cells. Shared configurations, seed 0, horizons 1 and 4. Estimands: embedding gain WIS(L3) − WIS(L3 + V), excess gain WIS(L3 + C\*) − WIS(L3 + C\* + V), and substitution WIS(L3) − WIS(L2 + embeddings). Holm adjustment within this variant family only. Values: [pending]. <!-- PENDING: EXP-A (docs/methods/round3_variants.md) -->
+Four post hoc representations replace the 64 embedding columns: V1, an embedding-space risk encoding (cosine nearest neighbours, k = 5, inverse-dissimilarity weights, the mean pre-training-years log(1 + cases) of training districts, excluding the district itself and, in held-out states and regions, using the same matched leave-out as C1), the embedding analogue of C1, as a single column; V2, the first 8 principal components, fitted on training districts' embeddings for each origin and fold; V3, a causal static embedding, the renormalised mean of the 2017 and 2018 vectors, the same in every year; V4, substitution, the embeddings in place of the L3 remote-sensing and population block (L2 + embeddings). C\* = C1, shared configurations, seed 0, horizons 1 and 4.
+
+<!-- src: R3_C_variants.csv; R3_C_summary.md section 1 tables (embedding gain; excess gain beyond C1; V1 against geography; substitution) -->
+| Cell | Original 64 columns | V1, risk encoding | V2, PCA-8 | V3, causal static |
+|---|---|---|---|---|
+| *Embedding gain, % (95% CI); p (Holm p)* | | | | |
+| Colombia, new years (S1) | −0.36; 0.0052 | −0.07 (−0.13 to −0.01); 0.023 (1.0) | −0.07 (−0.17 to 0.02); 0.12 (1.0) | −0.14 (−0.25 to −0.03); 0.017 (1.0) |
+| Colombia, held-out states (S2) | −0.59; <0.001 | −0.04 (−0.11 to 0.03); 0.19 (1.0) | **−0.14 (−0.22 to −0.07); <0.001 (0.027)** | **−0.30 (−0.40 to −0.20); <0.001 (0.001)** |
+| Peru, new years (S1) | −0.94; 0.020 | −0.01 (−0.13 to 0.10); 0.81 (1.0) | −0.15 (−0.64 to 0.35); 0.53 (1.0) | −0.66 (−1.19 to −0.13); 0.018 (1.0) |
+| Taiwan, new years (S1, with 2021) | −1.06; 0.024 | −0.66 (−1.76 to 0.45); 0.23 (1.0) | −0.46 (−1.71 to 0.78); 0.44 (1.0) | −0.60 (−1.58 to 0.37); 0.21 (1.0) |
+| Brazil, held-out states (S2) | −0.02; 0.88 | −0.05 (−0.11 to 0.01); 0.10 (1.0) | −0.02 (−0.17 to 0.12); 0.75 (1.0) | not run |
+| *Excess gain beyond C1, % (95% CI); p (Holm p)* | | | | |
+| Colombia, new years (S1) | −0.39; 0.0011 | −0.05 (−0.09 to −0.01); 0.014 (1.0) | −0.13 (−0.24 to −0.02); 0.025 (1.0) | −0.08 (−0.19 to 0.03); 0.12 (1.0) |
+| Colombia, held-out states (S2) | −0.47; <0.001 | −0.01 (−0.05 to 0.03); 0.68 (1.0) | −0.11 (−0.18 to −0.05); 0.0033 (0.085) | **−0.21 (−0.31 to −0.12); <0.001 (0.015)** |
+| Peru, new years (S1) | −0.70; 0.056 | +0.04 (−0.10 to 0.19); 0.53 (1.0) | +0.06 (−0.41 to 0.54); 0.77 (1.0) | **−0.87 (−1.32 to −0.42); 0.0012 (0.032)** |
+| Taiwan, new years (S1, with 2021) | −0.60; 0.049 | −0.11 (−0.29 to 0.07); 0.20 (1.0) | +0.15 (−0.53 to 0.83); 0.65 (1.0) | −0.12 (−0.32 to 0.08); 0.22 (1.0) |
+| Brazil, held-out states (S2) | 0.00; 1.0 | −0.02 (−0.06 to 0.02); 0.31 (1.0) | +0.05 (−0.12 to 0.21); 0.56 (1.0) | not run |
+
+<!-- src: R3_C_summary.md section 1 "V1 against geography directly" and "Substitution (V4)" tables -->
+| Cell | V1 vs C1: WIS(L3 + C1) − WIS(L3 + V1), % (95% CI); p | V4 substitution: WIS(L3) − WIS(L2 + embeddings), % (95% CI); p (Holm p) | WIS(L2) − WIS(L2 + embeddings), % (95% CI); p |
+|---|---|---|---|
+| Colombia, new years (S1) | −0.01 (−0.23 to 0.21); 0.94 | **−0.79 (−1.15 to −0.42); <0.001 (0.018)** | −0.48 (−0.80 to −0.17); 0.0062 |
+| Colombia, held-out states (S2) | +0.04 (−0.004 to 0.08); 0.064 | **−0.93 (−1.27 to −0.59); <0.001 (0.003)** | no L2 run |
+| Peru, new years (S1) | +0.24 (−0.48 to 0.97); 0.48 | −0.84 (−1.66 to −0.01); 0.047 (0.93) | −1.10 (−1.90 to −0.31); 0.010 |
+| Taiwan, new years (S1, with 2021) | −0.03 (−0.20 to 0.15); 0.74 | −0.79 (−1.77 to 0.20); 0.11 (1.0) | −0.74 (−1.37 to −0.11); 0.024 |
+| Brazil, held-out states (S2) | 0.00 (−0.07 to 0.07); 0.91 | not run | not run |
+
+Note: % of WIS(L3), positive = the variant helps. Holm adjustment within the 32-test variant family of the specification (embedding and excess gains of V1 to V3 and the substitution contrast); the V1-vs-C1 and L2 contrasts are outside that family. Bold: Holm p < 0.05. The first column repeats the primary seed-0 values. <!-- src: R3_C_summary.md section 1 "Holm" paragraph -->
+
+No representation turned the embeddings into a significant gain: none of the 28 embedding- and excess-gain tests had a CI above zero, and the largest point estimate was +0.15%. The compact forms V1 (one column) and V2 (eight columns) shrank the loss towards zero (Colombia, new years, embedding gain −0.07% for both vs −0.36%), so part of the loss with 64 columns is a cost of dimension, but they did not reverse it. V1 was indistinguishable from historical risk in every cell (largest edge +0.04%, p = 0.064): similarity in embedding space transfers risk about as well as geographic neighbourhood and no better. The causal static V3 did not remove the loss (Colombia, held-out states, excess gain −0.21%; Peru, new years, −0.87%, Holm p = 0.032), so year-to-year changes in the vector are not what hurts. Used in place of the remote-sensing and population block, the embeddings were worse than L3 in all four cells (Colombia −0.79% and −0.93%, both Holm-significant), and worse than L2 without any place block in Colombia, Peru and Taiwan: in this model they did not substitute for the hand-built covariates. Every Holm-significant variant result is a loss, and all lie within or near ±1%. <!-- src: R3_C_summary.md section 1 Reading; TRIAGE_round3.md Addendum 4 -->
 
 ### G10. Seeds
 
 **Table S52. Excess, embedding and control gains averaged over seeds 0 to 2, and seed 0 alone.**
 
-Seeds 1 and 2 were added for L3, L4, L3 + C\* and L4 + C\* in Colombia (all five splits), Peru and Taiwan (new years) and Brazil held out, and for L3 + C\* and L4 + C\* only in Peru and Taiwan held out (so their embedding and control gains stay seed 0). The seed changes LightGBM row and column subsampling and, where C\* is C3, the shuffled-embedding draw. Decided before any new seed was seen: where all three seeds exist for both models of an estimand, the primary estimate becomes the mean over seeds 0 to 2 (as already done in Brazil, new years), and seed 0 alone becomes a sensitivity analysis. Columns: cell; seeds used; estimate and 95% CI over seeds; seed 0 estimate; seed standard deviation. Values: [pending]. <!-- PENDING: EXP-B S1 (docs/methods/round3_runs.md section S1) -->
+<!-- src: R3_C_seeds.csv; R3_C_summary.md sections 2 and 3 (per-seed G_excess, 3-seed mean with CI and p, seed SD; G_emb and G_id 3-seed; Holm over 13 with 3-seed p values, GPU tmp/score4/holm13_3seed.csv) -->
+| Cell | C\* | Excess gain, seeds 0 / 1 / 2 | Excess gain, mean of seeds 0–2 (95% CI); p | Seed SD | Holm p, seed 0 → seeds 0–2 | Embedding gain, seeds 0–2 (95% CI); p | Control gain, seeds 0–2 (95% CI); p |
+|---|---|---|---|---|---|---|---|
+| Brazil, held-out country (S5) | C3 | −0.60 / −0.62 / −0.82 | −0.68 (−0.94 to −0.42); <0.001 | 0.12 | <0.001 → <0.001 | −0.39 (−1.34 to 0.55); 0.39 | +0.15 (−0.89 to 1.18); 0.77 |
+| Colombia, new years (S1) | C1 | −0.39 / −0.48 / −0.40 | −0.42 (−0.64 to −0.21); 0.0012 | 0.05 | 0.012 → 0.013 | −0.38 (−0.61 to −0.16); 0.0035 | −0.06 (−0.32 to 0.19); 0.60 |
+| Colombia, held-out states (S2) | C1 | −0.47 / −0.58 / −0.52 | −0.52 (−0.74 to −0.30); <0.001 | 0.05 | 0.0068 → 0.003 | −0.60 (−0.81 to −0.39); <0.001 | −0.06 (−0.09 to −0.03); 0.0019 |
+| Colombia, held-out regions (S3) | C1 | −0.65 / −0.70 / −0.70 | −0.68 (−1.08 to −0.29); 0.0030 | 0.03 | 0.026 → 0.027 | −0.82 (−1.14 to −0.49); <0.001 | −0.08 (−0.14 to −0.02); 0.011 |
+| Colombia, held-out districts (S4) | C1 | −0.43 / −0.48 / −0.42 | −0.45 (−0.68 to −0.21); 0.0017 | 0.03 | 0.025 → 0.017 | −0.54 (−0.78 to −0.30); <0.001 | −0.10 (−0.12 to −0.08); <0.001 |
+| Peru, new years (S1) | C1 | −0.70 / −0.88 / −0.87 | −0.82 (−1.49 to −0.14); 0.022 | 0.10 | 0.34 → 0.16 | −0.91 (−1.62 to −0.20); 0.016 | −0.20 (−0.92 to 0.52); 0.56 |
+| Peru, held-out country (S5) | C3 | +0.96 / +0.96 / +0.88 | +0.93 (−0.16 to 2.02); 0.088 | 0.04 | 0.39 → 0.44 | +0.68 (−0.59 to 1.96); 0.27 (seed 0) | −0.44 (−0.80 to −0.07); 0.022 (seed 0) |
+| Taiwan, new years (S1, with 2021) | C1 | −0.60 / −0.87 / −0.67 | −0.71 (−1.40 to −0.03); 0.042 | 0.14 | 0.34 → 0.25 | −0.95 (−1.71 to −0.18); 0.018 | −0.41 (−0.97 to 0.16); 0.15 |
+| Taiwan, held-out country (S5, with 2021) | C3 | −17.30 / −18.06 / −19.51 | −18.29 (−29.80 to −6.78); 0.0039 | 1.12 | 0.017 → 0.031 | −21.60 (−31.82 to −11.39); <0.001 (seed 0) | −3.36 (−6.52 to −0.20); 0.039 (seed 0) |
+
+Note: % of WIS(L3), horizons 1 and 4. The multi-seed estimator averages the per-row loss over the seeds common to both models of an estimand and applies the primary DM test; seed SD is the standard deviation of the three per-seed estimates, % of WIS. In Peru and Taiwan held out only L3 + C\* and L4 + C\* have seeds 1 and 2 (pre-declared compute cut), so their embedding and control gains stay seed 0. Brazil's new-years cell already used three seeds (Table 2); Brazil's held-out states and regions and Colombia held out have seed 0 only. Holm over the 13 available cells, with three-seed p values where three seeds exist. The final kit recomputes these values, with Holm over 14 cells. <!-- REVISIT final kit --> <!-- PENDING: final Holm m=14 --> <!-- src: R3_C_summary.md section 3 TW S5 / PE S5 paragraph; section 7 -->
+
+Averaging over three seeds changed no conclusion after Holm adjustment: the same six cells (Brazil held out, Colombia's four within-country splits and Taiwan held out) remain significant losses, every loss grew slightly (by 0.01 to 0.12 percentage points; Taiwan held out by 1.0), and no seed reversed a sign. The seed SD of the excess gain (0.03% to 0.14% of WIS; 1.1% in Taiwan held out) is small next to these effects, and in Colombia every seed was negative and significant on its own, so the Colombian losses are not seed noise. Without adjustment, Peru, new years, moved from p = 0.056 to p = 0.022, its CI now excluding zero (not significant after Holm adjustment, p = 0.16). Peru held out stays a non-significant gain (+0.93%, p = 0.088) with every seed positive. The control gain is the seed-sensitive quantity: seed 1 brought it to about zero in Colombia's held-out regions and districts and in Taiwan, new years. <!-- src: R3_C_summary.md sections 2 and 3 Reading -->
 
 ### G11. Taiwan new-years ladder including 2021
 
 **Table S53. Baselines, ladder and fixed control panel for Taiwan, new years, with test year 2021.**
 
-The Taiwan rows of Tables S17 to S20 and S36 exclude 2021, because the earlier baseline, L2 and panel runs had no 2021 forecasts. These runs add 2021 (seasonal naive, negative binomial, L1, L2 with the shared configuration, and L3/L4 with C2, C3 and C6), so the Taiwan ladder and panel use the same 141,645 rows as Table 2. Values: [pending]. <!-- PENDING: EXP-B S2 -->
+Panel A. Ladder and baselines (row mean; 141,645 rows).
+
+<!-- src: R3_C_tw2021_ladder.csv rows pooled_over "1,4": wis_log, rel_wis_vs_L0, cov_80, cov_80_nonzero, no2021_rel_wis_vs_L0 -->
+| Model | WIS | Relative WIS vs L0 | 80% coverage, all rows / cases > 0 | Relative WIS vs L0 without 2021 |
+|---|---|---|---|---|
+| L0, seasonal naive | 0.0743 | 1.00 | 0.95 / 0.00 | 1.00 |
+| Negative binomial regression (L1 inputs) | 0.0475 | 0.64 | 0.99 / 0.42 | 0.64 |
+| LightGBM L1, case history | 0.0316 | 0.43 | 0.98 / 0.24 | 0.43 |
+| LightGBM L2, + climate (shared configuration) | 0.0319 | 0.43 | 0.98 / 0.23 | not run (the earlier L2 was tuned separately, 0.52) |
+| LightGBM L3, + remote sensing and population | 0.0319 | 0.43 | 0.98 / 0.25 | 0.43 |
+| LightGBM L4, + embeddings | 0.0323 | 0.43 | 0.98 / 0.24 | 0.44 |
+| LightGBM L3 + C\* (C1) | 0.0321 | 0.43 | 0.98 / 0.24 | 0.43 |
+| LightGBM L4 + C\* (C1) | 0.0323 | 0.43 | 0.98 / 0.24 | 0.44 |
+
+Panel B. Fixed control panel (seed 0; no multiplicity adjustment).
+
+<!-- src: R3_C_tw2021_panel.csv G_id_pct, G_id_pct_lo95, G_id_pct_hi95, G_id_p, G_excess_pct, G_excess_pct_lo95, G_excess_pct_hi95, G_excess_p, no2021_G_excess_pct, no2021_G_excess_p -->
+| Control | Control gain, % (95% CI); p | Excess gain, % (95% CI); p | Excess gain without 2021; p |
+|---|---|---|---|
+| C1, historical risk | −0.63 (−1.68 to 0.43); 0.22 | −0.60 (−1.20 to −0.003); 0.049 | −0.44; 0.12 |
+| C2, coordinates | −0.36 (−0.76 to 0.03); 0.070 | −0.94 (−2.03 to 0.15); 0.087 | −0.77; 0.16 |
+| C3, shuffled embedding | −0.58 (−1.29 to 0.12); 0.097 | −0.68 (−1.45 to 0.09); 0.079 | −0.54; 0.15 |
+| C6, district identifier | −2.29 (−5.59 to 1.02); 0.16 | −0.52 (−1.16 to 0.13); 0.11 | −0.42; 0.18 |
+| none (embedding gain) | – | −1.06 (−1.96 to −0.16); 0.024 | −0.94; 0.043 |
+
+Note: Every ladder rung, panel control and positive-control increment is scored on the same 141,645 rows as Table 2. TimesFM was not run for Taiwan. The 2021 targets are all zero, so adding 2021 lowers every absolute WIS but leaves the ordering and the relative WIS almost unchanged. <!-- src: R3_C_summary.md section 5 row-count check and ladder note -->
+
+With 2021 included the Taiwan tables now share one row set. Every model forecast Taiwan about 57% better than the seasonal naive baseline, and nothing added to case history helped: L1 had the lowest WIS of the LightGBM ladder, and the non-case covariate steps were not detectable (Table S44). All four fixed controls gave a negative excess gain, none significant, and none of them improved L3. These values replace the without-2021 Taiwan rows of Tables S17 to S20 and S36. <!-- src: R3_C_tw2021_ladder.csv rel_wis_vs_L0 L1 0.425; R3_C_tw2021_panel.csv; R3_C_summary.md section 5 Reading -->
 
 ### G12. Colombia held-out states without case history
 
 **Table S54. Embedding, control and excess gains without case history, Colombia, held-out states.**
 
-The analysis without case history (Tables S41 and S42), repeated for Colombia's held-out states: levels N3, N4, N3 + C1, N4 + C1 and N3/N4 + C\*, with C\* selected at 2019 by rule v2 among C2, C3, C4 and C4s (C6 is not defined for held-out districts); Colombia's shared configuration; test years 2020 to 2022. Exploratory, outside the primary family. Values: [pending]. <!-- PENDING: EXP-B S3 -->
+<!-- src: R3_C_co_s2_nohist.csv pooled rows (pct_of_ref, lo95_pct, hi95_pct, p, mde_pct, wis_ref, C_star, selection_ref_wis, selection_cstar_wis); R3_C_co_s2_nohist_ladder.csv pooled wis_log, cov_80, cov_80_nonzero; Brazil comparison from T6b_nohist_estimands.csv / Table S42 -->
+| Estimand | Colombia, held-out states: % (95% CI); p | Brazil, new years (Table S42) |
+|---|---|---|
+| Embedding gain, N3 → N4 | **−5.30 (−8.19 to −2.41); 0.0020** | +2.54; 0.13 |
+| Control gain, N3 → N3 + C2 (coordinates, C\*) | **−2.08 (−3.47 to −0.69); 0.0072** | +3.30; <0.001 |
+| Excess gain, N3 + C2 → N4 + C2 | **−4.17 (−6.45 to −1.90); 0.0019** | −0.43; 0.58 |
+| Static history, N3 → N3 + C1 | −1.46 (−2.90 to −0.03); 0.047 | – |
+| Excess gain beyond C1, N3 + C1 → N4 + C1 | −3.46 (−6.13 to −0.79); 0.016 | – |
+
+<!-- src: R3_C_co_s2_nohist_ladder.csv -->
+| Model (row mean, 319,930 rows) | N3 | N3 + C1 | N3 + C2 | N4 | N4 + C1 | N4 + C2 |
+|---|---|---|---|---|---|---|
+| WIS | 0.1989 | 0.2019 | 0.2030 | 0.2096 | 0.2089 | 0.2115 |
+| 80% coverage, all rows / cases > 0 | 0.91 / 0.64 | 0.90 / 0.64 | 0.89 / 0.62 | 0.88 / 0.63 | 0.87 / 0.62 | 0.88 / 0.63 |
+
+Note: % of the WIS of N3 (week-weighted 0.1997), horizons 1 and 4, test years 2020 to 2022, seed 0, Colombia's shared configuration. C\* was selected at 2019 by rule v2 among C2, C3, C4 and C4s: C2 was the only tie-set member (0.33733 vs 0.34366 for C4 and 0.34467 for C3), although it did not beat N3 (0.33728). The minimum detectable excess gain is 3.18%. The control share is not estimable, because the embedding gain is negative. Exploratory, outside the primary family. Bold: CI excludes zero. <!-- src: R3_C_co_s2_nohist.csv mde_pct 3.177, wis_ref 0.19966; R3_C_summary.md section 6 Selection -->
+
+The Brazilian no-history pattern did not replicate. In Colombia's held-out states without case history, the embeddings made forecasts clearly worse (about −4% to −5%), with or without a location control, and neither coordinates nor static history helped N3. What the two countries share is that the embeddings added nothing beyond a location control. With three test years and five folds, and place features generally hurting in held-out Colombian states, this is weak evidence about mechanism: the no-history results differ between countries and are exploratory. <!-- src: R3_C_summary.md section 6 Reading; TRIAGE_round3.md Addendum 5 -->
 
 ### G13. Equal-budget tuning
 
 **Table S55. Excess gain in Colombia, new years, with each model tuned separately on an equal grid.**
 
-L3 + C\* and L4 + C\* are each tuned on train 2018, validate 2019, over the same grid (leaves 15, 31, 127; minimum rows per leaf 100, 1,000, 5,000; feature fraction 0.3, 0.9; 400 rounds), then run on the test years with their own best configuration. The "best for each" excess gain is reported beside the shared-configuration value, to check whether one shared configuration favoured or penalised the larger embedding model. Values: [pending]. <!-- PENDING: EXP-B S4 -->
+<!-- src: R3_C_tuning.csv (G_excess_tuned, G_excess_shared, tuning_gain_L3C, tuning_gain_L4C); R3_C_summary.md section 4 (chosen configurations, validation losses) -->
+| Model | Configuration chosen (leaves / minimum rows per leaf / feature fraction) | Validation pinball loss, 2019 | Excess gain, % (95% CI); p |
+|---|---|---|---|
+| L3 + C1, tuned separately | 31 / 100 / 0.9 | 0.07114 | – |
+| L4 + C1, tuned separately | 31 / 100 / 0.9 | 0.07174 | – |
+| Best for each | – | – | −0.39 (−0.58 to −0.19); 0.0011 |
+| Shared configuration (primary, seed 0) | 31 / 100 / 0.9 | – | −0.39 (−0.58 to −0.19); 0.0011 |
+
+Note: Grid of 18 configurations (leaves 15, 31, 127; minimum rows per leaf 100, 1,000, 5,000; feature fraction 0.3, 0.9; 400 rounds), train 2018, validate 2019. Runners-up were 15 / 100 / 0.9 for both models (+0.6% and +0.4% validation loss). Seed 0. <!-- src: R3_C_summary.md section 4 -->
+
+Tuned separately on an equal grid, each model chose the shared configuration, so the test-year forecasts were bit-identical to the shared ones and the excess gain was unchanged (−0.39%). In Colombia the loss is not an artefact of one shared configuration. <!-- src: R3_C_tuning.csv tuning_gain_L3C 0, tuning_gain_L4C 0; R3_C_summary.md section 4 Result -->
 
 ## H. Supplementary figures
 
-**Figure S1. Model ladder in the new-years split (S1), by country.** <!-- figure file: docs/results/figures/pub/FigS1.png --> Reduction in mean WIS over rows relative to L1 (case history only; open marker at 0), horizons 1 and 4 pooled, for L0 to L4 and for L3 and L4 with the selected location control (C\* = C1, historical risk, in every country). Values beyond a panel are drawn as an arrow with their value (the seasonal naive L0 everywhere). Panels have their own scales. The Taiwan panel uses 113,430 rows without test year 2021 (the L0 to L2 runs have no 2021 forecasts), not the 141,645 rows of the primary cell, and its L2 model was tuned separately, so its L2 point is not comparable with the other rungs. <!-- src: T2_ladder.csv `WIS pooled h{1,4}`, n_rows; caption text from docs/results/figures/pub/CAPTIONS.md -->
+**Figure S1. Model ladder in the new-years split (S1), by country.** <!-- figure file: docs/results/figures/pub/FigS1.png --> Reduction in mean WIS over rows relative to L1 (case history only; open marker at 0), horizons 1 and 4 pooled, for L0 to L4 and for L3 and L4 with the selected location control (C\* = C1, historical risk, in every country). Values beyond a panel are drawn as an arrow with their value (the seasonal naive L0 everywhere). Panels have their own scales. The Taiwan panel uses 113,430 rows without test year 2021 (the L0 to L2 runs had no 2021 forecasts when the figure was drawn), and its L2 model was tuned separately, so its L2 point is not comparable with the other rungs; Table S53 gives the Taiwan ladder with 2021. <!-- REVISIT final kit: redraw Fig S1 with the Taiwan 2021 ladder (R3_C_tw2021_ladder.csv) once T2_ladder.csv carries it --> <!-- src: T2_ladder.csv `WIS pooled h{1,4}`, n_rows; caption text from docs/results/figures/pub/CAPTIONS.md -->
 
 **Figure S2. Excess gain by test year.** <!-- figure file: docs/results/figures/pub/FigS2.png --> Each point is one cell and test year, as a percentage of that year's reference WIS (week-weighted), horizons 1 and 4 pooled, with 95% CIs (unadjusted; filled marker: CI excludes 0); marker shape gives the split. Shaded years are the COVID-19 pandemic years 2020 and 2021 (in the Taiwan panel only 2020 is shaded, and 2021 is labelled "no local cases"). Intervals running past a panel are cut with an arrowhead. Taiwan includes 2021, when there were no local cases, so its reference WIS is tiny and its percentages are very large (absolute values in Table S30). Panels have their own scales. <!-- src: S8_per_year.csv; caption text from docs/results/figures/pub/CAPTIONS.md -->
 
 **Figure S3. Embedding similarity and the excess gain when a whole country is held out (S5).** <!-- figure file: docs/results/figures/pub/FigS3.png --> The districts of the held-out country are split into fifths by the maximum cosine similarity between their renormalised AlphaEarth embedding (year y − 1) and those of the training districts. Points show each fifth's mean similarity and its excess gain as a percentage of the cell's overall reference WIS, with 95% CIs; ρ is the district-level Spearman correlation between similarity and excess gain (naive p values in Table S39). Panels have their own vertical scales. Exploratory. <!-- src: S7b_embedding_distance_bins.csv cos_max_mean, G_excess_pct_cell, G_excess_lo95_pct_cell, G_excess_hi95_pct_cell; S7_embedding_distance.csv spearman_rho, n_units; caption text from docs/results/figures/pub/CAPTIONS.md -->
 
-**Figure S4. Information probe.** <!-- figure file: [pending] --> [pending] Cross-validated skill of predicting district dengue burden from the embeddings, coordinates, L3 static covariates and their combinations, within country (spatial blocks) and across countries (Section G8). <!-- PENDING: R3-E1 figure; caption to be written from the drawn figure -->
+**Figure S4. How well district dengue burden can be predicted from embeddings, coordinates and static covariates in states not used for fitting.** <!-- figure file: docs/results/figures/pub/FigS4_info_probe.png --> Bars show the out-of-fold R² of a small LightGBM predicting each district's mean log(1 + weekly cases) over 2014 to 2019, under five-fold cross-validation that holds out whole states; whiskers are 95% CIs from 1,000 state-cluster bootstrap resamples of the out-of-fold predictions. Grey bars use no embeddings: coordinates with spherical harmonics (G, light), the L3 static covariates (S, mid) and both (G + S, dark); purple bars use the 2018 AlphaEarth embeddings, alone (E, solid) or added to coordinates and static covariates (G + S + E, hatched). The axis is cut at −0.5; whiskers that run below it end in an arrowhead (Peru G, and all of Taiwan, whose bootstrap is unstable because resamples without Kaohsiung and Tainan have almost no variance). Exploratory and cross-sectional; ridge regression results and the added R² with CIs are in Table S50. <!-- src: docs/results/review/R3_E1_info_probe.csv (target T1, scheme grouped_state, model lgbm, quantity R2, fsets G, S, G+S, E, G+S+E); scripts/analysis/info_probe.py make_figure -->
