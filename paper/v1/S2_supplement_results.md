@@ -333,7 +333,7 @@ Note: Share is the share of rows. Each estimate is a percentage of that stratum'
 
 Note: Percentage of that year's reference WIS. An asterisk marks unadjusted p < 0.05; CIs are in the source file. For Taiwan the absolute excess gain (× 10⁻⁴ log-WIS) is given in parentheses, because the reference WIS is close to zero outside the 2023 outbreak and the percentages are unstable (2021 had no local cases). Context: 2020 to 2021, COVID-19 pandemic; Peru 2023, record season; Taiwan 2023, outbreak; Brazil 2024, record epidemic.
 
-In all five Brazilian cells the excess gain was lowest in 2021 (−0.66% to −1.94%; each unadjusted p < 0.05), a year of the COVID-19 pandemic [@chen2022covid; @roster2024covidbrazil]; in the four within-Brazil cells it was highest in 2023 or 2024. The largest yearly estimate was Brazil, new years, in 2024, Brazil's largest recorded epidemic (+0.88%, 95% CI −0.93 to 2.69) [@gurgelgoncalves2024brazil]. Colombia's four within-country cells were negative in every year. Peru (new years) was negative in every year, closest to zero in its 2023 record season (−0.09%) [@munayco2024peru]. Taiwan's yearly percentages are unstable because its reference WIS is near zero outside the 2023 outbreak (2023: new years −0.28%, held out −1.50%). <!-- src: S8_per_year.csv G_excess pct_of_ref, lo95_pct, hi95_pct, p, context -->
+In all five Brazilian cells the excess gain was lowest in 2021 (−0.66% to −1.94%; each unadjusted p < 0.05), a year of the COVID-19 pandemic [@chen2022covid; @roster2024covidbrazil]; in the four within-Brazil cells it was highest in 2023 or 2024. The largest yearly estimate in Brazil was new years in 2024, Brazil's largest recorded epidemic (+0.88%, 95% CI −0.93 to 2.69) [@gurgelgoncalves2024brazil]. Colombia's four within-country cells were negative in every year. Peru (new years) was negative in every year, closest to zero in its 2023 record season (−0.09%) [@munayco2024peru]. Taiwan's yearly percentages are unstable because its reference WIS is near zero outside the 2023 outbreak (2023: new years −0.28%, held out −1.50%). <!-- src: S8_per_year.csv G_excess pct_of_ref, lo95_pct, hi95_pct, p, context -->
 
 **Table S31. Upper quantiles of the forecasts on rows with zero cases.**
 
@@ -607,7 +607,7 @@ Note: Mean WIS over rows (lower is better). Seed 0. All 21 case-derived inputs a
 
 Note: N3 is L3 and N4 is L4 without the 21 case-derived inputs. The selected control is coordinates (C2) in both cells. Gains are percentages of the WIS of N3. The minimum detectable effect is at 80% power. Seed 0. The identity share (control gain as a share of the embedding gain) is not estimable in either cell, because the embedding gain's CI includes zero. Static-history step (C1, pooled horizons): with new years, N3 → N3 + C1 +1.38% (95% CI −0.09 to 2.85; p = 0.064) and N3 + C1 → N4 + C1 +1.95% (−1.77 to 5.66; p = 0.28); with held-out states, −0.24% (−0.82 to 0.34; p = 0.39) and +1.85% (−1.09 to 4.79; p = 0.20). <!-- src: docs/results/review/FINAL_br_nohist_C1_rung.csv pct_of_ref, lo95_pct, hi95_pct, p -->
 
-In held-out Brazilian states, no estimate without case history was significant. The embedding gain (+1.52%) was of the same order as the coordinate gain (+0.88%), and beyond coordinates it was zero (−0.01%, 95% CI −1.28 to 1.27). The significant coordinate gain of the new-years cell (+3.30%) therefore did not carry over to states that were not used for fitting. The pre-specified identifier pattern (an embedding gain above zero together with an excess gain equivalent to zero) was not met in either cell, because neither embedding gain was significant and neither excess gain was equivalent within ±1%. <!-- src: T6b_nohist_estimands.csv BR_S1_nohist, BR_S2_nohist pooled; docs/results/FINAL_RESULTS_BRIEF.md section 4 -->
+In held-out Brazilian states, no estimate without case history was significant. The embedding gain (+1.52%) was of the same order as the coordinate gain (+0.88%), and beyond coordinates it was zero (−0.01%, 95% CI −1.28 to 1.27). The significant coordinate gain of the new-years cell (+3.30%) was therefore not detected in states that were not used for fitting. The pre-specified identifier pattern (an embedding gain above zero together with an excess gain equivalent to zero) was not met in either cell, because neither embedding gain was significant and neither excess gain was equivalent within ±1%. <!-- src: T6b_nohist_estimands.csv BR_S1_nohist, BR_S2_nohist pooled; docs/results/FINAL_RESULTS_BRIEF.md section 4 -->
 
 ## G. Post hoc analyses added after the third review round
 
@@ -909,7 +909,7 @@ Panel B. Fixed control panel (seed 0; no multiplicity adjustment).
 
 Note: Every ladder rung, panel control and positive-control increment is scored on the same 141,645 rows as Table 2. TimesFM was not run for Taiwan. The 2021 targets are all zero, so adding 2021 lowers every absolute WIS but leaves the ordering and the relative WIS almost unchanged. Seed 0; Table S17 averages seeds 0 to 2 for L3, L4, L3 + C\* and L4 + C\*, so its values differ by up to 0.0001. <!-- src: R3_C_summary.md section 5 row-count check and ladder note -->
 
-With 2021 included the Taiwan tables now share one row set. Every model forecast Taiwan about 57% better than the seasonal naive baseline, and nothing added to case history helped: L1 had the lowest WIS of the LightGBM ladder, and the non-case covariate steps were not detectable (Table S44). All four fixed controls gave a negative excess gain, none significant, and none of them improved L3. These values replace the without-2021 Taiwan rows of Tables S17 to S20 and S36. <!-- src: R3_C_tw2021_ladder.csv rel_wis_vs_L0 L1 0.425; R3_C_tw2021_panel.csv; R3_C_summary.md section 5 Reading -->
+With 2021 included the Taiwan tables now share one row set. Every LightGBM model forecast Taiwan about 57% better than the seasonal naive baseline, and nothing added to case history helped: L1 had the lowest WIS of the LightGBM ladder, and the non-case covariate steps were not detectable (Table S44). All four fixed controls gave a negative excess gain, nominally significant only with C1 (p = 0.049), and none of them improved L3. These values replace the without-2021 Taiwan rows of Tables S17 to S20 and S36. <!-- src: R3_C_tw2021_ladder.csv rel_wis_vs_L0 L1 0.425; R3_C_tw2021_panel.csv; R3_C_summary.md section 5 Reading -->
 
 ### G12. Colombia held-out states without case history
 
@@ -921,8 +921,8 @@ With 2021 included the Taiwan tables now share one row set. Every model forecast
 | Embedding gain, N3 → N4 | **−5.30 (−8.19 to −2.41); 0.0020** | +2.54; 0.13 |
 | Control gain, N3 → N3 + C2 (coordinates, C\*) | **−2.08 (−3.47 to −0.69); 0.0072** | +3.30; <0.001 |
 | Excess gain, N3 + C2 → N4 + C2 | **−4.17 (−6.45 to −1.90); 0.0019** | −0.43; 0.58 |
-| Static history, N3 → N3 + C1 | −1.46 (−2.90 to −0.03); 0.047 | – |
-| Excess gain beyond C1, N3 + C1 → N4 + C1 | −3.46 (−6.13 to −0.79); 0.016 | – |
+| Static history, N3 → N3 + C1 | **−1.46 (−2.90 to −0.03); 0.047** | – |
+| Excess gain beyond C1, N3 + C1 → N4 + C1 | **−3.46 (−6.13 to −0.79); 0.016** | – |
 
 <!-- src: R3_C_co_s2_nohist_ladder.csv -->
 | Model (row mean, 319,930 rows) | N3 | N3 + C1 | N3 + C2 | N4 | N4 + C1 | N4 + C2 |
