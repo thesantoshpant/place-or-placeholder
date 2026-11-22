@@ -102,3 +102,51 @@ Declarations
 - 3.2: 0.04998 replaced by 0.050 (per triage).
 - 3.3: Brazil excess gain +0.23% beside climate gain (Table 2, Table S44).
 - 3.9: individual R² 49%, 52%, 24%, 45% replaced by "24% to 52%" (Table S50).
+
+## Tone pass
+
+Inputs: audits/final_round/TONE_{opus,fable,sonnet,haiku}_v1g.md. Numbers and `<!-- src -->` comments checked by script: unchanged (one token moved within the power sentence). Abstract 299 words.
+
+- Opus 1 / Fable 2 / Sonnet 1 (abstract, no-history sentence): adapted. Stacked parentheses removed; "(the main design)" dropped (word limit; clashes with "the main test").
+- Opus 2 (no-control rule): applied. Checked: only BR S1 and CO S5 carry †, so "two" is correct; "kept it" clarified.
+- Opus 3 (S2 variants, "not what causes the loss"): applied; now matches the Discussion.
+- Opus 4 / Fable 8 / Sonnet 8 ("although we report them"): applied.
+- Opus 5 / Sonnet 4 (Interpretation, carry/carried): adapted ("captured", comma after Colombia).
+- Opus 6 (Table 1 note, 565 districts): applied.
+- Opus 7 / Sonnet 6 (Brazil held out; clearest loss): applied (both sentences split).
+- Opus 8 / Fable 4 / Haiku 8 (Taiwan, country marker): adapted.
+- Opus 9 ("They also agree"): applied.
+- Opus 10 / Fable 13 ("close to nominal"): adapted ("false-positive rate ... close to the nominal level"; "5%" not added).
+- Opus 11 / Fable 14 / Haiku 15 (power 1.00): applied (Opus order). Haiku's "all five Colombian splits" skipped: it would blur "about 1.00" vs "1.00".
+- Opus 12 / Fable 5 (tuning sentence): applied; Colombia's settings when Brazil was held out added (matches Methods).
+- Opus 13 / Sonnet 5 ("Neither main measure"): applied.
+- Opus 14 (shuffled embeddings, nested clause): applied.
+- Opus 15 / Fable 7 / Haiku 9 (closing sentence): adapted into two sentences; merged with Sonnet 15.
+- Fable 1 / Sonnet 2 / Haiku 6 (abstract ±1% sentence): adapted (Sonnet form, split at the semicolon).
+- Fable 3 (S2 G6 sentence): applied.
+- Fable 6 / Sonnet 5 / Haiku 13 (WIS rough guide): applied (Fable form; "rough guide" hedge kept).
+- Fable 9 (abstract "Six showed losses"): skipped; abstract at the word limit, sentence is clear.
+- Fable 10 (selected control usually C1): applied.
+- Fable 11 (further checks): applied.
+- Fable 12 (23% in Taiwan, Results): applied. The Discussion's parenthetical form is already clear; unchanged.
+- Fable 15 (five vs six controls): adapted ("six candidate controls: the five kinds of location control ... and a 2023 embedding snapshot"). Figure 1 caption unchanged.
+- Sonnet 3 (R² in abstract): adapted, "(variance explained)".
+- Sonnet 7 (Taiwan held out, significance): adapted ("significant after Holm correction but not under either stricter check"; Holm p < 0.05 per T1).
+- Sonnet 9 (control harm, mechanism): applied ("may partly undo").
+- Sonnet 10 (remove 1,439,937 rows): skipped; would remove a number.
+- Sonnet 11 (LightGBM jargon): adapted ("one set of trees" for "ensemble"); tuning-term gloss skipped.
+- Sonnet 12 (TOST "Without adjustment, this"): applied.
+- Sonnet 13 / Haiku 10 ("offer a shortcut"): applied.
+- Sonnet 14 ("only a placeholder"): skipped; this is the required one-line definition of the title's "placeholder".
+- Sonnet 15 ("neither show ... nor rule it out"): applied (first sentence only; no new claim added).
+- Haiku 1 ("Only Colombia's future years ... wider grid"): adapted ("In a sensitivity analysis, only ...").
+- Haiku 2 (control gain never positive vs no-history result): applied ("With case history, ...").
+- Haiku 3 (Peru held-out p values): applied (split).
+- Haiku 4 (labelling pattern): applied.
+- Haiku 5 (R² undefined): adapted; gloss added at first use in Methods 2.12 instead of Results (Results already says "explained").
+- Haiku 7 (abstract Methods, WIS undefined): skipped; abstract at the word limit.
+- Haiku 11 (intro, two claims one sentence): applied.
+- Haiku 12 (Table 1 note "Districts reporting are"): applied.
+- Haiku 14 (64 raw inputs): applied.
+
+Totals: 41 items listed above (some merged across reviewers); 6 skipped (Fable 9, Sonnet 10, Sonnet 14, Haiku 7, Haiku 15 merge wording, Fable 15 caption part). Main text grew by about 70 words because long sentences were split.
