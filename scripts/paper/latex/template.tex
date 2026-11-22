@@ -1,0 +1,103 @@
+% Pandoc LaTeX template for the medRxiv PDFs (manuscript and supplement); XeTeX via Tectonic.
+% Used by scripts/paper/build_pdf.sh with scripts/paper/latex/pdf_filter.lua.
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+\documentclass[11pt,letterpaper]{article}
+\usepackage[letterpaper,margin=2.5cm,footskip=1.0cm,headsep=0.6cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{unicode-math}
+\setmainfont{texgyretermes}[Extension=.otf,UprightFont=*-regular,BoldFont=*-bold,
+  ItalicFont=*-italic,BoldItalicFont=*-bolditalic,Ligatures=TeX]
+\setsansfont{texgyreheros}[Extension=.otf,UprightFont=*-regular,BoldFont=*-bold,
+  ItalicFont=*-italic,BoldItalicFont=*-bolditalic]
+\setmonofont{lmmono10-regular}[Extension=.otf,Scale=MatchLowercase]
+\setmathfont{texgyretermes-math.otf}
+\usepackage{newunicodechar}
+\newunicodechar{⁻}{\textsuperscript{−}}
+\newunicodechar{⁴}{\textsuperscript{4}}
+\usepackage{xcolor}
+\definecolor{linkblue}{HTML}{1F4E79}
+\definecolor{placeholder}{gray}{0.45}
+\definecolor{headgray}{gray}{0.35}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{booktabs,longtable,array,calc}
+\setlength{\LTpre}{3pt}
+\setlength{\LTpost}{2pt}
+\usepackage{needspace}
+\usepackage{pdflscape}
+\usepackage{setspace}
+\setstretch{1.15}
+\usepackage[section]{placeins}
+\usepackage[protrusion=true,expansion=false]{microtype}
+\usepackage{titlesec}
+\setcounter{secnumdepth}{-\maxdimen}
+\titleformat{\section}{\normalfont\Large\bfseries\raggedright}{}{0pt}{}
+\titlespacing*{\section}{0pt}{16pt plus 4pt minus 2pt}{6pt plus 2pt}
+\titleformat{\subsection}{\normalfont\large\bfseries\raggedright}{}{0pt}{}
+\titlespacing*{\subsection}{0pt}{12pt plus 3pt minus 2pt}{4pt plus 1pt}
+\titleformat{\subsubsection}{\normalfont\normalsize\bfseries\raggedright}{}{0pt}{}
+\titlespacing*{\subsubsection}{0pt}{10pt plus 2pt minus 1pt}{3pt plus 1pt}
+\titleformat{\paragraph}{\normalfont\normalsize\itshape\raggedright}{}{0pt}{}
+\titlespacing*{\paragraph}{0pt}{8pt plus 2pt minus 1pt}{2pt}
+\setcounter{tocdepth}{2}
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\footnotesize\color{headgray}\itshape $runninghead$}
+\fancyhead[R]{\footnotesize\color{headgray}\itshape $runningright$}
+\fancyfoot[C]{\small\thepage}
+\renewcommand{\headrulewidth}{0pt}
+\fancypagestyle{plain}{\fancyhf{}\fancyfoot[C]{\small\thepage}\renewcommand{\headrulewidth}{0pt}}
+\setlength{\parindent}{1.2em}
+\setlength{\parskip}{0pt plus 0.5pt}
+\setlength{\emergencystretch}{3em}
+\clubpenalty=10000
+\widowpenalty=10000
+\raggedbottom
+\setlength{\textfloatsep}{14pt plus 4pt minus 4pt}
+\setlength{\floatsep}{12pt plus 4pt minus 4pt}
+\renewcommand{\topfraction}{0.9}
+\renewcommand{\bottomfraction}{0.6}
+\renewcommand{\textfraction}{0.1}
+\renewcommand{\floatpagefraction}{0.75}
+\setcounter{topnumber}{3}
+\setcounter{totalnumber}{4}
+\providecommand{\tightlist}{\setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+% definitions for citeproc citations (from the pandoc 3.9 default template)
+\NewDocumentCommand\citeproctext{}{}
+\NewDocumentCommand\citeproc{mm}{%
+  \begingroup\def\citeproctext{#2}\cite{#1}\endgroup}
+\makeatletter
+ \let\@cite@ofmt\@firstofone
+ \def\@biblabel#1{}
+ \def\@cite#1#2{{#1\if@tempswa , #2\fi}}
+\makeatother
+\newlength{\cslhangindent}
+\setlength{\cslhangindent}{1.5em}
+\newlength{\csllabelwidth}
+\setlength{\csllabelwidth}{2.4em}
+\newenvironment{CSLReferences}[2]
+ {\begin{list}{}{%
+  \setlength{\itemindent}{0pt}
+  \setlength{\leftmargin}{0pt}
+  \setlength{\parsep}{0pt}
+  \ifodd #1
+   \setlength{\leftmargin}{\cslhangindent}
+   \setlength{\itemindent}{-1\cslhangindent}
+  \fi
+  \setlength{\itemsep}{0.35\baselineskip}}}
+ {\end{list}}
+\newcommand{\CSLBlock}[1]{\hfill\break\parbox[t]{\linewidth}{\strut\ignorespaces#1\strut}}
+\newcommand{\CSLLeftMargin}[1]{\parbox[t]{\csllabelwidth}{\strut#1\strut}}
+\newcommand{\CSLRightInline}[1]{\parbox[t]{\linewidth - \csllabelwidth}{\raggedright\strut#1\strut}}
+\newcommand{\CSLIndent}[1]{\hspace{\cslhangindent}#1}
+\usepackage{xurl}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,linkcolor=linkblue,citecolor=linkblue,urlcolor=linkblue,filecolor=linkblue,
+  pdftitle={$pdftitle$},pdfauthor={$pdfauthor$},pdfcreator={pandoc and XeTeX},bookmarksnumbered=false}
+\urlstyle{same}
+\usepackage{bookmark}
+\begin{document}
+$body$
+\end{document}
