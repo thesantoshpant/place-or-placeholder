@@ -50,13 +50,13 @@ COUNTRY_NAME = {"brazil": "Brazil", "colombia": "Colombia", "peru": "Peru", "tai
 CODE_COUNTRY = {"BR": "brazil", "CO": "colombia", "PE": "peru", "TW": "taiwan"}
 SPLIT_ORDER = ["S1", "S2", "S3", "S4", "S5"]
 # One name per split everywhere (text, tables, figures): triage round 3, A.10.
-SPLIT_NAME = {"S1": "New years", "S2": "Held-out states", "S3": "Held-out regions",
+SPLIT_NAME = {"S1": "Future years", "S2": "Held-out states", "S3": "Held-out regions",
               "S4": "Held-out districts", "S5": "Held-out country"}
 SPLIT_LONG = {k: v.lower() for k, v in SPLIT_NAME.items()}
 SPLIT_MARKER = {"S1": "o", "S2": "s", "S3": "^", "S4": "D", "S5": "v"}
 CONTROL_NAME = {"C1": "pre-2018 case average", "C2": "coordinates", "C3": "shuffled embedding",
                 "C4": "random smooth fields", "C4s": "short-range random fields",
-                "C5": "2023 embedding snapshot", "C6": "district ID"}
+                "C5": "2023 embedding snapshot", "C6": "district label"}
 W_FULL = 6.5
 MINUS = "−"
 
@@ -367,11 +367,11 @@ def fig1():
             color=INK, linespacing=1.05)
     arrow(ax, (gx1 + cw / 2, yT - ch / 2 - 0.03), (gx1 + cw / 2, yB + ch / 2 + 0.03), lw=2.0, ms=10,
           color=INK)
-    ax.text(gx1 + cw / 2 - 0.08, (yT + yB) / 2 - 0.05, "excess gain\n(primary)", ha="right", va="center",
+    ax.text(gx1 + cw / 2 - 0.08, (yT + yB) / 2 - 0.05, "excess gain", ha="right", va="center",
             fontsize=7.5, color=INK, fontweight="bold", linespacing=1.05)
-    legend = ("C* chosen at the 2019 origin from:\nC1 historical risk, C2 coordinates,\n"
+    legend = ("C* chosen at the 2019 origin from:\nC1 average past cases, C2 coordinates,\n"
               "C3 shuffled embedding, C4/C4s random\nsmooth fields, C5 2023 snapshot;\n"
-              "C6 district identifier (no-history arm)")
+              "C6 district label (no-history arm)")
     ax.text(1.52, yB - ch / 2 - 0.14, legend, fontsize=7, color=INK2, va="top", ha="left", linespacing=1.2)
 
     # ------------------------------------------------------------- Panel B: where models are tested
@@ -416,7 +416,7 @@ def fig1():
     xo2, yo2, _ = place(blob, sx + wbl + 0.14, y + 0.05)
     draw_hexes(ax, blob, xo2, yo2, Rb, lambda c: "test")
     ax.text(sx + wbl + 0.14 + wbl / 2, y - 0.19, "year Y", fontsize=6.8, color=INK2, ha="center", va="center")
-    label(y, "S1", "new years")
+    label(y, "S1", "future years")
 
     # S2: five state groups, one whole group dark
     def state_of(c):
@@ -558,11 +558,11 @@ def fig1():
     # key for the shading
     ky = yTr - 0.28
     ax.add_patch(Rectangle((0.12, ky - 0.065), 0.26, 0.13, fc="#f6d4d3", ec="none", hatch="/////"))
-    ax.text(0.45, ky, "dropped from primary scoring: origin in Y − 1 (yearly inputs or training labels "
+    ax.text(0.45, ky, "dropped from main scoring: origin in Y − 1 (yearly inputs or training labels "
             "after the origin)", fontsize=7, color=INK2, va="center", ha="left")
     ky2 = ky - 0.19
     ax.add_patch(Rectangle((0.12, ky2 - 0.065), 0.26, 0.13, fc="#d3ead3", ec="none"))
-    ax.text(0.45, ky2, "origin-year rows (primary)", fontsize=7, color=INK2, va="center", ha="left")
+    ax.text(0.45, ky2, "origin-year rows (main scoring)", fontsize=7, color=INK2, va="center", ha="left")
     return fig
 
 
@@ -665,11 +665,11 @@ def fig2(t1: pd.DataFrame):
     ky = ay - 0.70
     k1 = axes_in(fig, 0.06, ky - 0.09, 0.12, 0.18); k1.set_axis_off(); k1.set_xlim(0, 1); k1.set_ylim(0, 1)
     k1.plot(0.5, 0.5, "o", ms=4.4, mfc=INK2, mec=INK2, mew=1.0, clip_on=False)
-    ftext(fig, 0.19, ky, "excess gain, L3 + C* → L4 + C* (primary; Holm p)", va="center", fontsize=7.5,
+    ftext(fig, 0.19, ky, "excess gain, L3 + C* → L4 + C* (main measure; Holm p)", va="center", fontsize=7.5,
           color=INK2)
     k2 = axes_in(fig, 3.30, ky - 0.09, 0.12, 0.18); k2.set_axis_off(); k2.set_xlim(0, 1); k2.set_ylim(0, 1)
     k2.plot(0.5, 0.5, "o", ms=4.0, mfc="white", mec=INK2, mew=1.0, clip_on=False)
-    ftext(fig, 3.43, ky, "embedding gain, L3 → L4 (co-primary)", va="center", fontsize=7.5, color=INK2)
+    ftext(fig, 3.43, ky, "embedding gain, L3 → L4 (main measure)", va="center", fontsize=7.5, color=INK2)
     return fig, dict(n_avail=len(avail), n_cells=len(cells),
                      pending=[f"{COUNTRY_NAME[r['country']]} {SPLIT_NAME[r['split']].lower()} ({r['split']})"
                               for r in cells if not is_available(r["rec"])],
@@ -678,7 +678,7 @@ def fig2(t1: pd.DataFrame):
 
 
 # ============================================================================= Fig 3
-STRATA = [("positive", "Weeks with cases"), ("recorded_zero", "Recorded zeros\n(Brazil 2020–21 only)"),
+STRATA = [("positive", "Weeks with cases"), ("recorded_zero", "Zeros listed by the source\n(Brazil 2020–21)"),
           ("zero_filled", "Zero-filled weeks")]
 
 
@@ -1129,20 +1129,20 @@ def captions(meta: dict, t1: pd.DataFrame) -> str:
                      f"{fnum(q.pct_of_WIS_ref)}% (absolute {fnum(q.G_excess, True, 4)} log-WIS) and "
                      f"embedding gain {fnum(q.G_emb_pct)}% (absolute {fnum(q.G_emb, True, 4)}).")
     holm_m = int(t1.n_family_available.dropna().iloc[0]) if "n_family_available" in t1 else n_av
-    holm_note = (f"Holm adjustment over the {holm_m} available cells, final family {n_c}"
-                 if holm_m < n_c else f"Holm adjustment over all {n_c} cells")
+    holm_note = (f"Holm adjustment over the {holm_m} available comparisons, final family {n_c}"
+                 if holm_m < n_c else f"Holm adjustment over all {n_c} comparisons")
     tw = t1[t1.country == "taiwan"]
-    tw_note = (" Taiwan cells include test year 2021." if len(tw) and tw.test_years.astype(str).str.contains("2021").all()
+    tw_note = (" Taiwan comparisons include test year 2021." if len(tw) and tw.test_years.astype(str).str.contains("2021").all()
                else "")
     m4 = meta["fig4"]
     cs = m4["cstar"].get("BR_S1_nohist", "C*")
     cname = CONTROL_NAME.get(cs, cs)
     take = m4.get("takeaway", "")
     s2_note = ("" if "BR_S2_nohist" in m4["cells"] else
-               " Only Brazil, new years (S1) is drawn; Brazil, held-out states (S2), is added on rerun once "
+               " Only Brazil, future years (S1) is drawn; Brazil, held-out states (S2), is added on rerun once "
                "its results are released.")
-    fig4_splits = ("new years (S1) and held-out states (S2)" if "BR_S2_nohist" in m4["cells"]
-                   else "new years")
+    fig4_splits = ("future years (S1) and held-out states (S2)" if "BR_S2_nohist" in m4["cells"]
+                   else "future years")
     ms1 = meta.get("figS1") or {}
     s1_note = ""
     for c, n in ms1.get("n_rows", {}).items():
@@ -1150,26 +1150,26 @@ def captions(meta: dict, t1: pd.DataFrame) -> str:
         if len(r1) and np.isfinite(r1.n_rows.iloc[0]) and int(r1.n_rows.iloc[0]) != n:
             s1_note += (f" The {COUNTRY_NAME[CODE_COUNTRY[c[:2]]]} panel uses {n:,} rows without test year "
                         f"2021 (the L0–L2 runs have no 2021 forecasts), not the {int(r1.n_rows.iloc[0]):,} "
-                        f"rows of the primary cell, and its L2 model was tuned separately, so its L2 point is "
+                        f"rows of the primary comparison, and its L2 model was tuned separately, so its L2 point is "
                         f"not comparable with the other rungs.")
-    split_key = ("S1, new years; S2, held-out states; S3, held-out regions; S4, held-out districts; "
+    split_key = ("S1, future years; S2, held-out states; S3, held-out regions; S4, held-out districts; "
                  "S5, held-out country")
     lines = [
         "# Figure captions",
         "",
         "Generated by `scripts/paper/make_pub_figures.py` from the results-kit tables "
-        "(`docs/results/tables/*.csv`); cell counts, the selected control, Holm denominators and pending notes "
+        "(`docs/results/tables/*.csv`); comparison counts, the selected control, Holm denominators and pending notes "
         "update on rerun. These captions describe exactly what is drawn. WIS = weighted interval score on "
         "log(1 + cases); lower is better. Reference WIS = WIS of the reference model L3 (N3 without case "
         "history) on the same rows.",
         "",
         "**Fig 1. Study design and information timing.** Each comparison changes one block of inputs while "
-        "the model type, scored rows and configuration stay fixed; primary scores use only forecasts whose "
+        "the model type, scored rows and configuration stay fixed; main scores use only forecasts whose "
         "inputs and training labels end at the origin. (A) What is compared: the ladder L0–L4 and, from the "
         "reference model L3, the 2 × 2 grid behind the three gains: the embedding gain (L3 to L4), the control "
-        "gain (L3 to L3 + C*) and the excess gain (L3 + C* to L4 + C*; primary). The location control C* is "
-        "chosen at the 2019 origin from C1 historical risk, C2 coordinates, C3 shuffled embedding, C4/C4s "
-        "random smooth fields and C5 2023 snapshot; C6 (district identifier) is a candidate only in the "
+        "gain (L3 to L3 + C*) and the excess gain (L3 + C* to L4 + C*). The location control C* is "
+        "chosen at the 2019 origin from C1 average past cases, C2 coordinates, C3 shuffled embedding, C4/C4s "
+        "random smooth fields and C5 2023 snapshot; C6 (district label) is a candidate only in the "
         "analysis without case history. (B) Where models are tested, drawn on generic clusters of hexagons "
         "standing for districts (light: training; dark: test; dashed: dropped buffer): " + split_key + ". "
         "S2–S4 were run in Brazil and Colombia, S1 and S5 in all four countries; held-out districts keep "
@@ -1178,12 +1178,12 @@ def captions(meta: dict, t1: pd.DataFrame) -> str:
         "run from week 47 of year Y − 1 to week 6 of year Y (bold tick labels; a 52-week year is drawn). "
         "Remote sensing uses the last three complete months before the month of o; yearly inputs come from "
         "the year before the target's epidemiological year; training targets end in the last week of Y − 1. "
-        "Targets in the first h weeks of Y (origin in Y − 1; hatched) are dropped from primary scoring. "
-        "Horizons h are 1 to 4 weeks; primary estimates pool horizons 1 and 4.",
+        "Targets in the first h weeks of Y (origin in Y − 1; hatched) are dropped from main scoring. "
+        "Horizons h are 1 to 4 weeks; main estimates pool horizons 1 and 4.",
         "",
         f"**Fig 2. Excess and embedding gains from AlphaEarth embeddings in each country and split.** For each "
-        f"cell, the filled marker is the excess gain (L3 + C* to L4 + C*; primary) and the open marker, drawn "
-        f"just below it, is the embedding gain (L3 to L4; co-primary), both as a percentage of the reference "
+        f"comparison, the filled marker is the excess gain (L3 + C* to L4 + C*; main measure) and the open marker, drawn "
+        f"just below it, is the embedding gain (L3 to L4; main measure), both as a percentage of the reference "
         f"WIS (weeks weighted equally; origin-year rows; horizons 1 and 4 pooled). Positive values mean that "
         f"the embeddings improve the forecast. Lines are 95% confidence intervals from Diebold–Mariano tests "
         f"with the EWC variance and the HLN correction. The shaded band is the ±1% equivalence margin and the "
@@ -1191,10 +1191,10 @@ def captions(meta: dict, t1: pd.DataFrame) -> str:
         f"grey) and the Holm-adjusted p value of the excess gain ({holm_note}; bold: p < 0.05).{outl}"
         f"{tw_note}{pend} {split_key}.",
         "",
-        "**Fig 3. Contributions of three types of target week to the excess gain.** For each cell, the excess "
+        "**Fig 3. Contributions of three types of target week to the excess gain.** For each comparison, the excess "
         "gain of Fig 2 is split additively into contributions from weeks with cases, zero weeks listed by the "
-        "source (recorded zeros; Brazil 2020–2021 only) and zero weeks filled by us, each in percentage points "
-        "of the cell's reference WIS, with 95% confidence intervals (unadjusted; filled marker: interval "
+        "source (Brazil 2020–2021 only) and zero weeks filled by us, each in percentage points "
+        "of the comparison's reference WIS, with 95% confidence intervals (unadjusted; filled marker: interval "
         "excludes 0). The three contributions add up exactly to the total printed in the right-hand column "
         "(no total marker is drawn). Interval ends beyond the axis are cut with an arrowhead; an estimate "
         "beyond the axis is drawn as an arrow at the panel edge with its value printed beside it (Taiwan, "
@@ -1211,13 +1211,13 @@ def captions(meta: dict, t1: pd.DataFrame) -> str:
         f"confidence intervals (filled marker: interval excludes 0). The shaded band is ±1% and the dashed "
         f"lines ±0.5%.{take}{s2_note}",
         "",
-        "**Fig S1. Model ladder in the new-years split (S1), by country.** Reduction in mean WIS over rows "
+        "**Fig S1. Model ladder in the future-years split (S1), by country.** Reduction in mean WIS over rows "
         "relative to L1 (case history only; open marker at 0), horizons 1 and 4 pooled, for L0 to L4 and for "
-        "L3 and L4 with the selected location control (C* = C1, historical risk, in every country). Values "
+        "L3 and L4 with the selected location control (C* = C1, average past cases, in every country). Values "
         "beyond a panel are drawn as an arrow with their value (the seasonal naive L0 everywhere). Panels "
         f"have their own scales.{s1_note}",
         "",
-        "**Fig S2. Excess gain by test year.** Each point is one cell and test year, as a percentage of that "
+        "**Fig S2. Excess gain by test year.** Each point is one comparison and test year, as a percentage of that "
         "year's reference WIS (weeks weighted equally), horizons 1 and 4 pooled, with 95% confidence intervals "
         "(unadjusted; filled marker: interval excludes 0); marker shape gives the split. Shaded years are "
         "the COVID-19 pandemic years 2020–2021 (in the Taiwan panel only 2020 is shaded, and 2021 is labelled "
@@ -1228,7 +1228,7 @@ def captions(meta: dict, t1: pd.DataFrame) -> str:
         "**Fig S3. Embedding similarity and the excess gain when a whole country is held out (S5).** The "
         "districts of the held-out country are split into fifths by the maximum cosine similarity between "
         "their renormalised AlphaEarth embedding (year y − 1) and those of the training districts. Points "
-        "show each fifth's mean similarity and its excess gain as a percentage of the cell's overall "
+        "show each fifth's mean similarity and its excess gain as a percentage of the comparison's overall "
         "reference WIS, with 95% confidence intervals; ρ is the district-level Spearman correlation between "
         "similarity and excess gain (naive p values in Table S39). Panels have their own vertical scales. "
         "Exploratory.",

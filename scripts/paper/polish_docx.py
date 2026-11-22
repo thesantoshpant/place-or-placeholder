@@ -517,6 +517,37 @@ def table_notes(body, name2id):
     return n
 
 
+# A run of labelled paragraphs ("Seeds: ...", "Taiwan: ...", "Symbols: ...") directly after a table
+# note or a figure caption belongs to that note: a short capitalised label of 1 to 3 words, then a colon.
+FOLLOW_LBL = re.compile(r"^[A-Z][\w‐-—-]*(?: [\w‐-—-]+){0,2}:(?=\s)")
+BODY_STYLES = {"Normal", "Body Text", "First Paragraph", "Compact"}
+
+
+def note_followers(body, name2id, id2name):
+    """Restyle labelled paragraphs that directly follow a table note or figure caption as table notes."""
+    done = []
+    for p in [c for c in body if c.tag == w("p")]:
+        if para_style_name(p, id2name) not in ("Table Note", "Image Caption"):
+            continue
+        nxt = p.getnext()
+        while nxt is not None and nxt.tag == w("p"):
+            txt = text_of(nxt)
+            if not txt.strip():
+                nxt = nxt.getnext()
+                continue
+            m = FOLLOW_LBL.match(txt.lstrip())
+            if not m or para_style_name(nxt, id2name) not in BODY_STYLES or has_drawing(nxt):
+                break
+            set_style(nxt, "Table Note", name2id)
+            lead, _ = split_runs(nxt, len(txt) - len(txt.lstrip()) + m.end())
+            for r in lead:
+                if local(r) == "r":
+                    set_flag(first_child(r, "rPr"), "i", True)
+            done.append(txt.strip()[:60])
+            nxt = nxt.getnext()
+    return done
+
+
 def classify(body, name2id, id2name):
     counts = dict(figures=0, fig_captions=0, equations=0)
     for p in list(body.iter(w("p"))):
@@ -754,6 +785,10 @@ def polish(src, out):
     n_cap, n_note = table_captions(body, name2id)
     n_note += table_notes(body, name2id)
     counts = classify(body, name2id, id2name)
+    followers = note_followers(body, name2id, id2name)
+    n_note += len(followers)
+    for t in followers:
+        print(f"  note paragraph after a table note or figure caption: {t}")
     bake(body, id2name)
     n_bib = fix_bibliography(body, id2name)
     tables = [format_table(t) for t in body.iter(w("tbl"))]
