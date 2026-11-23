@@ -1,16 +1,19 @@
 # Place or placeholder? AlphaEarth satellite embeddings did not detectably improve weekly dengue forecasts in four countries
 
-<!-- Title changed in response to co-author comment C01 (states the finding); it needs the authors' approval. The earlier title is in STYLE_DECISIONS.md section 1; other alternatives are in notes_A.md. -->
+Brij K. Patel^1,\*^, Adithya V. Asokan^2,\*^, Santosh Pant^3,\*^
 
-Santosh Pant^1^, Brij Patel^2^, Adithya Asokan^3^
+^1^ Computer Science, Illinois State University, Normal, Illinois, USA\
+^2^ Department of Health Metrics Sciences, University of Washington, Seattle, Washington, USA\
+^3^ Knox College, Galesburg, Illinois, USA
 
-^1^ Knox College, Galesburg, Illinois, USA\
-^2^ Illinois State University, Normal, Illinois, USA\
-^3^ University of Washington, Seattle, Washington, USA
+^\*^ These authors contributed equally to this work.
 
-Corresponding author: [to be completed] <!-- AUTHORS: corresponding author name and email -->
+Corresponding author: Brij K. Patel (bpate17@ilstu.edu)
 
-ORCID iDs: [to be completed] <!-- AUTHORS: ORCID iDs of all three authors -->
+ORCID iDs:\
+Brij K. Patel: https://orcid.org/0009-0006-8101-4325\
+Adithya V. Asokan: https://orcid.org/0009-0008-8688-0091\
+Santosh Pant: https://orcid.org/0009-0000-6464-0777
 
 ## Abstract
 

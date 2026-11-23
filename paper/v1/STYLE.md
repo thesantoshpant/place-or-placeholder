@@ -3,9 +3,10 @@
 Target: **medRxiv preprint, Epidemiology**, submit Mon 23 Nov 2026. Agents write and verify; the three authors then review and comment in a shared doc, iterating until sign-off. The posted PDF is exported from that doc.
 
 ## Authors (exact)
-1. Santosh Pant — Knox College, Galesburg, Illinois, USA
-2. Brij Patel — Illinois State University, Normal, Illinois, USA
-3. Adithya Asokan — University of Washington, Seattle, Washington, USA
+1. Brij K. Patel — Computer Science, Illinois State University, Normal, Illinois, USA (corresponding)
+2. Adithya V. Asokan — Department of Health Metrics Sciences, University of Washington, Seattle, Washington, USA
+3. Santosh Pant — Knox College, Galesburg, Illinois, USA
+(All three contributed equally.)
 
 Corresponding author, emails, ORCID: `[[AUTHORS: TBD]]`. Funding, competing interests, CRediT, AI-use statement: `[[AUTHORS: TBD]]` placeholders only. AI use (authors' decision 2026-11-18): the full AI-use statement, naming the tool, is added ONLY in the shared doc and the submitted PDF. In these repo files write `[[AI-USE: full statement in the shared doc]]` in the declarations. Wherever the text describes code, verification, audits or analyses done by agents, say so factually and generically ("automated AI agents; see Use of AI tools"); never imply a person did it.
 

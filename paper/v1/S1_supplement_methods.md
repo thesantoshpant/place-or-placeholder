@@ -214,7 +214,7 @@ All LightGBM and negative binomial runs took about 4,700 core-hours, counted as 
 
 #### Derived data to be released
 
-The district-year AlphaEarth table (population-weighted and unweighted means, before and after renormalisation, with population sums and norms), the weekly district panel, the covariate tables, the split and fold definitions, all stored forecasts and the scoring code will be released with the code deposit [to be completed: deposit DOI]. The embedding table is derived from a CC BY 4.0 product; the case panel is derived from OpenDengue (CC BY-SA). <!-- AUTHORS: deposit DOI and repository URL -->
+The district-year AlphaEarth table (population-weighted and unweighted means, before and after renormalisation, with population sums and norms), the weekly district panel, the covariate tables, the split and fold definitions, all stored forecasts and the scoring code are available from the authors on request and will be archived on Zenodo with the journal version; the code is at https://github.com/thesantoshpant/place-or-placeholder. The embedding table is derived from a CC BY 4.0 product; the case panel is derived from OpenDengue (CC BY-SA).
 
 ---
 
@@ -611,17 +611,17 @@ Table S15 maps each item of the EPIFORGE 2020 checklist [@pollett2021epiforge] t
 | 3 | Methods in reproducible detail, including fitting and assumptions | Methods 2.2–2.12; Supplementary Methods, A–F | Present; code link in item 9 |
 | 4 | Prospective, real-time or retrospective | Methods 2.1: retrospective, from one snapshot of final revised data | Present |
 | 5 | Origin of input data, with references | Methods 2.2–2.4; Supplementary Methods, A1 | Present |
-| 6 | Source data available, or why not | Data availability statement (OpenDengue and all covariate sources are public; derived panels to be deposited) | Pending: [to be completed] <!-- AUTHORS: public repository URL and Zenodo DOI --> |
+| 6 | Source data available, or why not | Data availability statement (OpenDengue and all covariate sources are public; derived data available from the authors on request, to be archived on Zenodo with the journal version) | Present |
 | 7 | Data processing | Methods 2.2; Supplementary Methods, A2–A7 | Present |
 | 8 | Model type and assumptions, with references | Methods 2.4; Supplementary Methods, B and C | Present |
-| 9 | Code available, or why not | Code availability statement; protocol, deviation log and code, with the full commit history, released at [to be completed] <!-- AUTHORS: deposit DOI --> at posting (no separate pre-results deposit was made) | Pending: public repository URL [to be completed] <!-- AUTHORS: public repository URL and Zenodo DOI --> |
+| 9 | Code available, or why not | Code availability statement; protocol, deviation log and code, with the full commit history, at https://github.com/thesantoshpant/place-or-placeholder (no separate pre-results deposit was made) | Present |
 | 10 | Validation approach, described and justified | Methods 2.6–2.7; Supplementary Methods, D | Present |
 | 11 | Accuracy evaluation, described and justified | Methods 2.8–2.10; Supplementary Methods, E | Present |
 | 12 | Comparison with benchmark models, justified | Methods 2.4 (seasonal naive, negative binomial, TimesFM in Brazil); Results 3.1; Tables S17 and S18 | Present |
 | 13 | Forecast horizon, described and justified | Methods 2.3: 1–4 weeks, the range used by forecast hubs; horizons 1 and 4 bracket it and are used in S2–S5 to halve compute. Lead times for vector control can be longer; Discussion 4.1 limits the conclusion to one- and four-week forecasts and 4.6 names longer horizons as future work | Present (scope stated) |
 | 14 | Forecast uncertainty presented and explained | Quantile forecasts, WIS and interval coverage (Methods 2.8; Results 3.1) | Present |
 | 15 | Non-technical summary of results and uncertainty | Abstract; Discussion 4.1 | Partly present (no separate lay summary) |
-| 16 | Time-stamped, versioned identifier for forecasts and data | Protocol and code with the full commit history [to be completed] <!-- AUTHORS: deposit DOI --> at posting; Zenodo deposit of code, forecasts and derived data at posting | Pending: [to be completed] <!-- AUTHORS: public repository URL and Zenodo DOI --> |
+| 16 | Time-stamped, versioned identifier for forecasts and data | Protocol and code with the full dated commit history at https://github.com/thesantoshpant/place-or-placeholder; forecasts and derived data on request, to be archived on Zenodo with the journal version | Partly present |
 | 17 | Weaknesses, including data quality and methods | Discussion 4.5; Supplementary Methods, section I | Present |
 | 18 | Implications for public-health action | Discussion 4.6 (scoped: no recommendation about operational use) | Present |
 | 19 | Generalisability across populations | Discussion 4.2 and 4.5; four-country design and the held-out-country split | Present |
