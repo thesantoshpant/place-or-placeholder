@@ -93,3 +93,7 @@ Base: 99cec1a. Inputs: `audits/final_round/TONE_{opus,fable,sonnet,haiku}_v1i.md
 - 03_results.md: "2" (the "Table 2" cross-reference for the Brazil-held-out embedding gain), "3.4" and "2.2" (section cross-references), "20" (draws per share in the hidden-case check; R5 design value, already in Table S56 note and the 3.5 src comment).
 - 05_discussion.md: "8" and "5" (equivalence counts in 4.1, item 5; same values as 3.3, 4.7 and the abstract), "3.8" (section cross-reference in 4.3).
 - Removed: 03 "3.6" (cross-reference); 05 "0.01" (deletion 6), "2017" (deletion 7). S1 and S2: no number added or removed (the S1 timing sentence moved within the file).
+
+## Co-author suggestions in the v1.4 Google Doc (22 Nov), resolved in place
+- 4.5: "the main test still found none" became "still finds none" (Adithya's suggestion; accepted in the Doc).
+- 4.7: Adithya suggested "embeddings worsened forecasts" → "embedding". This was rejected because it breaks agreement and the fixed term. It was replaced by "the embeddings worsened forecasts" in the Doc and here.
