@@ -24,7 +24,7 @@ We will deposit the following with the code at [to be completed]: the weekly dis
 
 ### Code availability
 
-The code will be released under an open licence at [to be completed]. <!-- AUTHORS: public repository URL and Zenodo DOI --> It reproduces the whole study, from data download to every table and figure, and comes with unit tests, a locked software environment and data manifests with checksums. The archived version will receive a DOI on the day of posting. The public history includes the dated commits cited for pre-specification in the Supplementary Methods (`d8c7944`, `fcc3c38`, `bd3ba50`, `e9df1f1`). <!-- AUTHORS 2026-11-20: deposit skipped (decision of the authors); the repository must be public at posting, because the pre-specification claims rest on its dated history (RA M7) -->
+The code will be released under an open licence at [to be completed]. <!-- AUTHORS: public repository URL and Zenodo DOI --> It reproduces the whole study, from data download to every table and figure, and comes with unit tests, a locked software environment and manifests that list every data file with its checksum. The archived version will receive a DOI on the day of posting. The public history includes the dated commits cited for pre-specification in the Supplementary Methods (`d8c7944`, `fcc3c38`, `bd3ba50`, `e9df1f1`). <!-- AUTHORS 2026-11-20: deposit skipped (decision of the authors); the repository must be public at posting, because the pre-specification claims rest on its dated history (RA M7) -->
 
 <!-- EPIFORGE items 9 (code) and 16 (versioned identifier) depend on the repository and DOI above (R6 section E). The pre-specification claims rest on the git history being public (RESOLUTION_LOG.md, Needs the authors, item 3). -->
 

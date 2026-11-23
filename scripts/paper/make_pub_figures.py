@@ -176,11 +176,19 @@ def draw_interval(ax, y, est, lo, hi, color, filled=True, xlim=None, marker="o",
                     bbox=dict(boxstyle="square,pad=0.15", fc="white", ec="none"))
 
 
-def x_cues(ax, left="← embeddings hurt", right="embeddings help →", dy=-15, size=7.5):
+def x_cues(ax, left="← embeddings hurt", right="embeddings help →", dy=-15, size=7.5, color=MUTED,
+           weight="normal", at_zero=False):
+    """Direction labels under an x axis: at the panel edges (default) or either side of the zero line."""
+    if at_zero:
+        ax.annotate(left, (0, 0), xycoords=("data", "axes fraction"), xytext=(-4, dy), textcoords="offset points",
+                    ha="right", va="top", fontsize=size, color=color, fontweight=weight)
+        ax.annotate(right, (0, 0), xycoords=("data", "axes fraction"), xytext=(4, dy), textcoords="offset points",
+                    ha="left", va="top", fontsize=size, color=color, fontweight=weight)
+        return
     ax.annotate(left, (0, 0), xycoords="axes fraction", xytext=(0, dy), textcoords="offset points",
-                ha="left", va="top", fontsize=size, color=MUTED)
+                ha="left", va="top", fontsize=size, color=color, fontweight=weight)
     ax.annotate(right, (1, 0), xycoords="axes fraction", xytext=(0, dy), textcoords="offset points",
-                ha="right", va="top", fontsize=size, color=MUTED)
+                ha="right", va="top", fontsize=size, color=color, fontweight=weight)
 
 
 def break_marks(ax, side: str):
@@ -573,7 +581,7 @@ def fig2(t1: pd.DataFrame):
     pitch = 0.30
     off = 0.19                                   # vertical offset of the two markers (row units)
     n_units = -ylast + 1.0
-    top_m, bot_m = 0.46, 0.92
+    top_m, bot_m = 0.46, 0.98
     H = n_units * pitch + top_m + bot_m
     fig = plt.figure(figsize=(W_FULL, H))
     yl = (ylast - 0.6, 0.6)
@@ -652,17 +660,13 @@ def fig2(t1: pd.DataFrame):
                  ha="right", fontweight="bold" if sig else "normal")
         if np.isfinite(e2):
             axT.text(0.0, y - off, fci(e2, l2, h2), fontsize=7, color=INK2, va="center", ha="left")
-    if has_break:
-        axB.annotate("\u2190 embeddings hurt", (0, 0), xycoords="axes fraction", xytext=(0, -13),
-                     textcoords="offset points", ha="left", va="top", fontsize=7.5, color=MUTED)
-        x_cues(axM, left="", dy=-13)
-    else:
-        x_cues(axM, dy=-13)
+    x_cues(axM, left="\u2190 embeddings hurt", right="embeddings help \u2192", dy=-13, size=8.5, color=INK,
+           weight="bold", at_zero=True)
     xc = ((x_brk if has_break else x_main) + x_main + w_main) / 2
-    ftext(fig, xc, ay - 0.40, "Change in forecast error (% of reference WIS); positive = embeddings help",
+    ftext(fig, xc, ay - 0.46, "Gain from embeddings (% of the reference model's WIS)",
           ha="center", va="top", fontsize=8)
     # marker key
-    ky = ay - 0.70
+    ky = ay - 0.76
     k1 = axes_in(fig, 0.06, ky - 0.09, 0.12, 0.18); k1.set_axis_off(); k1.set_xlim(0, 1); k1.set_ylim(0, 1)
     k1.plot(0.5, 0.5, "o", ms=4.4, mfc=INK2, mec=INK2, mew=1.0, clip_on=False)
     ftext(fig, 0.19, ky, "excess gain, L3 + C* → L4 + C* (main measure; Holm p)", va="center", fontsize=7.5,
