@@ -10,4 +10,4 @@ It tests whether AlphaEarth satellite embeddings improve weekly district-level d
 - Plan: `docs/plans/paper1_evaluation_plan.txt`
 - Background research: `docs/research/`
 
-Compute runs on the team GPU server. Run `source env.sh` there before anything else (it keeps the venv and all caches inside the project folder).
+Compute runs on the team GPU server. Run `source env.sh` there before anything else (it keeps the venv and all caches inside the project folder)
