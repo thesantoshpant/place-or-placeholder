@@ -731,8 +731,16 @@ local function process(blocks)
   local out = pandoc.Blocks{}
   local i, n = 1, #blocks
   local cur_label
+  local in_abstract, abs_paras = false, 0
   while i <= n do
     local b = blocks[i]
+    -- structured abstract: every labelled paragraph starts flush left, with a small gap between them
+    if b.t == 'Header' then
+      in_abstract = (stringify(b.content) == 'Abstract')
+    elseif in_abstract and b.t == 'Para' and b.content[1] and b.content[1].t == 'Strong' then
+      abs_paras = abs_paras + 1
+      b.content:insert(1, rawi((abs_paras > 1 and '\\vspace{3pt}' or '') .. '\\noindent '))
+    end
     local tid = cap_id(b, 'Table')
     if b.t == 'Para' and stringify(b) == PAGEBREAK then
       out:insert(rawb('\\clearpage'))
