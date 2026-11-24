@@ -29,7 +29,7 @@
 \usepackage{setspace}
 \setstretch{1.15}
 \frenchspacing % one normal space after full stops, so labels and sentences are evenly spaced
-\usepackage[section]{placeins}
+\usepackage{placeins} % \FloatBarrier placed by pdf_filter.lua (before major sections)
 \usepackage[protrusion=true,expansion=false]{microtype}
 \usepackage{titlesec}
 \setcounter{secnumdepth}{-\maxdimen}
@@ -53,6 +53,7 @@
 \setlength{\parindent}{1.2em}
 \setlength{\parskip}{0pt plus 0.5pt}
 \setlength{\emergencystretch}{3em}
+\hyphenation{DeepMind AlphaEarth OpenDengue InfoDengue LightGBM TimesFM geoBoundaries} % never split product names
 \clubpenalty=10000
 \widowpenalty=10000
 \raggedbottom

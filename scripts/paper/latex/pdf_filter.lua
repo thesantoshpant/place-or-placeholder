@@ -290,7 +290,11 @@ local function plan(g, lw, sz, protect)
     end
   end
   local avail = lw - ncols * pad
-  if sum(natw) <= avail then return {mode = 'natural', w = natw, h = #rows, prot = protect} end
+  if sum(natw) <= avail then
+    local rl = {}
+    for i = 1, #rows do rl[i] = 1 end
+    return {mode = 'natural', w = natw, h = #rows, prot = protect, rl = rl}
+  end
   local w = {}
   for j = 1, ncols do w[j] = minw[j] end
   if sum(w) > avail then return nil end
@@ -390,9 +394,14 @@ local function plan(g, lw, sz, protect)
     end
     if not moved then break end
   end
-  local hreal = 0
-  for i = 1, #rows do local m = 0 for j = 1, ncols do m = math.max(m, L[i][j]) end hreal = hreal + m end
-  return {mode = 'p', w = w, h = hreal, prot = protect}
+  local hreal, rl = 0, {}
+  for i = 1, #rows do
+    local m = 0
+    for j = 1, ncols do m = math.max(m, L[i][j]) end
+    hreal = hreal + m
+    rl[i] = m
+  end
+  return {mode = 'p', w = w, h = hreal, prot = protect, rl = rl}
 end
 
 local function colspec(p, align, ncols, sz)
@@ -541,6 +550,11 @@ local function rows_tex(g, sz, p)
       body[#body + 1] = row(r, false)
     end
   end
+  -- no page break after the first body row or before the last one (no single orphaned row on a page)
+  local nb = #body
+  if nb >= 3 then
+    for _, k in ipairs({1, nb - 1}) do body[k] = body[k]:gsub(' \\\\$', ' \\\\*') end
+  end
   return table.concat(head, '\n'), table.concat(body, '\n')
 end
 
@@ -569,22 +583,35 @@ local function table_latex(tbl, label, float, max_hpt)
                                             sz.name, p.mode, p.prot and ' protected' or '', p.h,
                                             land and ', landscape' or '', table.concat(wl, ' '))
   local hpt = height_pt(p, sz)
+  -- space to reserve before the table starts: all of a short table (<= 8 body rows and <= 200 pt, kept
+  -- whole), otherwise the header plus three body rows (a long table then breaks with repeated headers)
+  local nhead, nbody = #g.head_txt, #g.body_txt
+  local need = p.h * sz.pt * 1.44 + 10
+  if nbody > 8 or need > 200 then
+    local lines = 0
+    if p.rl then
+      for k = 1, math.min(#p.rl, nhead + 3) do lines = lines + p.rl[k] end
+    else
+      lines = p.h / (nhead + nbody) * (nhead + 3)
+    end
+    need = lines * sz.pt * 1.44 + 10
+  end
   local spec = colspec(p, g.align, g.ncols, sz)
   local head, body = rows_tex(g, sz, p)
   local pre = string.format('\\begingroup\\setstretch{1}%s\\setlength{\\tabcolsep}{%.1fpt}' ..
                             '\\renewcommand{\\arraystretch}{1.2}', sz.cmd, sz.tcs)
   if float then
-    local c = (p.mode == 'natural') and '\\centering' or ''
-    return pre .. c .. '\n\\begin{tabular}{' .. spec .. '}\n\\toprule\n' .. head .. '\n\\midrule\n' .. body ..
+    -- natural-width tables sit flush left, aligned with their caption and notes
+    return pre .. '\n\\begin{tabular}{' .. spec .. '}\n\\toprule\n' .. head .. '\n\\midrule\n' .. body ..
            '\n\\bottomrule\n\\end{tabular}\\par\\endgroup', land, hpt
   end
   local cont = ''
   if label then
     cont = string.format('\\multicolumn{%d}{@{}l}{\\textit{Table %s (continued)}} \\\\[2pt]\n', g.ncols, label)
   end
-  return pre .. '\n\\begin{longtable}[c]{' .. spec .. '}\n\\toprule\n' .. head .. '\n\\midrule\n\\endfirsthead\n' ..
+  return pre .. '\n\\begin{longtable}[l]{' .. spec .. '}\n\\toprule\n' .. head .. '\n\\midrule\n\\endfirsthead\n' ..
          cont .. '\\toprule\n' .. head .. '\n\\midrule\n\\endhead\n\\bottomrule\n\\endfoot\n\\bottomrule\n' ..
-         '\\endlastfoot\n' .. body .. '\n\\end{longtable}\n\\endgroup', land, hpt
+         '\\endlastfoot\n' .. body .. '\n\\end{longtable}\n\\endgroup', land, hpt, need
 end
 
 -- ------------------------------------------------------------------ paragraphs around tables/figures
@@ -702,7 +729,9 @@ local function figure_latex(img, cap, fid, followers)
 end
 
 -- ------------------------------------------------------------------ title-page divs
+local fm_list = false
 local function style_div(div, style)
+  if style ~= 'Front Matter' then fm_list = false end
   local x = tex_blocks(div.content)
   if style == 'Title' then
     local rest = x:match('^Supplementary Information for:%s*(.*)$')
@@ -717,7 +746,12 @@ local function style_div(div, style)
   elseif style == 'Affiliation' then
     return rawb('\\noindent{\\small ' .. x .. '\\par}\\vspace{2pt}')
   elseif style == 'Front Matter' then
-    return rawb('\\vspace{10pt}\\noindent{\\small ' .. x .. '\\par}')
+    -- a line ending in ':' (e.g. "ORCID iDs:") introduces a tight list of "Name: value" lines
+    local s = trim(stringify(div.content))
+    local gap = '10pt'
+    if fm_list and s:match('^[^:]+:') then gap = '1pt' else fm_list = false end   -- (URLs are raw here)
+    if s:match(':$') then fm_list = true end
+    return rawb('\\vspace{' .. gap .. '}\\noindent{\\small ' .. x .. '\\par}')
   elseif style == 'Keywords' then
     return rawb('\\par\\vspace{10pt}\\noindent ' .. x .. '\\par')
   end
@@ -732,8 +766,40 @@ local function process(blocks)
   local i, n = 1, #blocks
   local cur_label
   local in_abstract, abs_paras = false, 0
+  local tcache = {}
+  local function tbl_at(k, label)
+    if not tcache[k] then
+      local tex, land, hpt, need = table_latex(blocks[k], label, false)
+      tcache[k] = {tex = tex, land = land, need = need or 0}
+    end
+    return tcache[k]
+  end
+  -- index of the table that belongs to the caption at k (text, but no heading or other caption, in between)
+  local function table_after(k)
+    local j = k + 1
+    while j <= n and j <= k + 6 do
+      local x = blocks[j]
+      if x.t == 'Table' then return j end
+      if x.t == 'Header' or is_panel(x) or cap_id(x, 'Table') or cap_id(x, 'Figure') then return nil end
+      j = j + 1
+    end
+    return nil
+  end
+  -- points to reserve for the caption at k, its optional continuation paragraph and the start of table j
+  local function cap_need(k, j, cont)
+    local lines = math.ceil(est(stringify(blocks[k]), 10.5) / LW)
+    if cont then lines = lines + math.ceil(est(stringify(cont), 10.5) / LW) end
+    if not j then return lines * 12.5 + 8 * 15.6 end
+    return lines * 12.5 + 14 + tbl_at(j, cap_id(blocks[k], 'Table')).need
+  end
   while i <= n do
     local b = blocks[i]
+    -- float barrier before every major section of the supplement; in the manuscript only before the
+    -- Declarations and the references, so a figure may run onto the first page of the next section
+    if b.t == 'Header' and b.level == 1 then
+      local h = stringify(b.content)
+      if PART ~= 'main' or h == 'Declarations' or h == 'References' then out:insert(rawb('\\FloatBarrier')) end
+    end
     -- structured abstract: every labelled paragraph starts flush left, with a small gap between them
     if b.t == 'Header' then
       in_abstract = (stringify(b.content) == 'Abstract')
@@ -785,12 +851,28 @@ local function process(blocks)
       out:insert(rawb(s))
       i = j
     elseif tid then
+      -- supplement caption: reserve room for the caption and the start of its table. A single paragraph
+      -- between caption and table is set as part of the caption; longer text between them is moved above
+      -- the caption, so the caption always sits directly on its table.
       cur_label = tid
-      out:insert(rawb('\\par\\Needspace{8\\baselineskip}\\vspace{8pt}\\phantomsection\\label{tab:' .. tid .. '}%\n' ..
-                      caption_tex(b) .. '\\nopagebreak\\vspace{3pt}'))
-      i = i + 1
+      local j = table_after(i)
+      local cont
+      if j and j == i + 2 and blocks[i + 1].t == 'Para' then
+        cont = blocks[i + 1]
+      elseif j and j > i + 1 then
+        local mid = pandoc.Blocks{}
+        for q = i + 1, j - 1 do mid:insert(blocks[q]) end
+        out:extend(process(mid))
+        note('Table ' .. tid .. ': caption moved below ' .. (j - i - 1) .. ' intervening blocks')
+      end
+      local s = caption_tex(b)
+      if cont then s = s .. '\\nopagebreak\\vspace{2pt}' .. caption_tex(cont) end
+      out:insert(rawb(string.format('\\par\\Needspace{%.0fpt}\\vspace{8pt}\\phantomsection\\label{tab:%s}%%\n',
+                                    cap_need(i, j, cont), tid) .. s .. '\\nopagebreak\\vspace{3pt}'))
+      i = j or (i + 1)
     elseif b.t == 'Table' then
-      local tex, land = table_latex(b, cur_label, false)
+      local c = tcache[i] or tbl_at(i, cur_label)
+      local tex, land = c.tex, c.land
       if land then tex = '\\begin{landscape}\n' .. tex end
       local j = i + 1
       local notes = {}
@@ -804,9 +886,18 @@ local function process(blocks)
       if land then tex = tex .. '\n\\end{landscape}' end
       out:insert(rawb(tex .. '\n\\vspace{8pt}'))
       i = j
-    elseif b.t == 'Header' and (cap_id(blocks[i + 1], 'Table') or cap_id(blocks[i + 2], 'Table')) then
-      -- keep a heading with the table caption that follows it
-      out:insert(rawb('\\Needspace{14\\baselineskip}'))
+    elseif b.t == 'Header' and PART ~= 'main' and (cap_id(blocks[i + 1], 'Table') or cap_id(blocks[i + 2], 'Table')) then
+      -- keep a heading with the table caption that follows it (and with a short paragraph in between)
+      local kc = cap_id(blocks[i + 1], 'Table') and i + 1 or i + 2
+      local jt = table_after(kc)
+      local need = 36 + cap_need(kc, jt, (jt == kc + 2 and blocks[kc + 1].t == 'Para') and blocks[kc + 1] or nil)
+      if jt and jt > kc + 2 then
+        need = 36 + 4 * 15.6   -- the caption will be moved below the text that follows it
+      elseif kc == i + 2 then
+        local lines = math.ceil(est(stringify(blocks[i + 1]), 11) / LW)
+        if blocks[i + 1].t ~= 'Para' or lines > 3 then need = 36 + 4 * 15.6 else need = need + lines * 15.6 end
+      end
+      out:insert(rawb(string.format('\\Needspace{%.0fpt}', need)))
       out:insert(b)
       i = i + 1
     elseif is_panel(b) then

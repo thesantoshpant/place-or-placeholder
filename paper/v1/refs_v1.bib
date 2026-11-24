@@ -188,7 +188,7 @@
 % Reported cases and deaths in 2024; checked on who.int 2026-11-21.
 @misc{who2025dengue,
   author       = {{World Health Organization}},
-  title        = {Dengue and severe dengue},
+  title        = {Dengue},
   howpublished = {Fact sheet},
   year         = {2025},
   note         = {Published 21 August 2025},
@@ -350,12 +350,14 @@
 % ===========================================================================
 
 @article{roberts2017cv,
-  author  = {Roberts, D. R. and others},
+  author  = {Roberts, David R. and Bahn, Volker and Ciuti, Simone and Boyce, Mark S. and Elith, Jane and Guillera-Arroita, Gurutzeta and Hauenstein, Severin and Lahoz-Monfort, Jos{\'e} J. and Schr{\"o}der, Boris and Thuiller, Wilfried and Warton, David I. and Wintle, Brendan A. and Hartig, Florian and Dormann, Carsten F.},
   title   = {Cross-validation strategies for data with temporal, spatial, hierarchical, or phylogenetic structure},
   journal = {Ecography},
   volume  = {40},
+  number  = {8},
   pages   = {913--929},
-  year    = {2017}
+  year    = {2017},
+  doi     = {10.1111/ecog.02881}
 }
 
 @article{ploton2020spatial,
@@ -432,7 +434,8 @@
   volume  = {19},
   number  = {8},
   pages   = {e1011393},
-  year    = {2023}
+  year    = {2023},
+  doi     = {10.1371/journal.pcbi.1011393}
 }
 
 @article{cramer2022covidhub,
@@ -459,12 +462,14 @@
 }
 
 @article{harvey1997testing,
-  author  = {Harvey, D. and Leybourne, S. and Newbold, P.},
+  author  = {Harvey, David and Leybourne, Stephen and Newbold, Paul},
   title   = {Testing the equality of prediction mean squared errors},
   journal = {International Journal of Forecasting},
   volume  = {13},
+  number  = {2},
   pages   = {281--291},
-  year    = {1997}
+  year    = {1997},
+  doi     = {10.1016/S0169-2070(96)00719-4}
 }
 
 @article{lazarus2018har,
@@ -570,22 +575,23 @@
 % ===========================================================================
 
 @article{clarke2024opendengue,
-  author  = {Clarke, J. and others},
+  author  = {Clarke, Joe and Lim, Ahyoung and Gupte, Pratik and Pigott, David M. and {van Panhuis}, Wilbert G. and Brady, Oliver J.},
   title   = {A global dataset of publicly available dengue case count data},
   journal = {Scientific Data},
   volume  = {11},
+  number  = {1},
   pages   = {296},
   year    = {2024},
   doi     = {10.1038/s41597-024-03120-7}
 }
 
 @misc{opendengue131,
-  author       = {{OpenDengue}},
-  title        = {{OpenDengue} data release {V1.3.1} (National, Spatial and Temporal extracts)},
+  author       = {Clarke, Joe and Lim, Ahyoung and Gupte, Pratik R. and Pigott, David M. and {van Panhuis}, Wilbert G. and Brady, Oliver},
+  title        = {{OpenDengue}: data from the {OpenDengue} database, version 5 (release {V1.3.1}: National, Spatial and Temporal extracts)},
+  publisher    = {figshare},
   year         = {2026},
-  howpublished = {\url{https://github.com/OpenDengue/master-repo/tree/main/data/releases/V1.3.1}},
-  doi          = {10.6084/m9.figshare.24259573},
-  note         = {Release commit 99b6a3e (3 November 2026); figshare version 5; CC BY-SA}
+  doi          = {10.6084/m9.figshare.24259573.v5},
+  note         = {Dataset, CC BY 4.0. Release commit 99b6a3e (3 November 2026), \url{https://github.com/OpenDengue/master-repo/tree/main/data/releases/V1.3.1}}
 }
 
 @misc{aef_dataset,
@@ -597,41 +603,60 @@
 }
 
 @misc{era5land_ee,
-  author       = {{ECMWF}},
-  title        = {{ERA5-Land} daily aggregated (\texttt{ECMWF/ERA5\_LAND/DAILY\_AGGR})},
-  howpublished = {Google Earth Engine Data Catalog},
-  note         = {Copernicus licence}
+  author       = {Mu{\~n}oz Sabater, Joaqu{\'i}n},
+  title        = {{ERA5-Land} hourly data from 1950 to present},
+  publisher    = {Copernicus Climate Change Service (C3S) Climate Data Store},
+  year         = {2019},
+  doi          = {10.24381/cds.e2161bac},
+  note         = {Daily aggregates accessed through the Google Earth Engine Data Catalog (\texttt{ECMWF/ERA5\_LAND/DAILY\_AGGR}), \url{https://developers.google.com/earth-engine/datasets/catalog/ECMWF_ERA5_LAND_DAILY_AGGR}; Copernicus licence}
 }
 
 @misc{mod13q1_ee,
-  author       = {{NASA LP DAAC}},
-  title        = {{MODIS} Terra Vegetation Indices 16-day 250\,m, Collection 6.1 (\texttt{MODIS/061/MOD13Q1})},
-  howpublished = {Google Earth Engine Data Catalog}
+  author       = {Didan, Kamel},
+  title        = {{MODIS/Terra} Vegetation Indices 16-Day {L3} Global 250m {SIN} Grid {V061}},
+  publisher    = {NASA Land Processes Distributed Active Archive Center},
+  year         = {2021},
+  doi          = {10.5067/MODIS/MOD13Q1.061},
+  note         = {Accessed through the Google Earth Engine Data Catalog (\texttt{MODIS/061/MOD13Q1}), \url{https://developers.google.com/earth-engine/datasets/catalog/MODIS_061_MOD13Q1}}
 }
 
 @misc{mod11a2_ee,
-  author       = {{NASA LP DAAC}},
-  title        = {{MODIS} Terra Land Surface Temperature 8-day 1\,km, Collection 6.1 (\texttt{MODIS/061/MOD11A2})},
-  howpublished = {Google Earth Engine Data Catalog}
+  author       = {Wan, Zhengming and Hook, Simon and Hulley, Glynn},
+  title        = {{MODIS/Terra} Land Surface Temperature/Emissivity 8-Day {L3} Global 1km {SIN} Grid {V061}},
+  publisher    = {NASA Land Processes Distributed Active Archive Center},
+  year         = {2021},
+  doi          = {10.5067/MODIS/MOD11A2.061},
+  note         = {Accessed through the Google Earth Engine Data Catalog (\texttt{MODIS/061/MOD11A2}), \url{https://developers.google.com/earth-engine/datasets/catalog/MODIS_061_MOD11A2}}
 }
 
-@misc{viirs_ee,
-  author       = {{Earth Observation Group}},
-  title        = {{VIIRS} Nighttime Day/Night Band annual composites ({VNL} {V2.1}/{V2.2}; \texttt{NOAA/VIIRS/DNB/ANNUAL\_V21}, \texttt{ANNUAL\_V22})},
-  howpublished = {Google Earth Engine Data Catalog}
+@article{viirs_ee,
+  author  = {Elvidge, Christopher D. and Zhizhin, Mikhail and Ghosh, Tilottama and Hsu, Feng-Chi and Taneja, Jay},
+  title   = {Annual Time Series of Global {VIIRS} Nighttime Lights Derived from Monthly Averages: 2012 to 2019},
+  journal = {Remote Sensing},
+  volume  = {13},
+  number  = {5},
+  pages   = {922},
+  year    = {2021},
+  doi     = {10.3390/rs13050922},
+  note    = {Accessed as Google Earth Engine collections \texttt{NOAA/VIIRS/DNB/ANNUAL\_V21} and \texttt{ANNUAL\_V22}}
 }
 
 @misc{ghsl_pop,
-  author       = {{European Commission, Joint Research Centre}},
-  title        = {{GHSL} {P2023A} {GHS-POP} population grid (\texttt{JRC/GHSL/P2023A/GHS\_POP})},
-  howpublished = {Google Earth Engine Data Catalog},
-  note         = {Epochs 1975--2030 at 5-year steps; 2025 and 2030 are projections}
+  author       = {Schiavina, Marcello and Freire, Sergio and Carioli, Alessandra and MacManus, Kytt},
+  title        = {{GHS-POP} {R2023A} -- {GHS} population grid multitemporal (1975--2030)},
+  publisher    = {European Commission, Joint Research Centre (JRC)},
+  year         = {2023},
+  doi          = {10.2905/2FF68A52-5B5B-4A22-8F40-C41DA8332CFE},
+  note         = {Accessed through Google Earth Engine (\texttt{JRC/GHSL/P2023A/GHS\_POP}); epochs 1975--2030 at 5-year steps, 2025 and 2030 projected}
 }
 
 @misc{ghsl_built,
-  author       = {{European Commission, Joint Research Centre}},
-  title        = {{GHSL} {P2023A} {GHS-BUILT-S} built-up surface (\texttt{JRC/GHSL/P2023A/GHS\_BUILT\_S})},
-  howpublished = {Google Earth Engine Data Catalog}
+  author       = {Pesaresi, Martino and Politis, Panagiotis},
+  title        = {{GHS-BUILT-S} {R2023A} -- {GHS} built-up surface grid, derived from {Sentinel-2} composite and {Landsat}, multitemporal (1975--2030)},
+  publisher    = {European Commission, Joint Research Centre (JRC)},
+  year         = {2023},
+  doi          = {10.2905/9F06F36F-4B11-47EC-ABB0-4F8B7B1D72EA},
+  note         = {Accessed through Google Earth Engine (\texttt{JRC/GHSL/P2023A/GHS\_BUILT\_S})}
 }
 
 % Verified, but not used by the v1 analyses (GHSL is the population source). Cite only if WorldPop is mentioned.
@@ -643,22 +668,38 @@
 
 @misc{ibge2022malha,
   author       = {{Instituto Brasileiro de Geografia e Estat\'istica (IBGE)}},
-  title        = {Malha municipal 2022 (\texttt{BR\_Municipios\_2022})},
+  title        = {Malha Municipal 2022 (\texttt{BR\_Municipios\_2022})},
   year         = {2023},
-  howpublished = {IBGE geoftp}
+  howpublished = {IBGE, Malhas territoriais},
+  url          = {https://www.ibge.gov.br/geociencias/organizacao-do-territorio/malhas-territoriais/15774-malhas.html?edicao=36516}
 }
 
 @misc{geoboundaries_gbopen,
   author       = {{geoBoundaries}},
-  title        = {{gbOpen} {ADM1}/{ADM2} boundaries for Colombia, Peru and Taiwan},
-  howpublished = {geoBoundaries API, commit 9469f09},
+  title        = {{gbOpen ADM1/ADM2 Boundaries for Colombia, Peru and Taiwan}},
+  year         = {2023},
+  howpublished = {geoBoundaries API, release commit 9469f09 (build of 12 December 2023)},
+  url          = {https://www.geoboundaries.org/},
   note         = {Colombia: DANE MGN 2020 (CC BY 4.0); Peru: IGN/OCHA (CC BY 3.0 IGO); Taiwan: OpenStreetMap 2017 (CC BY-SA 2.0)}
+}
+
+@article{runfola2020geoboundaries,
+  author  = {Runfola, Daniel and Anderson, Austin and Baier, Heather and Crittenden, Matt and Dowker, Elizabeth and Fuhrig, Sydney and Goodman, Seth and Grimsley, Grace and Layko, Rachel and Melville, Graham and Mulder, Maddy and Oberman, Rachel and Panganiban, Joshua and Peck, Andrew and Seitz, Leigh and Shea, Sylvia and Slevin, Hannah and Youngerman, Rebecca and Hobbs, Lauren},
+  title   = {{geoBoundaries}: A global database of political administrative boundaries},
+  journal = {PLOS ONE},
+  volume  = {15},
+  number  = {4},
+  pages   = {e0231866},
+  year    = {2020},
+  doi     = {10.1371/journal.pone.0231866}
 }
 
 @misc{infodengue_api,
   author       = {{InfoDengue}},
   title        = {{InfoDengue} {API}: \texttt{alertcity} endpoint},
-  howpublished = {\url{https://info.dengue.mat.br/services/api/doc}},
+  year         = {2026},
+  url          = {https://info.dengue.mat.br/services/api/doc},
+  urldate      = {2026-11-15},
   note         = {Accessed November 2026}
 }
 
@@ -676,8 +717,10 @@
 @misc{taiwancdc_dengue_daily,
   author       = {{Taiwan Centers for Disease Control}},
   title        = {Dengue fever daily confirmed cases since 1998 (\texttt{Dengue\_Daily.csv})},
-  howpublished = {Taiwan government open data platform, dataset 21025, \url{https://data.gov.tw/dataset/21025}},
-  note         = {Open Government Data License v1.0. The dataset is now listed as archived; we used the Internet Archive snapshot of the od.cdc.gov.tw file of 29 July 2025. VERIFY: add the exact Internet Archive snapshot URL (R6 C)}
+  howpublished = {Taiwan government open data platform, dataset 21025 (https://data.gov.tw/dataset/21025); Internet Archive snapshot of 29 July 2025},
+  year         = {2025},
+  url          = {https://web.archive.org/web/20250729004227/https://od.cdc.gov.tw/eic/Dengue_Daily.csv},
+  note         = {Open Government Data License v1.0}
 }
 
 % ===========================================================================
@@ -696,16 +739,18 @@
 
 @misc{baston_exactextract,
   author       = {Baston, Daniel},
-  title        = {exactextract: Fast and accurate raster zonal statistics},
-  howpublished = {ISciences, \url{https://github.com/isciences/exactextract}},
+  title        = {exactextract},
+  publisher    = {Zenodo},
+  year         = {2023},
   doi          = {10.5281/zenodo.11396419},
-  note         = {Software, Apache-2.0 licence}
+  note         = {Software (all-versions DOI); version 0.3.0 of the Python package was used; Apache-2.0 licence; \url{https://github.com/isciences/exactextract}}
 }
 
 @inproceedings{ke2017lightgbm,
   author    = {Ke, Guolin and Meng, Qi and Finley, Thomas and Wang, Taifeng and Chen, Wei and Ma, Weidong and Ye, Qiwei and Liu, Tie-Yan},
   title     = {{LightGBM}: A Highly Efficient Gradient Boosting Decision Tree},
   booktitle = {Advances in Neural Information Processing Systems 30 (NIPS 2017)},
+  pages     = {3146--3154},
   year      = {2017},
   url       = {https://papers.nips.cc/paper/2017/hash/6449f44a102fde848669bdd9eb6b76fa-Abstract.html}
 }

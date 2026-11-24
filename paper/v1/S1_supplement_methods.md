@@ -20,11 +20,11 @@ We report three measures. The embedding gain compares the reference model with t
 
 | Source | Use | Version / product | Licence as recorded |
 |---|---|---|---|
-| OpenDengue [@clarke2024opendengue; @opendengue131] | Weekly Admin2 cases | V1.3.1, Temporal extract (release commit 99b6a3e; figshare v5) | CC BY-SA (share-alike applies to redistributed derived data) |
+| OpenDengue [@clarke2024opendengue; @opendengue131] | Weekly Admin2 cases | V1.3.1, Temporal extract (release commit 99b6a3e; figshare v5) | CC BY 4.0 (figshare v5) |
 | InfoDengue API [@codeco2018infodengue; @infodengue_api] | Brazil zero-fill validation | `alertcity`, column `casprov` (probable) | Public API |
 | Taiwan CDC `Dengue_Daily.csv` [@taiwancdc_dengue_daily] | Taiwan validation and crosswalk | Internet Archive snapshot of 2025-07-29 | Open government data |
 | IBGE municipal mesh [@ibge2022malha] | Brazil polygons | 2022 | IBGE open data |
-| geoBoundaries gbOpen [@geoboundaries_gbopen] | Colombia, Peru, Taiwan polygons | COL ADM2 (DANE 2020); PER ADM2; TWN ADM2 (OpenStreetMap 2017) | CC BY 4.0; CC BY 3.0 IGO; CC BY-SA 2.0 |
+| geoBoundaries gbOpen [@geoboundaries_gbopen; @runfola2020geoboundaries] | Colombia, Peru, Taiwan polygons | COL ADM2 (DANE 2020); PER ADM2; TWN ADM2 (OpenStreetMap 2017) | CC BY 4.0; CC BY 3.0 IGO; CC BY-SA 2.0 |
 | ERA5-Land daily aggregates [@era5land_ee] | Weekly climate | `ECMWF/ERA5_LAND/DAILY_AGGR` | Copernicus licence |
 | MODIS [@mod13q1_ee; @mod11a2_ee] | NDVI; land-surface temperature | MOD13Q1 and MOD11A2, collection 6.1 | Provider terms |
 | VIIRS night lights [@viirs_ee] | Night lights | VNL annual V2.1 (2013–2021), V2.2 (2022–2024) | Provider terms |
@@ -214,7 +214,7 @@ All LightGBM and negative binomial runs took about 4,700 core-hours, counted as 
 
 #### Derived data to be released
 
-The district-year AlphaEarth table (population-weighted and unweighted means, before and after renormalisation, with population sums and norms), the weekly district panel, the covariate tables, the split and fold definitions, all stored forecasts and the scoring code are available from the authors on request and will be archived on Zenodo with the journal version; the code is at https://github.com/thesantoshpant/place-or-placeholder. The embedding table is derived from a CC BY 4.0 product; the case panel is derived from OpenDengue (CC BY-SA).
+The district-year AlphaEarth table (population-weighted and unweighted means, before and after renormalisation, with population sums and norms), the weekly district panel, the covariate tables, the split and fold definitions, all stored forecasts and the scoring code are available from the authors on request and will be archived on Zenodo with the journal version; the code is at https://github.com/thesantoshpant/place-or-placeholder. The embedding table is derived from a CC BY 4.0 product; the case panel is derived from OpenDengue (CC BY 4.0), and the Taiwan polygons are CC BY-SA 2.0.
 
 ---
 
